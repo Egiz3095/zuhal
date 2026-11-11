@@ -676,7 +676,6 @@ bdi{unicode-bidi:isolate}
     <div class="filter-field"><label class="filter-label">السائق</label><select id="fDriver"><option value="">جميع السائقين</option></select></div>
     <div class="filter-field"><label class="filter-label">ضغط الخرسانة</label><select id="fGrade"><option value="">جميع درجات الضغط</option></select></div>
     <div class="filter-field"><label class="filter-label">معدة الصب</label><select id="fPump"><option value="">جميع معدات الصب</option></select></div>
-    <button id="dashboardApplyFilters" class="btn" type="button">تطبيق التصفية</button>
     <div class="z-presets"><button type="button" class="z-preset" data-p="m">الشهر الحالي</button><button type="button" class="z-preset" data-p="pm">الشهر السابق</button><button type="button" class="z-preset" data-p="y">هذه السنة</button><button type="button" class="z-preset" data-p="12">آخر 12 شهراً</button><button type="button" class="z-preset" data-p="all">كل البيانات</button><button type="button" class="z-preset z-reset" id="zResetFilters">مسح الفلاتر ✕</button></div>
   </section>
 
@@ -1142,9 +1141,13 @@ function toolbar(kind){
   if(kind==="docs")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label>`;
   if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","بانتظار المعالجة"],["done","تمت معالجتها"],["all","الكل"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
   if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label><label class="report-filter">الفرع<select id="rBranch"><option value="">جميع الفروع</option>${[...new Set(DB.G.map(g=>g.branch))].map(b=>`<option${RS.branch===b?" selected":""}>${esc(b)}</option>`).join("")}</select></label>`;
-  h+=`<label class="report-filter"><span>&nbsp;</span><button type="button" id="rApply">عرض التقرير</button></label><label class="report-filter"><span>&nbsp;</span><button type="button" id="rExcel" style="background:#1f9d68">تصدير Excel</button></label>`;
+  h+=`<label class="report-filter"><span>&nbsp;</span><button type="button" id="rExcel" style="background:#1f9d68">تصدير Excel</button></label>`;
   $("reportToolbar").innerHTML=h;
-  $("rApply").onclick=()=>{["rFrom","rTo","rMonth","rDay","rStatus","rBranch"].forEach(id=>{const e=$(id);if(e)RS[{rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch"}[id]]=e.value;});drawReport();};
+  // التطبيق المباشر: أي تغيير في الفلاتر يحدّث التقرير فوراً دون زر
+  const MAP={rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch"};let tmr;
+  const applyNow=()=>{clearTimeout(tmr);tmr=setTimeout(()=>{let ok=true;Object.keys(MAP).forEach(id=>{const e=$(id);if(!e)return;if(e.type==="date"&&e.value&&!/^\d{4}-\d{2}-\d{2}$/.test(e.value)){ok=false;return;}RS[MAP[id]]=e.value;});
+    if(!ok)return;if(RS.from&&RS.to&&RS.from>RS.to){toast("تاريخ «من» بعد تاريخ «إلى»");return;}KEEP_TB=true;drawReport();KEEP_TB=false;},250);};
+  Object.keys(MAP).forEach(id=>{const e=$(id);if(e){e.addEventListener("change",applyNow);if(e.type==="date")e.addEventListener("input",applyNow);}});
   $("rExcel").onclick=()=>exportTables($("reportBody"),REPORTS[CUR].t);
   const ex=document.createElement("div");ex.className="z-tb-extra";
   ex.innerHTML=`${RS.mixer?`<span class="z-fchip">الخلاطة ${esc(RS.mixer)} <button type="button" id="rClrMixer">✕</button></span>`:""}<button type="button" id="rSave" class="z-tb-btn">☆ حفظ العرض</button><button type="button" id="rLink" class="z-tb-btn">🔗 نسخ الرابط</button>`;
@@ -1167,8 +1170,9 @@ function monthlyTableHtml(d){const ms=monthly(d);return table(["الشهر","ا�
   ms.map(([k,v])=>tr([mLabel(k),num(v.qty,1),num(v.trips),num(v.cem,1),num(v.rec,1),`<span class="${Math.abs(v.rec-v.cem)>v.cem*0.1?"z-flag":""}">${v.rec-v.cem>=0?"+":""}${num(v.rec-v.cem,1)}</span>`,money(v.fuel),num(v.qty?v.fuel/v.qty:0,2),num(v.water)])));}
 function mixerRows(P){return [...groupBy(P,r=>r.mixer)].map(([m,rs])=>{const q=sum(rs,"qty");const tt=rs.filter(r=>r.trip);const drs=[...sumBy(rs,r=>r.driver,()=>1)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,3).join("، ");
   return {m,q,n:rs.length,drs,trip:tt.length?sum(tt,"trip")/tt.length:null,days:new Set(rs.map(r=>dKey(r.date))).size};}).sort((a,b)=>b.q-a.q);}
+let KEEP_TB=false;
 function drawReport(){
-  const id=CUR;let h="";
+  const id=CUR;let h="";const _tb=toolbar;if(KEEP_TB){toolbar=()=>{};}
   if(["exec","prod","fleet","cement","fuel","water","revenue","expenses","pnl"].includes(id))toolbar("range");
   else if(id==="monthly")toolbar("month");else if(id==="daily")toolbar("day");else if(id==="veh")toolbar("docs");else if(id==="gov")toolbar("gov");else if(id==="follow")toolbar("follow");else toolbar("none");
   if(id==="exec"){const d=rangeData();const al=docAlerts();
@@ -1258,7 +1262,7 @@ function drawReport(){
   $("reportBody").querySelectorAll(".report-card").forEach(c=>{const n=c.querySelectorAll("tbody tr").length;if(n<=22)c.classList.add("z-keep");});
   fixBidi($("reportBody"));
   const ph=document.querySelector(".z-print-head");ph.querySelector(".z-ph-title").textContent=REPORTS[id].t;ph.querySelector(".z-ph-period").textContent=periodLabel(id);
-  syncHash();
+  syncHash();if(KEEP_TB)toolbar=_tb;
 }
 function periodLabel(id){
   if(id==="monthly")return mLabel(RS.month);if(id==="daily")return fmtDate(toDate(RS.day));
@@ -1350,7 +1354,9 @@ async function refresh(force){
 
 /* ---------- الواجهة ---------- */
 function bindUI(){
-  $("dashboardApplyFilters").onclick=()=>{render();if(innerWidth<900)document.body.classList.remove("z-filters-open");};
+  // التطبيق المباشر للفلاتر الرئيسية
+  let ftm;const autoRender=()=>{clearTimeout(ftm);ftm=setTimeout(()=>{const f=$("dashboardFromDate").value,t=$("dashboardToDate").value;if(f&&t&&f>t)return;render();},250);};
+  ["dashboardFromDate","dashboardToDate","fMixer","fDriver","fGrade","fPump"].forEach(id=>{$(id).addEventListener("change",autoRender);if($(id).type==="date")$(id).addEventListener("input",autoRender);});
   $("zResetFilters").onclick=()=>{["dashboardFromDate","dashboardToDate","fMixer","fDriver","fGrade","fPump"].forEach(id=>$(id).value="");render();};
   document.querySelectorAll(".z-preset").forEach(b=>b.onclick=()=>{const t=DB?DB.maxD:new Date();let f;const p=b.dataset.p;
     if(p==="m")f=new Date(t.getFullYear(),t.getMonth(),1);else if(p==="pm"){f=new Date(t.getFullYear(),t.getMonth()-1,1);$("dashboardToDate").value=dKey(new Date(t.getFullYear(),t.getMonth(),0));$("dashboardFromDate").value=dKey(f);render();return;}
