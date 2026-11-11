@@ -473,6 +473,29 @@ html[data-theme="dark"] .report-item .z-txt>span{color:#8495bb}
 .z-badge{direction:ltr;unicode-bidi:isolate}
 /* حذف أدوات العمود الجانبي حسب الطلب: الأدوات، حركة اليوم، آخر ما فتحت، المفضلة، العروض والقوالب */
 .z-rs-tools,.z-bulk-bar,.z-rs-today,.z-rs-quick,.z-star{display:none!important}
+/* ================= أكورديون مركز التقارير ================= */
+.report-list{gap:4px!important;padding:6px 12px 14px!important}
+.report-list .amc-report-group{margin-top:2px;padding:11px 12px!important;border-radius:13px!important;border:1px solid var(--border);background:var(--surface-soft);color:var(--text)!important;font-size:13px!important;transition:background .15s,border-color .15s}
+.report-list .amc-report-group:hover{border-color:var(--ring)}
+.report-list .amc-report-group .amc-rg-t{font-size:13.5px!important;font-weight:800}
+.report-list .amc-report-group .amc-rg-ic{width:30px;height:30px;border-radius:9px;background:var(--surface);border:1px solid var(--border)}
+.report-list .amc-report-group .amc-rg-car svg{transform:rotate(90deg);transition:transform .2s}
+.report-list .amc-report-group.z-open{background:linear-gradient(90deg,var(--primary-soft),var(--surface));border-color:rgba(47,107,255,.4);border-bottom-left-radius:4px;border-bottom-right-radius:4px}
+.report-list .amc-report-group.z-open .amc-rg-car svg{transform:rotate(0deg)}
+.report-list .amc-report-group.z-open .amc-rg-ic{background:linear-gradient(135deg,var(--ring),var(--cyan));color:#fff;border-color:transparent}
+.report-list .report-item{margin-inline-start:14px;width:calc(100% - 14px)!important;border-inline-start:2px solid var(--border)!important;border-radius:0 10px 10px 0!important;padding:8px 10px!important;animation:zAcc .18s ease}
+.report-list .report-item .z-txt>span{display:none}
+.report-list .report-item strong{font-size:12.5px}
+.report-list .report-item .report-icon{width:28px;height:28px;border-radius:8px}
+.report-list .report-item .report-icon svg{width:15px;height:15px}
+.report-list .report-item.active{border-inline-start-color:var(--gold)!important}
+@keyframes zAcc{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+html[data-theme="dark"] .report-list .amc-report-group{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:#dbe4fa!important}
+html[data-theme="dark"] .report-list .amc-report-group .amc-rg-ic{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08)}
+html[data-theme="dark"] .report-list .report-item{border-inline-start-color:rgba(255,255,255,.1)!important}
+.reports-collapsed .report-list .report-item{margin:0;width:100%!important;border-inline-start:0!important}
+.report-list .report-item.amc-rg-hide,.report-list .report-item.z-hidden{display:none!important}
+.reports-collapsed .report-list .report-item.amc-rg-hide{display:flex!important}
 </style>
 <style id="zahal-extra">.z-chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
 .z-expired{background:var(--red-soft);color:var(--red)}.z-near{background:var(--amber-soft);color:var(--amber)}.z-valid{background:var(--green-soft);color:var(--green)}
@@ -1131,7 +1154,7 @@ function openReport(id,keep){
   $("reportWorkspace").hidden=false;document.querySelector(".page-shell").classList.add("z-report-open");
   if(!RS.from&&!RS.to){const f=getFilters();RS.from=f.from;RS.to=f.to;}
   if(!RS.month)RS.month=mKey(DB.maxD);if(!RS.day)RS.day=dKey(DB.maxD);
-  drawReport();window.scrollTo({top:0,behavior:"smooth"});pushRecent(id);
+  drawReport();window.scrollTo({top:0,behavior:"smooth"});pushRecent(id);revealActive();
 }
 function closeReport(){CUR=null;setTimeout(syncHash,0);$("reportWorkspace").hidden=true;document.querySelector(".page-shell").classList.remove("z-report-open");document.querySelectorAll(".report-item").forEach(b=>b.classList.remove("active"));}
 function toolbar(kind){
@@ -1563,20 +1586,28 @@ function decorateItems(){const F=favs();document.querySelectorAll(".report-list 
   b.dataset.key=i<9?String(i+1):"";});}
 function searchSide(q){q=q.trim();let n=0;
   document.querySelectorAll(".report-list .report-item[data-r]").forEach(b=>{const s=b.querySelector("strong");const name=s.dataset.name||s.textContent;const m=!q||b.textContent.includes(q);
-    b.style.display=m?"":"none";if(m){n++;if(q)b.classList.remove("amc-rg-hide");}s.innerHTML=hl(name,q);});
+    b.classList.toggle("z-hidden",!m);if(m){n++;if(q)b.classList.remove("amc-rg-hide");}s.innerHTML=hl(name,q);});
   document.querySelectorAll(".report-list .amc-rg").forEach(g=>{g.style.display=q?"none":"";});
   $("zRsEmpty").hidden=!(q&&!n);$("zRsEmpty").innerHTML=`لا يوجد تقرير باسم «${esc(q)}» — <button type="button" id="zEmptyPal">ابحث في لوحة الأوامر</button>`;
   const ep=$("zEmptyPal");if(ep)ep.onclick=()=>{openPal();$("zPalIn").value=q;drawPal();};
-  if(q===""&&n)document.querySelectorAll(".amc-rg").forEach(g=>{const closed=g.classList.contains("amc-rg-closed");document.querySelectorAll(`.report-item[data-amc-group="${g.dataset.g}"]`).forEach(b=>b.classList.toggle("amc-rg-hide",closed));});}
+  if(q==="")document.querySelectorAll(".report-list .amc-rg").forEach(g=>setGroup(g,g.classList.contains("z-open")));}
 
 /* ---------- التهيئة والربط ---------- */
+/* ---------- أكورديون مجموعات التقارير: مجموعة واحدة مفتوحة فقط ---------- */
+function setGroup(g,open){g.classList.toggle("amc-rg-closed",!open);g.classList.toggle("z-open",open);g.setAttribute("aria-expanded",String(open));
+  document.querySelectorAll(`.report-list .report-item[data-amc-group="${g.dataset.g}"]`).forEach(b=>b.classList.toggle("amc-rg-hide",!open));}
+function accordion(g){const groups=[...document.querySelectorAll(".report-list .amc-rg")];groups.forEach(x=>setGroup(x,x===g));}
+function revealActive(){const b=document.querySelector(`.report-list .report-item[data-r="${CUR}"]`);if(!b)return;const g=document.querySelector(`.report-list .amc-rg[data-g="${b.dataset.amcGroup}"]`);if(g&&!g.classList.contains("z-open"))accordion(g);}
 function initSidebarPro(){
   decorateItems();
+  document.querySelectorAll(".report-list .amc-rg").forEach(g=>{setGroup(g,false);
+    g.onclick=()=>{g.classList.contains("z-open")?setGroup(g,false):accordion(g);};
+    g.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();g.click();}};});
   // نقر عنصر التقرير: فتح أو تحديد في وضع التصدير المجمّع
   document.querySelectorAll(".report-list .report-item[data-r]").forEach(b=>b.onclick=()=>{
     if(BULK){const id=b.dataset.r;SEL.has(id)?SEL.delete(id):SEL.add(id);b.classList.toggle("z-sel",SEL.has(id));updBulk();return;}go(b.dataset.r);});
   const rsIn=document.querySelector(".amc-rs-search input");rsIn.oninput=()=>searchSide(rsIn.value);
-  rsIn.onkeydown=e=>{if(e.key==="Enter"){const f=[...document.querySelectorAll(".report-list .report-item[data-r]")].find(b=>b.style.display!=="none");if(f){go(f.dataset.r);rsIn.value="";searchSide("");}}};
+  rsIn.onkeydown=e=>{if(e.key==="Enter"){const f=[...document.querySelectorAll(".report-list .report-item[data-r]")].find(b=>!b.classList.contains("z-hidden"));if(f){go(f.dataset.r);rsIn.value="";searchSide("");}}};
   document.querySelector(".amc-rs-clr").onclick=()=>{rsIn.value="";searchSide("");};
   $("zBulkBtn").onclick=()=>setBulk(!BULK);$("zBulkCancel").onclick=()=>setBulk(false);$("zBulkGo").onclick=bulkExport;
   $("zBulkAll").onclick=()=>{ORDER().forEach(id=>SEL.add(id));document.querySelectorAll(".report-list .report-item[data-r]").forEach(b=>b.classList.add("z-sel"));updBulk();};
