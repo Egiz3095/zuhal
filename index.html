@@ -641,7 +641,8 @@ bdi{unicode-bidi:isolate}
         <button class="report-item" type="button" data-r="fleet" data-amc-group="prod"><span class="report-icon"><svg class="amc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16V7h11v9M14 10h4l3 3v3h-7"></path><circle cx="7" cy="17.5" r="1.8"></circle><circle cx="17" cy="17.5" r="1.8"></circle></svg></span><span><strong>الخلاطات والسائقين</strong><span>النقلات والكميات ومتوسط زمن الرحلة</span></span><b class="report-arrow">‹</b></button>
         <button class="report-item" type="button" data-r="cement" data-amc-group="prod"><span class="report-icon"><svg class="amc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 18h14M7 18V9l5-3 5 3v9M9 12h6M9 15h6"></path></svg></span><span><strong>تقرير الأسمنت</strong><em class="amc-rs-badge">مطابقة</em><span>المستلم مقابل المستهلك والموردين</span></span><b class="report-arrow">‹</b></button>
 
-        <div class="amc-report-group amc-rg" data-g="cost" role="button" tabindex="0" aria-expanded="true"><span class="amc-rg-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-6"></path></svg></span><span class="amc-rg-t">التكاليف والخدمات</span><span class="amc-rg-n">2</span><span class="amc-rg-car" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+        <div class="amc-report-group amc-rg" data-g="cost" role="button" tabindex="0" aria-expanded="true"><span class="amc-rg-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m7 15 4-4 3 3 5-6"></path></svg></span><span class="amc-rg-t">التكاليف والخدمات</span><span class="amc-rg-n">3</span><span class="amc-rg-car" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+        <button class="report-item" type="button" data-r="equip" data-amc-group="cost"><span class="report-icon"><svg class="amc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"></path></svg></span><span><strong>تكلفة المعدات</strong><em class="amc-rs-badge">جديد</em><span>مصروف كل معدة وتكلفة المتر</span></span><b class="report-arrow">‹</b></button>
         <button class="report-item" type="button" data-r="fuel" data-amc-group="cost"><span class="report-icon"><svg class="amc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M6 9h6"></path><path d="M14 8h2l3 3v7a1.5 1.5 0 0 1-3 0v-4h-2"></path></svg></span><span><strong>تقرير المحروقات</strong><span>حسب مركز التكلفة وتكلفة المتر</span></span><b class="report-arrow">‹</b></button>
         <button class="report-item" type="button" data-r="water" data-amc-group="cost"><span class="report-icon"><svg class="amc-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.6 6 11a6 6 0 0 1-12 0c0-4.4 6-11 6-11z"></path></svg></span><span><strong>تقرير الوايت</strong><span>الردود حسب مركز التكلفة والوايت</span></span><b class="report-arrow">‹</b></button>
 
@@ -955,7 +956,9 @@ function model(raw){
       notes:clean(pick(r,"الملاحظات")),owner:clean(pick(r,"الشخص المسئول","الشخص المسؤول"))};}).filter(g=>g.title);
   const fin=(rows,kind)=>(rows||[]).map(r=>{const dr=toNum(pick(r,"مدين"))||0,cr=toNum(pick(r,"دائن"))||0;
     return {date:toDate(pick(r,"التاريخ")),entry:clean(pick(r,"رقم القيد")),name:clean(pick(r,"إسم الحركة","اسم الحركة"))||"غير محدد",dr,cr,
-      amount:kind==="rev"?cr-dr:dr-cr,branch:clean(pick(r,"الفرع"))||"غير محدد",desc:clean(pick(r,"البيان")),center:clean(pick(r,"مركز التكلفة"))||"غير محدد"};}).filter(r=>r.date);
+      amount:kind==="rev"?cr-dr:dr-cr,branch:clean(pick(r,"الفرع"))||"غير محدد",desc:clean(pick(r,"البيان")),center:clean(pick(r,"مركز التكلفة"))||"غير محدد",
+      cat:clean(r[normKey("التصنيف")]??"")||"غير مصنف",sub:clean(pick(r,"التصنيف الفرعي"))||"غير محدد",equip:clean(pick(r,"المعدة"))||"غير مرتبط بمعدة",
+      etype:clean(pick(r,"نوع المعدة"))||"عام",ctype:clean(pick(r,"نوع التكلفة"))||"غير محدد"};}).filter(r=>r.date);
   const S=fin(raw.sales,"rev"),E=fin(raw.expenses,"exp");
   const allDates=P.map(r=>r.date).concat(C.map(r=>r.date),F.map(r=>r.date));
   const minD=new Date(Math.min(...allDates)),endD=new Date(Math.max(...allDates));
@@ -1089,14 +1092,34 @@ function render(){
   renderToday();updateSidebar();
 }
 function finEmptyMsg(){return `<div class="z-empty"><div class="z-empty-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div><b>لا توجد قيود بعد في تبويبي «المبيعات» و«المصروفات»</b><p>الأعمدة جاهزة في الشيت: رقم القيد، التاريخ، إسم الحركة، مدين، دائن، الفرع، البيان${""} — ومركز التكلفة للمصروفات. بمجرد إدخال القيود تظهر الأرقام والتقارير هنا تلقائياً.</p></div>`;}
+/* ---------- ربط المعدة بالإنتاج ---------- */
+const EQ_CATS=["وقود","إطارات","زيوت وتشحيم","قطع غيار","صيانة وإصلاح"];
+function equipProd(name,P){const m=String(name).match(/\((\d+)\)/),num_=(String(name).match(/\d{3,}/)||[])[0];
+  if(/مضخة/.test(name)&&m)return P.filter(r=>r.pump===m[1]||r.pump.includes(m[1]));
+  if(/خلاطة/.test(name)&&num_)return P.filter(r=>r.mixer===num_);return null;}
+function equipRows(d){
+  const E=d.E.filter(r=>r.equip!=="غير مرتبط بمعدة");
+  // الإنتاج يُحسب على نفس فترة المصروفات فقط حتى تكون تكلفة المتر متسقة
+  let PP=d.P;if(d.E.length){const lo=Math.min(...d.E.map(r=>+r.date)),hi=Math.max(...d.E.map(r=>+r.date));PP=d.P.filter(r=>+r.date>=lo&&+r.date<=hi);}
+  return [...groupBy(E,r=>r.equip)].map(([eq,rs])=>{const tot=sum(rs,"amount");const c={};EQ_CATS.forEach(k=>c[k]=sum(rs.filter(r=>r.cat===k),"amount"));
+    const other=tot-EQ_CATS.reduce((a,k)=>a+c[k],0);const pp=equipProd(eq,PP);const q=pp?sum(pp,"qty"):null,n=pp?pp.length:null;
+    return {eq,type:rs[0].etype,c,other,tot,q,n,cnt:rs.length,maint:(c["قطع غيار"]+c["صيانة وإصلاح"]+c["إطارات"]+c["زيوت وتشحيم"])};}).sort((a,b)=>b.tot-a.tot);}
+function spanQty(d,A){if(!A.length)return sum(d.P,"qty");const lo=Math.min(...A.map(r=>+r.date)),hi=Math.max(...A.map(r=>+r.date));return sum(d.P.filter(r=>+r.date>=lo&&+r.date<=hi),"qty");}
 function renderFinance(d,qty){
   const rev=sum(d.S,"amount"),exp=sum(d.E,"amount"),net=rev-exp,has=DB.S.length+DB.E.length>0;
   $("finRev").innerHTML=`${money(rev)} <small>SAR</small>`;$("finExp").innerHTML=`${money(exp)} <small>SAR</small>`;
   $("finNet").innerHTML=`${money(net)} <small>SAR</small>`;$("finNet").className="value "+(net>=0?"green":"red");
   $("finRevSub").textContent=has?`${num(d.S.length)} قيد • ${num(qty?rev/qty:0,2)} ريال لكل م³`:"بانتظار إدخال القيود";
-  $("finExpSub").textContent=has?`${num(d.E.length)} قيد • ${num(qty?exp/qty:0,2)} ريال لكل م³`:"بانتظار إدخال القيود";
-  $("finNetSub").textContent=has?`هامش التشغيل ${pct(rev?net/rev:0)}`:"الإيرادات − المصروفات";
-  $("finBody").innerHTML=has?"":finEmptyMsg();
+  const qe=spanQty(d,d.E);
+  $("finExpSub").textContent=d.E.length?`${num(d.E.length)} قيد • ${num(qe?exp/qe:0,2)} ريال لكل م³ (${fmtDate(new Date(Math.min(...d.E.map(r=>+r.date))))} — ${fmtDate(new Date(Math.max(...d.E.map(r=>+r.date))))})`:"لا توجد قيود في الفترة";
+  if(!DB.S.length){$("finRevSub").textContent="تبويب «المبيعات» بلا قيود بعد";$("finNet").innerHTML=`— <small>SAR</small>`;$("finNet").className="value";$("finNetSub").textContent="يظهر عند إدخال المبيعات";}
+  else $("finNetSub").textContent=`هامش التشغيل ${pct(rev?net/rev:0)}`;
+  if(!has){$("finBody").innerHTML=finEmptyMsg();return;}
+  const cats=[...sumBy(d.E,r=>r.cat,r=>r.amount)].sort((a,b)=>b[1]-a[1]).slice(0,9),cm=Math.max(1,...cats.map(x=>x[1]));
+  const eqs=equipRows(d).slice(0,8),em=Math.max(1,...eqs.map(x=>x.tot));
+  $("finBody").innerHTML=`<div class="amc-grid2 even" style="margin-top:14px"><div class="card panel secondary-panel"><div class="panel-head"><h3>المصروفات حسب التصنيف</h3><button type="button" class="amc-chip" data-go="expenses">التفاصيل ‹</button></div><div class="hbars">${cats.map(([k,v])=>`<div class="hrow"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${Math.max(0,v)/cm*100}%;background:linear-gradient(90deg,#e0475a,#ff8a98)"></div></div><b>${money(v)} <small style="color:var(--muted)">${pct(exp?v/exp:0)}</small></b></div>`).join("")}</div></div>
+  <div class="card panel secondary-panel"><div class="panel-head"><h3>أعلى المعدات تكلفة</h3><button type="button" class="amc-chip" data-go="equip">تكلفة المعدات ‹</button></div><div class="hbars">${eqs.map(x=>`<div class="hrow"><span>${esc(x.eq)}</span><div class="track"><div class="fill" style="width:${Math.max(0,x.tot)/em*100}%;background:linear-gradient(90deg,#d6a84b,#f0cf86)"></div></div><b>${money(x.tot)}${x.q?` <small style="color:var(--muted)">${num(x.tot/x.q,1)}/م³</small>`:""}</b></div>`).join("")}</div></div></div>`;
+  $("finBody").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
 }
 function renderDecisions(d,x){
   const A=[];const add=(p,c,t,b)=>A.push(`<div class="alert amc-prio p-${p}"><span class="amc-prio-tag">${{urgent:"عاجل",high:"مهم",info:"للعلم"}[p]}</span><strong class="${c}">${t}</strong><p>${b}</p></div>`);
@@ -1137,7 +1160,8 @@ const REPORTS={
   fleet:{t:"تقرير الخلاطات والسائقين",d:"النقلات والكميات ومتوسط زمن الرحلة"},
   cement:{t:"تقرير الأسمنت",d:"المستلم مقابل المستهلك حسب الخلطة والموردين"},
   revenue:{t:"تقرير الإيرادات",d:"المبيعات حسب الشهر والحركة والفرع"},
-  expenses:{t:"تقرير المصروفات",d:"المصروفات حسب الشهر ومركز التكلفة والحركة"},
+  expenses:{t:"تقرير المصروفات",d:"المصروفات حسب التصنيف والتصنيف الفرعي ونوع التكلفة والمعدة"},
+  equip:{t:"تكلفة المعدات",d:"مصروفات كل معدة حسب التصنيف مع تكلفة المتر المكعب والنقلة"},
   pnl:{t:"الأرباح والخسائر",d:"الإيرادات ناقص المصروفات وصافي التشغيل الشهري وتكلفة المتر"},
   fuel:{t:"تقرير المحروقات",d:"التكلفة حسب مركز التكلفة والمجموعة وتكلفة المتر"},
   water:{t:"تقرير الوايت",d:"الردود حسب مركز التكلفة والوايت ومكان التحميل"},
@@ -1147,7 +1171,7 @@ const REPORTS={
   dq:{t:"جودة البيانات",d:"الأخطاء والنواقص التي تؤثر على دقة التقارير"}
 };
 let CUR=null;
-const RS={from:"",to:"",month:"",day:"",status:"",branch:"",mixer:""};let HASHDONE=false;
+const RS={from:"",to:"",month:"",day:"",status:"",branch:"",mixer:"",cat:"",etype:"",equip:""};let HASHDONE=false;
 function openReport(id,keep){
   CUR=id;const r=REPORTS[id];
   document.querySelectorAll(".report-item").forEach(b=>b.classList.toggle("active",b.dataset.r===id));
@@ -1165,15 +1189,19 @@ function toolbar(kind){
   if(kind==="month")h+=`<label class="report-filter">الشهر<select id="rMonth">${months.map(m=>`<option value="${m}"${m===RS.month?" selected":""}>${mLabel(m)}</option>`).join("")}</select></label>`;
   if(kind==="day")h+=`<label class="report-filter">اليوم<input type="date" id="rDay" value="${RS.day}" min="${dKey(DB.minD)}" max="${dKey(DB.maxD)}"></label>`;
   if(kind==="docs")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label>`;
+  if(kind==="range"&&CUR==="expenses"){const cs=[...new Set(DB.E.map(r=>r.cat))].sort((a,b)=>a.localeCompare(b,"ar"));h+=`<label class="report-filter">التصنيف<select id="rCat"><option value="">جميع التصنيفات</option>${cs.map(c=>`<option${RS.cat===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
+  if(kind==="range"&&CUR==="equip"){const ts=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة").map(r=>r.etype))].sort((a,b)=>a.localeCompare(b,"ar"));const es=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة"&&(!RS.etype||r.etype===RS.etype)).map(r=>r.equip))].sort((a,b)=>a.localeCompare(b,"ar",{numeric:true}));
+    h+=`<label class="report-filter">نوع المعدة<select id="rEtype"><option value="">جميع الأنواع</option>${ts.map(c=>`<option${RS.etype===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label><label class="report-filter">المعدة<select id="rEquip"><option value="">كل المعدات</option>${es.map(c=>`<option${RS.equip===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
   if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","بانتظار المعالجة"],["done","تمت معالجتها"],["all","الكل"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
   if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label><label class="report-filter">الفرع<select id="rBranch"><option value="">جميع الفروع</option>${[...new Set(DB.G.map(g=>g.branch))].map(b=>`<option${RS.branch===b?" selected":""}>${esc(b)}</option>`).join("")}</select></label>`;
   h+=`<label class="report-filter"><span>&nbsp;</span><button type="button" id="rExcel" style="background:#1f9d68">تصدير Excel</button></label>`;
   $("reportToolbar").innerHTML=h;
   // التطبيق المباشر: أي تغيير في الفلاتر يحدّث التقرير فوراً دون زر
-  const MAP={rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch"};let tmr;
+  const MAP={rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch",rCat:"cat",rEtype:"etype",rEquip:"equip"};let tmr;
   const applyNow=()=>{clearTimeout(tmr);tmr=setTimeout(()=>{let ok=true;Object.keys(MAP).forEach(id=>{const e=$(id);if(!e)return;if(e.type==="date"&&e.value&&!/^\d{4}-\d{2}-\d{2}$/.test(e.value)){ok=false;return;}RS[MAP[id]]=e.value;});
     if(!ok)return;if(RS.from&&RS.to&&RS.from>RS.to){toast("تاريخ «من» بعد تاريخ «إلى»");return;}KEEP_TB=true;drawReport();KEEP_TB=false;},250);};
   Object.keys(MAP).forEach(id=>{const e=$(id);if(e){e.addEventListener("change",applyNow);if(e.type==="date")e.addEventListener("input",applyNow);}});
+  if($("rEtype"))$("rEtype").addEventListener("change",e=>{clearTimeout(tmr);RS.etype=e.target.value;RS.equip="";drawReport();});
   $("rExcel").onclick=()=>exportTables($("reportBody"),REPORTS[CUR].t);
   const ex=document.createElement("div");ex.className="z-tb-extra";
   ex.innerHTML=`${RS.mixer?`<span class="z-fchip">الخلاطة ${esc(RS.mixer)} <button type="button" id="rClrMixer">✕</button></span>`:""}<button type="button" id="rSave" class="z-tb-btn">☆ حفظ العرض</button><button type="button" id="rLink" class="z-tb-btn">🔗 نسخ الرابط</button>`;
@@ -1199,7 +1227,7 @@ function mixerRows(P){return [...groupBy(P,r=>r.mixer)].map(([m,rs])=>{const q=s
 let KEEP_TB=false;
 function drawReport(){
   const id=CUR;let h="";const _tb=toolbar;if(KEEP_TB){toolbar=()=>{};}
-  if(["exec","prod","fleet","cement","fuel","water","revenue","expenses","pnl"].includes(id))toolbar("range");
+  if(["exec","prod","fleet","cement","fuel","water","revenue","expenses","pnl","equip"].includes(id))toolbar("range");
   else if(id==="monthly")toolbar("month");else if(id==="daily")toolbar("day");else if(id==="veh")toolbar("docs");else if(id==="gov")toolbar("gov");else if(id==="follow")toolbar("follow");else toolbar("none");
   if(id==="exec"){const d=rangeData();const al=docAlerts();
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b></div>`+prodKpis(d)+`<div class="report-grid">`+card("الأداء الشهري",monthlyTableHtml(d),true)+
@@ -1266,23 +1294,26 @@ function drawReport(){
     card(`المستندات (${num(G.length)})`,table(["الفرع","البيان","الرقم","التجديد","الانتهاء","المتبقي","الحالة","المسؤول","ملاحظات"],G.map(g=>tr([esc(g.branch),`<b>${esc(g.title)}</b>`,esc(g.no),fmtDate(g.renew),fmtDate(g.exp),daysTxt(g.st),chip(g.st.s),esc(g.owner||"—"),esc(g.notes)]))),true)+`</div>`;}
   if(id==="dq")h=dqReport();
   if(id==="follow")h=followReport();
-  if(id==="revenue"||id==="expenses"){const d=rangeData();const A=id==="revenue"?d.S:d.E;const tot=sum(A,"amount");const q=sum(d.P,"qty");const lbl=id==="revenue"?"الإيرادات":"المصروفات";
+  if(id==="equip")h=equipReport();
+  if(id==="revenue"||id==="expenses"){const d=rangeData();const A=id==="revenue"?d.S:d.E.filter(r=>!RS.cat||r.cat===RS.cat);const tot=sum(A,"amount");const q=spanQty(d,A);const lbl=id==="revenue"?"الإيرادات":"المصروفات";
     const grp=(fn,head)=>table([head,"القيود","المبلغ ر.س","النسبة"],[...groupBy(A,fn)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([`<b>${esc(k)}</b>`,num(rs.length),money(sum(rs,"amount")),pct(sum(rs,"amount")/(tot||1))])),A.length?tr(["الإجمالي",num(A.length),money(tot),"100%"],"total"):"");
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b> — ${id==="revenue"?"الإيراد = دائن − مدين":"المصروف = مدين − دائن"} من تبويب «${id==="revenue"?SHEETS.tabs.sales:SHEETS.tabs.expenses}»</div>`+
     (!(id==="revenue"?DB.S:DB.E).length?finEmptyMsg():"")+
     `<div class="report-kpis">${kpi("إجمالي "+lbl,money(tot)+" ر.س",id==="revenue"?"blue":"red")}${kpi("عدد القيود",num(A.length))}${kpi(lbl+" لكل م³",num(q?tot/q:0,2)+" ر.س")}${kpi("متوسط القيد",money(A.length?tot/A.length:0)+" ر.س")}</div><div class="report-grid">`+
     card("شهرياً",table(["الشهر",lbl+" ر.س","الإنتاج م³","ريال/م³"],monthly(d).filter(([,v])=>v[id==="revenue"?"rev":"exp"]).map(([k,v])=>{const x=v[id==="revenue"?"rev":"exp"];return tr([mLabel(k),money(x),num(v.qty,1),num(v.qty?x/v.qty:0,2)]);})))+
-    card("حسب إسم الحركة",grp(r=>r.name,"الحركة"))+
-    (id==="expenses"?card("حسب مركز التكلفة",grp(r=>r.center,"مركز التكلفة")):"")+
+    (id==="expenses"?card("حسب التصنيف",grp(r=>r.cat,"التصنيف"))+card("حسب نوع التكلفة",grp(r=>r.ctype,"نوع التكلفة"))+
+      card("حسب التصنيف الفرعي",table(["التصنيف","التصنيف الفرعي","القيود","المبلغ ر.س","النسبة"],[...groupBy(A,r=>r.cat+"|"+r.sub)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k.split("|")[0]),`<b>${esc(k.split("|")[1])}</b>`,num(rs.length),money(sum(rs,"amount")),pct(sum(rs,"amount")/(tot||1))]))),true)+
+      card("حسب المعدة",grp(r=>r.equip,"المعدة"))+card("حسب مركز التكلفة",grp(r=>r.center,"مركز التكلفة")):card("حسب إسم الحركة",grp(r=>r.name,"الحركة")))+
     card("حسب الفرع",grp(r=>r.branch,"الفرع"))+
-    card("القيود",table(["التاريخ","رقم القيد","الحركة","الفرع",...(id==="expenses"?["مركز التكلفة"]:[]),"مدين","دائن","البيان"],A.slice().sort((a,b)=>b.date-a.date).slice(0,300).map(r=>tr([fmtDate(r.date),esc(r.entry),esc(r.name),esc(r.branch),...(id==="expenses"?[esc(r.center)]:[]),money(r.dr),money(r.cr),esc(r.desc)]))),true)+`</div>`;}
+    card(`القيود${A.length>300?" — آخر 300 قيد":""}`,table(["التاريخ","رقم القيد",...(id==="expenses"?["التصنيف","الفرعي","المعدة"]:["الحركة","الفرع"]),"المبلغ","البيان"],A.slice().sort((a,b)=>b.date-a.date).slice(0,300).map(r=>tr([fmtDate(r.date),esc(r.entry),...(id==="expenses"?[esc(r.cat),esc(r.sub),esc(r.equip)]:[esc(r.name),esc(r.branch)]),money(r.amount),esc(r.desc)]))),true)+`</div>`;}
   if(id==="pnl"){const d=rangeData();const rev=sum(d.S,"amount"),exp=sum(d.E,"amount"),net=rev-exp,q=sum(d.P,"qty");let cum=0;
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b></div>`+(!(DB.S.length+DB.E.length)?finEmptyMsg():"")+
     `<div class="report-kpis">${kpi("الإيرادات",money(rev)+" ر.س","blue")}${kpi("المصروفات",money(exp)+" ر.س","red")}${kpi("صافي التشغيل",money(net)+" ر.س",net>=0?"green":"red")}${kpi("هامش التشغيل",pct(rev?net/rev:0))}
     ${kpi("الإنتاج",num(q,1)+" م³")}${kpi("متوسط سعر المتر",num(q?rev/q:0,2)+" ر.س")}${kpi("تكلفة المتر",num(q?exp/q:0,2)+" ر.س")}${kpi("ربح المتر",num(q?net/q:0,2)+" ر.س",net>=0?"green":"red")}</div><div class="report-grid">`+
     card("قائمة الأرباح والخسائر الشهرية",table(["الشهر","الإيرادات","المصروفات","الصافي","الهامش","التراكمي","ربح المتر"],monthly(d).filter(([,v])=>v.rev||v.exp).map(([k,v])=>{const n=v.rev-v.exp;cum+=n;return tr([mLabel(k),money(v.rev),money(v.exp),`<span class="${n>=0?"green":"red"}">${money(n)}</span>`,pct(v.rev?n/v.rev:0),`<span class="${cum>=0?"green":"red"}">${money(cum)}</span>`,num(v.qty?n/v.qty:0,2)]);}),(rev||exp)?tr(["الإجمالي",money(rev),money(exp),money(net),pct(rev?net/rev:0),"—",num(q?net/q:0,2)],"total"):""),true)+
     card("الإيرادات حسب الحركة",table(["الحركة","المبلغ ر.س"],[...sumBy(d.S,r=>r.name,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(([k,v])=>tr([esc(k),money(v)]))))+
-    card("المصروفات حسب مركز التكلفة",table(["مركز التكلفة","المبلغ ر.س"],[...sumBy(d.E,r=>r.center,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(([k,v])=>tr([esc(k),money(v)]))))+`</div>`;}
+    card("المصروفات حسب التصنيف",table(["التصنيف","المبلغ ر.س","النسبة"],[...sumBy(d.E,r=>r.cat,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(([k,v])=>tr([esc(k),money(v),pct(exp?v/exp:0)]))))+
+    card("المصروفات حسب نوع التكلفة",table(["نوع التكلفة","المبلغ ر.س","ريال/م³"],[...sumBy(d.E,r=>r.ctype,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(([k,v])=>tr([esc(k),money(v),num(q?v/q:0,2)]))))+`</div>`;}
   const sm=summaryFor(id);
   $("reportBody").innerHTML=(sm?`<div class="z-summary"><h4>الملخص التنفيذي</h4><ul>${sm.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:"")+h;
   $("reportBody").querySelectorAll(".report-card").forEach(c=>{const n=c.querySelectorAll("tbody tr").length;if(n<=22)c.classList.add("z-keep");});
@@ -1290,11 +1321,25 @@ function drawReport(){
   const ph=document.querySelector(".z-print-head");ph.querySelector(".z-ph-title").textContent=REPORTS[id].t;ph.querySelector(".z-ph-period").textContent=periodLabel(id);
   syncHash();if(KEEP_TB)toolbar=_tb;
 }
+function equipReport(){
+  const d=rangeData();let rows=equipRows(d).filter(x=>(!RS.etype||x.type===RS.etype)&&(!RS.equip||x.eq===RS.equip));
+  const tot=sum(rows,"tot"),mt=sum(rows,"maint"),fu=rows.reduce((a,x)=>a+x.c["وقود"],0);
+  let h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b> — المصروف من تبويب «${SHEETS.tabs.expenses}» حسب عمود «المعدة»، والإنتاج من «${SHEETS.tabs.production}» (الخلاطة برقمها، والمضخة برقم معدة الصب).</div>`+(!DB.E.length?finEmptyMsg():"")+
+  `<div class="report-kpis">${kpi("إجمالي مصروفات المعدات",money(tot)+" ر.س","red")}${kpi("الصيانة والقطع والإطارات والزيوت",money(mt)+" ر.س — "+pct(tot?mt/tot:0))}${kpi("الوقود",money(fu)+" ر.س")}${kpi("عدد المعدات",num(rows.length))}</div><div class="report-grid">`;
+  h+=card("تكلفة كل معدة",table(["المعدة","النوع",...EQ_CATS,"أخرى","الإجمالي","الإنتاج م³","النقلات","ريال/م³","ريال/نقلة","نسبة الصيانة"],
+    rows.map(x=>tr([`<b>${esc(x.eq)}</b>`,esc(x.type),...EQ_CATS.map(k=>money(x.c[k])),money(x.other),`<b>${money(x.tot)}</b>`,x.q!=null?num(x.q,1):"—",x.n!=null?num(x.n):"—",x.q?num(x.tot/x.q,2):"—",x.n?num(x.tot/x.n,1):"—",pct(x.tot?x.maint/x.tot:0)])),
+    rows.length?tr(["الإجمالي","",...EQ_CATS.map(k=>money(rows.reduce((a,x)=>a+x.c[k],0))),money(sum(rows,"other")),money(tot),"","","","",pct(tot?mt/tot:0)],"total"):""),true);
+  const E=d.E.filter(r=>r.equip!=="غير مرتبط بمعدة"&&(!RS.etype||r.etype===RS.etype)&&(!RS.equip||r.equip===RS.equip));
+  h+=card("حسب التصنيف الفرعي",table(["التصنيف","الفرعي","القيود","المبلغ ر.س","النسبة"],[...groupBy(E,r=>r.cat+"|"+r.sub)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).slice(0,25).map(([k,rs])=>tr([esc(k.split("|")[0]),`<b>${esc(k.split("|")[1])}</b>`,num(rs.length),money(sum(rs,"amount")),pct(sum(rs,"amount")/(tot||1))]))));
+  h+=card("شهرياً",table(["الشهر","الوقود","الصيانة والقطع","الإجمالي"],[...groupBy(E,r=>mKey(r.date))].sort().map(([k,rs])=>tr([mLabel(k),money(sum(rs.filter(r=>r.cat==="وقود"),"amount")),money(sum(rs.filter(r=>["قطع غيار","صيانة وإصلاح","إطارات","زيوت وتشحيم"].includes(r.cat)),"amount")),money(sum(rs,"amount"))]))));
+  if(RS.equip)h+=card(`قيود ${esc(RS.equip)}`,table(["التاريخ","التصنيف","الفرعي","المبلغ","البيان"],E.slice().sort((a,b)=>b.date-a.date).slice(0,300).map(r=>tr([fmtDate(r.date),esc(r.cat),esc(r.sub),money(r.amount),esc(r.desc)]))),true);
+  return h+`</div>`;
+}
 function periodLabel(id){
   if(id==="monthly")return mLabel(RS.month);if(id==="daily")return fmtDate(toDate(RS.day));
   if(id==="veh"||id==="gov"||id==="dq"||id==="follow")return "الوضع حتى "+fmtDate(today());return "الفترة: "+rangeLabel()+(RS.mixer?` • الخلاطة ${RS.mixer}`:"");}
 function summaryFor(id){
-  const L=[];const d=["exec","prod","fleet","cement","fuel","water","pnl"].includes(id)?rangeData():null;
+  const L=[];const d=["exec","prod","fleet","cement","fuel","water","pnl","equip"].includes(id)?rangeData():null;
   if(d){const q=sum(d.P,"qty"),n=d.P.length,days=new Set(d.P.map(r=>dKey(r.date))).size,c=sum(d.P,"cement")/1000,rc=sum(d.C,"tons"),fu=sum(d.F,"value");
     const ms=monthly(d).filter(([,v])=>v.qty>0);const best=ms.slice().sort((a,b)=>b[1].qty-a[1].qty)[0],worst=ms.filter(([k])=>!isPartial(k)).sort((a,b)=>a[1].qty-b[1].qty)[0];
     if(["exec","prod","fleet"].includes(id)){L.push(`تم إنتاج <b>${num(q,1)} م³</b> في <b>${num(n)}</b> نقلة خلال <b>${num(days)}</b> يوم تشغيل، بمتوسط <b>${num(days?q/days:0,1)} م³</b> يومياً و<b>${num(n?q/n:0,2)} م³</b> للنقلة.`);
@@ -1305,6 +1350,9 @@ function summaryFor(id){
       if(id==="cement"){const pr=d.C.filter(x=>x.price).length;L.push(`${num(pr)} من ${num(d.C.length)} حمولة فقط مسجّل لها سعر — تكلفة الأسمنت غير مكتملة.`);}}
     if(["exec","fuel"].includes(id)){const fg=[...sumBy(d.F,r=>r.group,r=>r.value)].sort((a,b)=>b[1]-a[1])[0];L.push(`تكلفة المحروقات <b>${money(fu)} ر.س</b> بمعدل <b>${num(q?fu/q:0,2)} ر.س</b> لكل م³${fg?`، وتستحوذ ${esc(fg[0])} على ${pct(fg[1]/(fu||1))} منها`:""}.`);}
     if(id==="water"){const t=sum(d.W,"trips");const c1=[...sumBy(d.W,r=>r.center,r=>r.trips)].sort((a,b)=>b[1]-a[1])[0];L.push(`إجمالي ${num(t)} رد ماء في ${num(d.W.length)} إذن${c1?`، أكثرها لـ ${esc(c1[0])} بنسبة ${pct(c1[1]/(t||1))}`:""}.`);}
+    if(id==="equip"){const rows=equipRows(d);if(rows[0]){const t=sum(rows,"tot");L.push(`مصروفات المعدات <b>${money(t)} ر.س</b>، أعلاها <b>${esc(rows[0].eq)}</b> بـ ${money(rows[0].tot)} ر.س.`);
+      const mx=rows.filter(x=>x.q>500).map(x=>({...x,r:x.tot/x.q})).sort((a,b)=>b.r-a.r);if(mx[0])L.push(`أعلى تكلفة للمتر: ${esc(mx[0].eq)} بـ ${num(mx[0].r,2)} ر.س/م³${mx.length>1?`، وأقلها ${esc(mx[mx.length-1].eq)} بـ ${num(mx[mx.length-1].r,2)} ر.س/م³`:""}.`);
+      const ty=rows.slice().sort((a,b)=>b.c["إطارات"]-a.c["إطارات"])[0];if(ty&&ty.c["إطارات"])L.push(`أعلى مصروف إطارات: ${esc(ty.eq)} بـ ${money(ty.c["إطارات"])} ر.س.`);}}
     if(id==="pnl"){const rv=sum(d.S,"amount"),ex=sum(d.E,"amount");if(!(DB.S.length+DB.E.length))L.push("لا توجد قيود في تبويبي المبيعات والمصروفات بعد؛ ستظهر الأرقام تلقائياً عند إدخالها.");else L.push(`الإيرادات ${money(rv)} ر.س والمصروفات ${money(ex)} ر.س، وصافي التشغيل <b>${money(rv-ex)} ر.س</b> بهامش ${pct(rv?(rv-ex)/rv:0)}.`);}
     if(id==="exec"){const al=docAlerts();L.push(`المستندات: <b>${num(al.t.expired)}</b> منتهٍ و<b>${num(al.t.near)}</b> ينتهي خلال ${NEAR_DAYS} يوماً (مركبات وحكومية).`);}
   }
@@ -1455,6 +1503,7 @@ function computeBadges(){
   const dqn=dqCount();B.dq=st(dqn,dqn?"warn":"ok",`${num(dqn)} نوع من المشكلات`);
   const hasF=DB.S.length+DB.E.length>0;
   B.revenue=hasF?st(compact(sum(L.S,"amount")),"info","إيرادات "+mLabel(lf)):st("فارغ","muted","تبويب المبيعات بلا قيود");
+  const er=equipRows(L);B.equip=er.length?st(compact(sum(er,"tot")),"info","مصروفات المعدات "+mLabel(lf)):st("فارغ","muted","لا توجد مصروفات معدات");
   B.expenses=hasF?st(compact(sum(L.E,"amount")),"info","مصروفات "+mLabel(lf)):st("فارغ","muted","تبويب المصروفات بلا قيود");
   const nt=sum(L.S,"amount")-sum(L.E,"amount");B.pnl=hasF?st(compact(nt),nt>=0?"ok":"bad","صافي "+mLabel(lf)):st("فارغ","muted","لا توجد قيود مالية");
   return B;
@@ -1496,7 +1545,7 @@ function renderQuick(){
   box.querySelectorAll("[data-delview]").forEach(b=>b.onclick=e=>{e.stopPropagation();const v=LS.get(ZK.views,[]);v.splice(+b.dataset.delview,1);LS.set(ZK.views,v);renderQuick();toast("تم حذف العرض");});
   const vt=$("zViewsToggle");if(vt)vt.onclick=()=>{LS.set("zahal_views_open",!LS.get("zahal_views_open",false));renderQuick();};
 }
-function go(id,keep){if(!keep){RS.from="";RS.to="";RS.status="";RS.mixer="";}openReport(id,keep);if(innerWidth<900)closeSheet();}
+function go(id,keep){if(!keep){RS.from="";RS.to="";RS.status="";RS.mixer="";RS.cat="";RS.etype="";RS.equip="";}openReport(id,keep);if(innerWidth<900)closeSheet();}
 
 /* ---------- 3) القوالب والعروض والروابط ---------- */
 const TEMPLATES=[
@@ -1511,11 +1560,11 @@ function saveView(){
     [{t:"حفظ",p:1,f:()=>{const n=$("zViewName").value.trim();if(!n)return false;const v=LS.get(ZK.views,[]);v.push({name:n,id:CUR,rs:{...RS}});LS.set(ZK.views,v);LS.set("zahal_views_open",true);renderQuick();toast("تم حفظ العرض ✓");}},{t:"إلغاء"}]);
   setTimeout(()=>$("zViewName")?.select(),50);
 }
-function buildHash(){if(!CUR)return "";const p=new URLSearchParams({r:CUR});["from","to","month","day","status","branch","mixer"].forEach(k=>{if(RS[k])p.set(k,RS[k]);});return "#"+p.toString();}
+function buildHash(){if(!CUR)return "";const p=new URLSearchParams({r:CUR});["from","to","month","day","status","branch","mixer","cat","etype","equip"].forEach(k=>{if(RS[k])p.set(k,RS[k]);});return "#"+p.toString();}
 function syncHash(){try{history.replaceState(null,"",CUR?buildHash():location.pathname+location.search);}catch(e){}}
 function copyLink(){const u=location.href.split("#")[0]+buildHash();(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast("تم نسخ رابط التقرير ✓")).catch(()=>{modal("رابط التقرير",`<input class="z-copy" value="${esc(u)}" readonly onclick="this.select()">`,[{t:"إغلاق"}]);});}
 function openFromHash(){if(!location.hash||!DB)return false;const p=new URLSearchParams(location.hash.slice(1));const id=p.get("r");if(!id||!REPORTS[id])return false;
-  ["from","to","month","day","status","branch","mixer"].forEach(k=>RS[k]=p.get(k)||"");openReport(id,true);return true;}
+  ["from","to","month","day","status","branch","mixer","cat","etype","equip"].forEach(k=>RS[k]=p.get(k)||"");openReport(id,true);return true;}
 
 /* ---------- 4) التصدير المجمّع ومتابعة التجديدات ---------- */
 let BULK=false;const SEL=new Set();
