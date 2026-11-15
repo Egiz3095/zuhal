@@ -786,6 +786,10 @@ bdi{unicode-bidi:isolate}
   .z-print-foot .z-pf-meta{color:#5d6980;direction:rtl}
   .z-cover,.z-cover.z-cv2{z-index:5!important;position:relative}
 }
+
+/* لا تذييل ولا ترقيم في صفحة الغلاف */
+@page:first{@bottom-left{content:none}}
+@media print{.z-cover.z-cv2{background:#fff!important;z-index:50!important}}
 </style>
 </head>
 <body>
@@ -889,7 +893,7 @@ bdi{unicode-bidi:isolate}
   <div id="reportToolbar" class="report-toolbar"></div>
   <div id="reportBody" class="report-body"></div>
   </td></tr></tbody></table>
-  <div class="z-print-foot"><span class="z-pf-co">شركة زحل للخرسانة الجاهزة — سري للاستخدام الداخلي</span><span class="z-pf-rep"></span><span class="z-pf-meta"></span></div>
+  <div class="z-print-foot"><span class="z-pf-co">شركة زحل للخرسانة الجاهزة</span><span class="z-pf-rep"></span><span class="z-pf-meta"></span></div>
 </div>
   <div class="amc-net-banner err" id="netBanner" role="status"><span class="amc-net-text" id="netBannerText">⚠ تعذر الاتصال بـ Google Sheets</span><button type="button" id="netRetry">إعادة المحاولة</button></div>
   <section class="hero" aria-labelledby="hero-title">
@@ -2007,7 +2011,7 @@ function initSidebarPro(){
 function showHelp(){modal("اختصارات لوحة المفاتيح",`<table class="z-keys"><tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd> أو <kbd>/</kbd></td><td>لوحة الأوامر والبحث الذكي</td></tr><tr><td><kbd>1</kbd> … <kbd>9</kbd></td><td>فتح التقرير حسب ترتيبه في العمود</td></tr><tr><td><kbd>Alt</kbd>+<kbd>↓</kbd> / <kbd>↑</kbd></td><td>التقرير التالي / السابق</td></tr><tr><td><kbd>Esc</kbd></td><td>إغلاق التقرير أو النافذة</td></tr><tr><td><kbd>?</kbd></td><td>عرض هذه القائمة</td></tr></table>`,[{t:"تم",p:1}]);}
 
 document.querySelectorAll(".report-list > *").forEach((el,i)=>el.style.setProperty("order",String(i),"important"));
-function fillFoot(){const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";const r=document.querySelector(".z-pf-rep");if(r)r.textContent=pr?`${t} — ${pr}`:t;const m=document.querySelector(".z-pf-meta");if(m)m.textContent=`${printStamp()} · إعداد: ${PREPARED_BY}`;}
+function fillFoot(){const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";const r=document.querySelector(".z-pf-rep");if(r)r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t;const m=document.querySelector(".z-pf-meta");if(m){const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;}}
 addEventListener("beforeprint",()=>{fillFoot();const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
 
