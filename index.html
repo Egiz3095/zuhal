@@ -884,6 +884,16 @@ bdi{unicode-bidi:isolate}
 /* توسيط النص داخل المربعات */
 .z-db{align-items:center;text-align:center;justify-content:center}
 .z-db-h{justify-content:center}
+/* 6 مربعات في صف واحد (عرض كل مربع نصف السابق) */
+.z-db-row.z-db3{grid-template-columns:repeat(6,1fr)!important;gap:8px}
+.z-db3 .z-db{padding:8px 6px}
+.z-db3 .z-db-v{font-size:17px}.z-db3 .z-db-l{font-size:11px}.z-db3 .z-db-s{font-size:10px}
+.z-db3 .z-db-h{flex-direction:column;gap:3px}
+@media (max-width:900px){.z-db-row.z-db3{grid-template-columns:repeat(3,1fr)!important}}
+@media print{.z-db-row.z-db3{grid-template-columns:repeat(6,1fr)!important;gap:1.5mm!important}
+  .z-db3 .z-db{padding:1.4mm 1mm!important}
+  .z-db3 .z-db-v{font-size:10pt!important}.z-db3 .z-db-v small{font-size:6pt!important}
+  .z-db3 .z-db-l{font-size:6.6pt!important}.z-db3 .z-db-s{font-size:5.6pt!important}}
 </style>
 </head>
 <body>
