@@ -1589,7 +1589,6 @@ function dailyReport(){
   sec("المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.cat)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
   sec("المصروفات حسب المعدة",["المعدة","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.equip)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
   sec("قيود المصروفات",["رقم القيد","التصنيف","الفرعي","المعدة","المبلغ","البيان"],d.E.map(r=>tr([esc(r.entry),esc(r.cat),esc(r.sub),esc(r.equip),money(r.amount),`<span class="z-desc">${esc(r.desc)}</span>`])),tr(["الإجمالي","","","",money(T.exp),""],"total"),true);
-  sec("نقلات اليوم",["الإيصال","الخلاطة","السائق","الضغط","الكمية م³","المضخة","الخروج","الرجوع"],d.P.slice().sort((a,b)=>(toNum(a.receipt)||0)-(toNum(b.receipt)||0)).map(r=>tr([esc(r.receipt||"—"),esc(r.mixer),esc(r.driver),esc(gl(r.grade)),num(r.qty,1),esc(r.pump),esc(r.out??""),esc(r.back??"")])),tr(["الإجمالي","","","",num(q,1),"","",""],"total"),true);
   h+=`<div class="report-grid z-daily-grid">`+cards.join("")+(empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`:"");
   return h+`</div>`;
 }
