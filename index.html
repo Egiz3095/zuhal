@@ -1130,6 +1130,13 @@ bdi{unicode-bidi:isolate}
 .z-idle span{display:inline-block;padding:2px 10px;border-radius:999px;background:#f6ecd6;color:#13296a;font-weight:800}
 @media print{.z-idle{margin:-2mm 0 3mm!important;padding:1.8mm 3mm!important;font-size:9pt!important;border:0.3mm solid #d9e0ea!important;border-inline-start:1mm solid #13296a!important;background:#f8fafc!important;gap:1.5mm!important;break-inside:avoid}
   .z-idle span{background:#f6ecd6!important;padding:0.3mm 2.5mm!important}}
+/* ===== نقل أسلوب التقرير اليومي لكل التقارير ===== */
+.z-daily-grid .report-table:not(.z-simple):not(.z-cmp6) td{font-weight:700}
+.z-daily-grid .report-table:not(.z-simple) thead th{height:56px;vertical-align:middle}
+@media print{
+  .z-daily-grid .report-table:not(.z-simple):not(.z-cmp6) td{font-weight:700!important}
+  .z-daily-grid .report-table:not(.z-simple) thead th{height:8.4mm!important;vertical-align:middle!important}
+}
 </style>
 </head>
 <body>
@@ -1912,6 +1919,7 @@ function drawReport(){
   const sm=summaryFor(id);
   const smH=sm?`<div class="z-summary"><h4>الملخص التنفيذي</h4><ul>${sm.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:"";
   $("reportBody").innerHTML=h.includes("<!--NOSUM-->")?h:h.includes("<!--SUM-->")?h.replace("<!--SUM-->",smH):smH+h;
+  document.querySelectorAll("#reportBody .report-grid").forEach(g=>g.classList.add("z-daily-grid"));
   $("reportBody").querySelectorAll(".report-card").forEach(c=>{const n=c.querySelectorAll("tbody tr").length;if(n<=22)c.classList.add("z-keep");});
   fixBidi($("reportBody"));
   const ph=document.querySelector(".z-print-head");ph.querySelector(".z-ph-title").textContent=REPORTS[id].t;ph.querySelector(".z-ph-period").textContent=periodLabel(id);fillCover(REPORTS[id].t,periodLabel(id),coverItems());
@@ -2273,6 +2281,7 @@ function bulkExport(){
   const parts=ids.map((id,i)=>{CUR=id;drawReport();return {id,i:i+1,t:REPORTS[id].t,p:periodLabel(id),h:$("reportBody").innerHTML};});
   const cover=`<section class="z-bk-cover"><h2>حزمة تقارير التشغيل</h2><p>${num(ids.length)} تقارير • ${fmtDate(new Date())}</p><ol class="z-toc">${parts.map(x=>`<li><b>${esc(x.t)}</b><span>${esc(x.p)}</span></li>`).join("")}</ol></section>`;
   $("reportBody").innerHTML=cover+parts.map(x=>`<section class="z-bk-sec"><div class="z-bk-title"><span>${x.i}</span>${esc(x.t)}<em>${esc(x.p)}</em></div>${x.h}</section>`).join("");
+  document.querySelectorAll("#reportBody .report-grid").forEach(g=>g.classList.add("z-daily-grid"));
   fillCover("حزمة تقارير التشغيل",`${num(ids.length)} تقارير`,parts.map(x=>`${x.t} — ${x.p}`));
   const ph=document.querySelector(".z-print-head");ph.querySelector(".z-ph-title").textContent="حزمة تقارير";ph.querySelector(".z-ph-period").textContent=`${num(ids.length)} تقارير`;
   const nw=new Date();ph.querySelector(".z-ph-date").textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;
