@@ -872,6 +872,11 @@ bdi{unicode-bidi:isolate}
   .z-dsum .report-table tr.z-grp td{padding:0.45mm 2mm!important}
   .z-dsum h3{font-size:9.5pt!important;padding-bottom:1mm!important}
 }
+/* المربعات أضيق بنسبة 40% */
+.z-db-row{grid-template-columns:repeat(4,15%)!important;justify-content:start}
+.z-db-v{font-size:19px}
+@media (max-width:900px){.z-db-row{grid-template-columns:repeat(2,30%)!important}.z-db-v{font-size:16px}.z-db-l{font-size:11px}}
+@media print{.z-db-row{grid-template-columns:repeat(4,15%)!important}.z-db-v{font-size:10.5pt!important}.z-db-s{font-size:5.8pt!important}}
 </style>
 </head>
 <body>
@@ -1702,9 +1707,8 @@ function dailyReport(){
     box("fuel","fuel","المحروقات",money(T.fuel),"ر.س",`قبل الضريبة • ${money(T.qty?T.fuel/T.qty:0)} ر.س/م³`)+
     `</div><div class="z-db-row"><div class="z-db-cap">الشهر حتى اليوم</div>`+
     box("prod","cal","إنتاج الشهر",num(M.qty,1),"م³",`${num(M.days)} يوم تشغيل • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`)+
-    box("cost","cost","تكلفة المتر المكعب",money(perM3),"ر.س/م³","محروقات + مواد + مصروفات أخرى")+
     box("bal","bal","رصيد الأسمنت",`<bdi dir="ltr">${bal>=0?"+":"−"}${num(Math.abs(bal),1)}</bdi>`,"طن",`مستلم ${num(M.crec,1)} − مستهلك ${num(M.ccon,1)}`,bal<0?"z-db-bad":"z-db-good")+
-    box("exp","exp","المصروفات المسجلة",money(M.exp),"ر.س",`${num(M.expN)} قيد`)+`</div></div>`;
+    ``+`</div></div>`;
   {const al=[];const tk=dKey(t);
    if(!T.trips)al.push("لا يوجد إنتاج مسجّل في هذا اليوم.");
    if(bal<0)al.push(`عجز في الأسمنت منذ بداية الشهر: المستهلك أكثر من المستلم بـ <b>${num(-bal,1)}</b> طن.`);
