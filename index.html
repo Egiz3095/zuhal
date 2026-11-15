@@ -963,6 +963,7 @@ bdi{unicode-bidi:isolate}
 }
 .report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child,.report-table.z-cmp6 thead th:last-child{text-align:center!important}
 @media print{.report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child{text-align:center!important}}
+.report-table.z-cmp6 tbody tr:not(.z-grp) td:nth-child(5),.report-table.z-cmp6 tbody tr:not(.z-grp) td:nth-child(6){background:transparent!important}
 </style>
 </head>
 <body>
@@ -1797,16 +1798,16 @@ function dailyReport(){
   const DD=M.days||1;const fv=(v,dec,m)=>m?money(v):num(v,dec);
   const R=o=>{const a=o.f(T)||0,c=o.f(M)||0;if(!a&&!c)return "";
     const sg=v=>o.sign?(v<0?" z-neg":v>0?" z-pos":""):"";const sv=v=>o.sign&&v>0?"+"+fv(v,o.dec,o.m):fv(v,o.dec,o.m);
-    const av=o.add?fv(c/DD,o.dec,o.m):"—",sh=o.add&&c?pct(a/c):"—";
+    const av="",sh="";
     return `<tr${o.cls?` class="${o.cls}"`:""}><td class="z-lbl">${o.l}</td><td class="z-unit">${o.u||""}</td><td class="num z-n${sg(a)}">${sv(a)}</td><td class="num z-n z-sep${sg(c)}">${sv(c)}</td><td class="num z-n z-avg">${av}</td><td class="num z-n z-sh">${sh}</td></tr>`;};
   const r=(l,u,f,dec,cls)=>R({l,u,f,dec,cls,add:true});
   const nr=(l,u,f,dec,x)=>R({l,u,f,dec,add:false,...(x||{})});
   const mny=(l,f,cls)=>R({l,u:"ر.س",f,m:true,add:true,cls});
   const G=(x,f,u,dec,m)=>{const a=f(T)||0,c=f(M)||0;return `<tr class="z-grp"><td>${x}</td><td class="z-unit">${u}</td><td class="num z-n">${fv(a,dec,m)}</td><td class="num z-n z-sep">${fv(c,dec,m)}</td><td class="num z-n">${fv(c/DD,dec,m)}</td><td class="num z-n">${c?pct(a/c):"—"}</td></tr>`;};
   const per=(o,v)=>o.qty?v/o.qty:0;
-  let rows=G("الإنتاج",o=>o.qty,"م³",1)+r("عدد النقلات","نقلة",o=>o.trips,0)+nr("متوسط حمولة النقلة","م³",o=>o.avg,2)+nr("أيام التشغيل","يوم",o=>o.days,0)+
+  let rows=G("الإنتاج",o=>o.qty,"م³",1)+r("عدد النقلات","نقلة",o=>o.trips,0)+
     G("الأسمنت المستلم",o=>o.crec,"طن",1)+r("عدد الحمولات","حمولة",o=>o.crecN,0)+r("المستهلك حسب الخلطة","طن",o=>o.ccon,1)+nr("الفرق (مستلم − مستهلك)","طن",o=>o.cdiff,1,{sign:true})+nr("الأسمنت المستهلك / م³","طن",o=>per(o,o.ccon),3)+
-    G("المواد الخام الواردة لزحل",o=>o.matLoads,"حمولة",0)+["بطحى لزحل","بحص 3-4 بوصة","بحص 3-8 بوصة","أخرى"].map(k=>r(k==="أخرى"?"مواد أخرى":k,"حمولة",o=>o.mat[k],0)).join("")+
+    G("المواد الخام الواردة لزحل",o=>o.matLoads,"حمولة",0)+
       mny("قيمة المواد (سعر المصدر)",o=>o.matPrice)+mny("النقل والإكراميات",o=>o.matTrans+o.matTip)+mny("إجمالي تكلفة المواد",o=>o.matT,"z-sub-t")+
     G("المحروقات قبل الضريبة",o=>o.fuel,"ر.س",2,true)+r("اللترات المسجلة","لتر",o=>o.liters,0)+r("عدد التعبئات","تعبئة",o=>o.fuelN,0)+
     G(`الوايت ${WATER_TRUCK} — الردود`,o=>o.wtrips,"رد",0)+r("عدد الأذونات","إذن",o=>o.wperm,0);
@@ -1825,7 +1826,7 @@ function dailyReport(){
   {const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
    const g1=[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const g2=[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty"));
    const rr=([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/q)]);
-   add(0,"توزيع الإنتاج",["البيان","النقلات","الإنتاج م³","النسبة"],d.P.length?[gtr("حسب درجة الضغط",4),...g1.map(rr),gtr("حسب معدة الصب",4),...g2.map(([k,rs])=>rr([/^\d+$/.test(k)?"مضخة "+k:k,rs]))]:[],tr(["الإجمالي",num(d.P.length),num(T.qty,1),"100%"],"total"));}
+   add(0,"توزيع الإنتاج",["البيان","النقلات","الإنتاج م³","النسبة"],d.P.length?[gtr("حسب درجة الضغط",4),...g1.map(rr),gtr("حسب معدة الصب",4),...g2.map(([k,rs])=>rr([/^\d+$/.test(k)?"مضخة "+k:k,rs]))]:[],"");}
   {const MZ=T.MZ;const cr=[...groupBy(d.C,r=>r.supplier||"غير محدد")].filter(([k,rs])=>sum(rs,"tons")>0).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"tons"),2)+" طن","—"]));
    const mr=[...groupBy(MZ,r=>r.type)].sort((a,b)=>b[1].length-a[1].length).map(([k,rs])=>tr([esc(k),num(rs.length),esc([...new Set(rs.map(r=>r.source))].slice(0,3).join("، ")),money(sum(rs,"total"))]));
    const rows_=[...(cr.length?[gtr("الأسمنت (حسب المورد)",4),...cr]:[]),...(mr.length?[gtr("المواد الخام الواردة لزحل (حسب النوع)",4),...mr]:[])];
