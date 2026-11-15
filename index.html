@@ -1560,15 +1560,14 @@ function dailyReport(){
   const chg=(a,b,dir)=>{if(dir===null)return `<span class="z-chg flat">${a-b>=0?"+":"−"}${num(Math.abs(a-b),1)}</span>`;if(!b&&!a)return `<span class="z-chg flat">—</span>`;if(!b)return `<span class="z-chg flat">جديد</span>`;const c=(a-b)/b;const up=c>=0;
     const cls=Math.abs(c)<0.005||!dir?"flat":((up?1:-1)*dir>0?"good":"bad");return `<span class="z-chg ${cls}">${up?"▲":"▼"} ${Math.abs(c*100).toFixed(1)}%</span>`;};
   const row=(label,unit,key,dec,dir,f)=>{const g=o=>f?f(o):o[key];const a=g(T),b=g(PD),c=g(M),e=g(PM);
-    return `<tr><td class="z-lbl">${label}${unit?` <small>${unit}</small>`:""}</td><td class="num">${num(a,dec)}</td><td class="num z-muted">${num(b,dec)}</td><td class="num">${chg(a,b,dir)}</td><td class="num z-sep">${num(c,dec)}</td><td class="num z-muted">${num(e,dec)}</td><td class="num">${chg(c,e,dir)}</td></tr>`;};
-  const grp=t_=>`<tr class="z-grp"><td colspan="7">${t_}</td></tr>`;
+    return `<tr><td class="z-lbl">${label}${unit?` <small>${unit}</small>`:""}</td><td class="num">${num(a,dec)}</td><td class="num z-sep">${num(c,dec)}</td></tr>`;};
+  const grp=t_=>`<tr class="z-grp"><td colspan="3">${t_}</td></tr>`;
   const pdNote=(PD.trips?"":` <em class="z-off">${pd.getDay()===5?"جمعة":"بلا تشغيل"}</em>`);
   const lastOf=a=>a.length?fmtDate(new Date(Math.max(...a.map(r=>+r.date)))):"—";
-  let h=`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — يُقارن بـ <b>${fmtDate(pd)}</b> (${DOW[pd.getDay()]})، والشهر حتى اليوم (<b>${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</b> إلى <b>${fmtDate(t)}</b>) يُقارن بالفترة من <b>${fmtDate(new Date(pd.getFullYear(),pd.getMonth(),1))}</b> إلى <b>${fmtDate(pd)}</b>.</div>`;
+  let h=`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — والشهر حتى اليوم من <b>${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</b> إلى <b>${fmtDate(t)}</b>.</div>`;
   h+=`<div class="report-kpis z-daily-kpis">${kpi("إنتاج اليوم",num(T.qty,1)+" م³","blue")}${kpi("إنتاج الشهر حتى اليوم",num(M.qty,1)+" م³","blue")}${kpi("الأسمنت المستلم (الشهر)",num(M.crec,1)+" طن")}${kpi("المحروقات (الشهر)",money(M.fuel)+" ر.س","red")}</div>`;
-  h+=`<div class="report-card z-keep" style="margin-bottom:14px"><h3>المقارنة: اليوم والشهر حتى اليوم مقابل الشهر الماضي</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:26%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.5%"></colgroup><thead>
-    <tr><th rowspan="2" class="z-lbl">البند</th><th colspan="3">اليوم</th><th colspan="3" class="z-sep">الشهر حتى اليوم</th></tr>
-    <tr><th>${fmtDate(t)}</th><th>${fmtDate(pd)}${pdNote}</th><th>التغير</th><th class="z-sep">${num(t.getDate())} يوم</th><th>نفس المدة السابقة</th><th>التغير</th></tr></thead><tbody>`+
+  h+=`<div class="report-card z-keep" style="margin-bottom:14px"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:40%"><col style="width:30%"><col style="width:30%"></colgroup><thead>
+    <tr><th class="z-lbl">البند</th><th>اليوم<br><small>${fmtDate(t)}</small></th><th class="z-sep">الشهر حتى اليوم<br><small>${num(t.getDate())} يوم</small></th></tr></thead><tbody>`+
     grp("الإنتاج")+row("الإنتاج","م³","qty",1,1)+row("عدد النقلات","","trips",0,1)+row("متوسط حمولة النقلة","م³","avg",2,1)+row("أيام التشغيل","","days",0,1)+
     grp("الأسمنت")+row("الأسمنت المستلم","طن","crec",1,0)+row("عدد الحمولات","","crecN",0,0)+row("المستهلك حسب الخلطة","طن","ccon",1,0)+row("الفرق (مستلم − مستهلك)","طن","cdiff",1,null)+
     grp("المواد الخام (من المصروفات)")+row("بطحاء","ر.س",null,2,-1,o=>o.mat["بطحاء"])+row("بحص","ر.س",null,2,-1,o=>o.mat["بحص"])+row("إضافات وكيماويات","ر.س",null,2,-1,o=>o.mat["إضافات وكيماويات"])+row("إجمالي المواد","ر.س","matT",2,-1)+
@@ -1618,10 +1617,10 @@ function summaryFor(id){
   if(id==="monthly"){const k=RS.month;const [y,m]=k.split("-").map(Number);const pk=mKey(new Date(y,m-2,1));const a=filt({from:`${k}-01`,to:dKey(new Date(y,m,0))}),b=filt({from:`${pk}-01`,to:dKey(new Date(y,m-1,0))});
     const qa=sum(a.P,"qty"),qb=sum(b.P,"qty");L.push(`إنتاج ${mLabel(k)} <b>${num(qa,1)} م³</b> مقابل ${num(qb,1)} م³ في ${mLabel(pk)}، بتغير ${qb?(qa>=qb?"+":"−")+pct(Math.abs(qa-qb)/qb):"—"}.`);
     L.push(`الأسمنت المستلم ${num(sum(a.C,"tons"),1)} طن، والمحروقات ${money(sum(a.F,"value"))} ر.س بمعدل ${num(qa?sum(a.F,"value")/qa:0,2)} ر.س لكل م³.`);if(isPartial(k))L.push("الشهر لم يكتمل بعد؛ المقارنة جزئية.");}
-  if(id==="daily"){const X=dailyCtx();const q=X.T.qty,qp=X.PD.qty,qm=X.M.qty,qmp=X.PM.qty;
-    if(!X.T.trips)L.push(`لا يوجد إنتاج مسجّل في ${fmtDate(X.t)}${qp?`، مقابل ${num(qp,1)} م³ في ${fmtDate(X.pd)}`:""}.`);else L.push(`إنتاج اليوم <b>${num(q,1)} م³</b> في ${num(X.T.trips)} نقلة${qp?`، مقابل ${num(qp,1)} م³ في ${fmtDate(X.pd)} (${chgTxt(q,qp)})`:` — لا يوجد إنتاج في ${fmtDate(X.pd)}`}.`);
-    L.push(`إنتاج الشهر حتى اليوم <b>${num(qm,1)} م³</b> مقابل ${num(qmp,1)} م³ لنفس المدة من الشهر الماضي (${chgTxt(qm,qmp)}).`);
-    L.push(`الأسمنت المستلم حتى اليوم ${num(X.M.crec,1)} طن مقابل مستهلك حسب الخلطة ${num(X.M.ccon,1)} طن، والمحروقات ${money(X.M.fuel)} ر.س بمعدل ${num(X.M.fuelM3,2)} ر.س/م³.`);
+  if(id==="daily"){const X=dailyCtx();
+    L.push(X.T.trips?`إنتاج اليوم <b>${num(X.T.qty,1)} م³</b> في ${num(X.T.trips)} نقلة بمتوسط ${num(X.T.avg,2)} م³ للنقلة.`:`لا يوجد إنتاج مسجّل في ${fmtDate(X.t)}.`);
+    L.push(`إنتاج الشهر حتى اليوم <b>${num(X.M.qty,1)} م³</b> في ${num(X.M.trips)} نقلة خلال ${num(X.M.days)} يوم تشغيل.`);
+    L.push(`الأسمنت حتى اليوم: مستلم ${num(X.M.crec,1)} طن ومستهلك حسب الخلطة ${num(X.M.ccon,1)} طن، والمحروقات ${money(X.M.fuel)} ر.س بمعدل ${num(X.M.fuelM3,2)} ر.س/م³.`);
     L.push(`الوايت 5770: ${num(X.T.wtrips)} رد اليوم و${num(X.M.wtrips)} رد حتى اليوم، والمصروفات المسجلة حتى اليوم ${money(X.M.exp)} ر.س.`);}
   if(id==="veh"){const c=s=>DB.V.reduce((x,v)=>x+Object.values(v.docs).filter(z=>z.s===s).length,0);const ins=DB.V.filter(v=>v.docs.ins.s==="near"||v.docs.ins.s==="expired").length;
     L.push(`${num(DB.V.length)} مركبة: <b>${num(c("expired"))}</b> مستند منتهٍ و<b>${num(c("near"))}</b> يقارب الانتهاء.`);if(ins)L.push(`تأمين <b>${num(ins)}</b> مركبة منتهٍ أو ينتهي خلال ${NEAR_DAYS} يوماً.`);}
