@@ -648,6 +648,15 @@ bdi{unicode-bidi:isolate}
   .z-cover{justify-content:flex-start!important}
   .z-cv-mid{flex:1;justify-content:center;margin-top:0!important;padding-bottom:18mm}
 }
+/* جدول معلومات الغلاف */
+@media print{
+  .z-cv-period{display:none!important}
+  .z-cv-info{width:120mm;margin-top:8mm;border-collapse:separate;border-spacing:0;border:.3mm solid #dfe4ec;border-radius:3mm;padding:2mm 7mm;background:#fff}
+  .z-cv-info th,.z-cv-info td{padding:3.6mm 0;border-bottom:.25mm solid #e8ecf2;font-size:11pt}
+  .z-cv-info tr:last-child th,.z-cv-info tr:last-child td{border-bottom:0}
+  .z-cv-info th{text-align:right;font-weight:500;color:#5d6980;width:40%}
+  .z-cv-info td{text-align:left;font-weight:800;color:#0f1a33;unicode-bidi:plaintext}
+}
 </style>
 </head>
 <body>
@@ -722,6 +731,7 @@ bdi{unicode-bidi:isolate}
       <div class="z-cv-line"></div>
       <h1 class="z-cv-title"></h1>
       <div class="z-cv-period"></div>
+      <table class="z-cv-info"><tr><th>المنشأة</th><td>شركة زحل للخرسانة الجاهزة</td></tr><tr><th>تاريخ التقرير</th><td class="z-cv-rdate"></td></tr><tr><th>تاريخ الإعداد</th><td class="z-cv-pdate"></td></tr><tr><th>إعداد</th><td class="z-cv-by"></td></tr></table>
     </div>
     <div class="z-cv-tocwrap"><div class="z-cv-toch">محتويات التقرير</div><ol class="z-cv-toc"></ol></div>
     <div class="z-cv-foot"><span class="z-cv-date"></span><span>سري — للاستخدام الداخلي</span></div>
@@ -917,7 +927,8 @@ const SHEETS = {
     expenses: "المصروفات"
   }
 };
-const NEAR_DAYS = 30;               // مستند «قارب على الانتهاء» خلال هذه المدة
+const NEAR_DAYS = 30;
+const PREPARED_BY = "أ. محمد فوزي";  // اسم مُعدّ التقرير في ورقة الغلاف               // مستند «قارب على الانتهاء» خلال هذه المدة
 const CACHE_KEY = "zahal_dashboard_v1";
 const CACHE_MAX_AGE = 30*60*1000;
 
@@ -1411,7 +1422,8 @@ function printStamp(){const nw=new Date();return `تاريخ الطباعة: ${f
 function fillCover(title,period,items){const c=document.querySelector(".z-cover");if(!c)return;
   c.querySelector(".z-cv-title").textContent=title;c.querySelector(".z-cv-period").textContent=period;
   c.querySelector(".z-cv-toc").innerHTML=(items||[]).map(x=>`<li>${esc(x)}</li>`).join("");c.querySelector(".z-cv-tocwrap").style.display=(items&&items.length)?"":"none";
-  c.querySelector(".z-cv-date").textContent=printStamp();}
+  c.querySelector(".z-cv-date").textContent=printStamp();
+  c.querySelector(".z-cv-rdate").textContent=String(period).replace(/^الفترة:\s*/,"").replace(/^الوضع حتى\s*/,"");c.querySelector(".z-cv-pdate").textContent=fmtDate(new Date());c.querySelector(".z-cv-by").textContent=PREPARED_BY;}
 function coverItems(){const L=[];if(document.querySelector("#reportBody .z-summary"))L.push("الملخص التنفيذي");if(document.querySelector("#reportBody .report-kpis"))L.push("المؤشرات الرئيسية");
   document.querySelectorAll("#reportBody .report-card > h3").forEach(h=>L.push(h.textContent.trim()));return L.slice(0,14);}
 function periodLabel(id){
@@ -1775,7 +1787,7 @@ function initSidebarPro(){
 function showHelp(){modal("اختصارات لوحة المفاتيح",`<table class="z-keys"><tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd> أو <kbd>/</kbd></td><td>لوحة الأوامر والبحث الذكي</td></tr><tr><td><kbd>1</kbd> … <kbd>9</kbd></td><td>فتح التقرير حسب ترتيبه في العمود</td></tr><tr><td><kbd>Alt</kbd>+<kbd>↓</kbd> / <kbd>↑</kbd></td><td>التقرير التالي / السابق</td></tr><tr><td><kbd>Esc</kbd></td><td>إغلاق التقرير أو النافذة</td></tr><tr><td><kbd>?</kbd></td><td>عرض هذه القائمة</td></tr></table>`,[{t:"تم",p:1}]);}
 
 document.querySelectorAll(".report-list > *").forEach((el,i)=>el.style.setProperty("order",String(i),"important"));
-addEventListener("beforeprint",()=>{const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
+addEventListener("beforeprint",()=>{const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
 
 </script>
