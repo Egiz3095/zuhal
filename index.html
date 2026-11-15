@@ -1745,13 +1745,6 @@ function dailyReport(){
     box("prod","cal","إنتاج الشهر حتى اليوم",num(M.qty,1),"م³",`${num(M.days)} يوم تشغيل • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`)+
     box("bal","bal","رصيد الأسمنت (الشهر)",`<bdi dir="ltr">${bal>=0?"+":"−"}${num(Math.abs(bal),1)}</bdi>`,"طن",`مستلم ${num(M.crec,1)} − مستهلك ${num(M.ccon,1)}`,bal<0?"z-db-bad":"z-db-good")+
     ``+`</div></div>`;
-  {const al=[];const tk=dKey(t);
-   if(!T.trips)al.push("لا يوجد إنتاج مسجّل في هذا اليوم.");
-   if(bal<0)al.push(`عجز في الأسمنت منذ بداية الشهر: المستهلك أكثر من المستلم بـ <b>${num(-bal,1)}</b> طن.`);
-   {const fk=new Set(T.d.F.filter(r=>/خلاطة/.test(r.center)).map(r=>dig(r.center)));const nf=[...new Set(T.d.P.map(r=>r.mixer))].filter(m=>dig(m)&&!fk.has(dig(m)));if(nf.length)al.push(`خلاطات اشتغلت اليوم بدون تعبئة ديزل مسجّلة: <b>${nf.map(esc).join("، ")}</b>.`);}
-   const lt=[["الإنتاج",DB.P],["الأسمنت",DB.C],["المحروقات",DB.F],["الوايت",DB.W],["المواد",DB.M||[]]].map(([n,a])=>{const mx=a.length?Math.max(...a.map(r=>+r.date)):0;return [n,mx];}).filter(([n,mx])=>!mx||dKey(new Date(mx))<tk);
-   if(lt.length)al.push(`بيانات غير مسجّلة لهذا اليوم بعد — ${lt.map(([n,mx])=>`${n}: آخر تسجيل <bdi dir="ltr">${mx?fmtDate(new Date(mx)):"—"}</bdi>`).join(" • ")}.`);
-   if(al.length)h+=`<div class="z-alerts"><b>تنبيهات</b><ul>${al.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;}
   const R=(label,unit,a,c,dec,cls)=>`<tr${cls?` class="${cls}"`:""}><td class="z-lbl">${label}${unit?` <small>${unit}</small>`:""}</td><td class="num">${typeof a==="string"?a:num(a,dec)}</td><td class="num z-sep">${typeof c==="string"?c:num(c,dec)}</td></tr>`;
   const r=(label,unit,f,dec,cls)=>R(label,unit,f(T),f(M),dec,cls);
   const G=x=>`<tr class="z-grp"><td colspan="3">${x}</td></tr>`;
