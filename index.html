@@ -1967,7 +1967,7 @@ function dailyReport(){
     row("prod","الإنتاج",cell(num(T.qty,1),"م³",`${num(T.trips)} نقلة`),cell(num(M.qty,1),"م³",`${num(M.trips)} نقلة • متوسط ${num(M.days?M.qty/M.days:0,1)} م³/يوم`))+
     row("cem","الأسمنت",cell(`<small>مستلم</small> ${num(T.crec,1)}`,"طن",`مستهلك ${num(T.ccon,1)} طن`),cell(`<small>مستلم</small> ${num(M.crec,1)}`,"طن",`مستهلك ${num(M.ccon,1)} • رصيد <b class="${M.cdiff<0?"z-neg":"z-pos"}">${sgn(M.cdiff)}</b> طن`))+
     row("mat","المواد الخام",cell(num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),"حمولة",`تكلفة ${money(M.matT)} ر.س`))+
-    row("fuel","المحروقات<br><small>قبل الضريبة</small>",cell(money(T.fuel),"ر.س",`${num(T.liters)} لتر • ${num(T.fuelN)} تعبئة`),cell(money(M.fuel),"ر.س",`${num(M.liters)} لتر • ${num(M.fuelN)} تعبئة`))+
+    row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} لتر • ${num(T.fuelN)} تعبئة`),cell(money(M.fuel),"ر.س",`${num(M.liters)} لتر • ${num(M.fuelN)} تعبئة`))+
     row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),"رد",wPl(T)),cell(num(M.wtrips),"رد",wPl(M)));
   h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
