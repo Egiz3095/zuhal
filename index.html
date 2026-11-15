@@ -758,6 +758,10 @@ bdi{unicode-bidi:isolate}
   .z-emptyline{font-size:8pt;padding:2.5mm 3mm;border-radius:2mm;background:#f6f8fb!important}
   .z-cmp td.z-lbl{white-space:normal}
 }
+.z-sum-grid{margin-bottom:14px}
+.z-mini-cmp .z-cmp td.z-lbl{white-space:normal}
+@media print{.report-grid.z-sum-grid{margin-bottom:5mm!important}.z-mini-cmp .report-card,.z-mini-cmp{break-inside:avoid}}
+@media print{#reportBody{counter-reset:psec}.report-grid.z-daily-grid{counter-reset:none!important}}
 </style>
 </head>
 <body>
@@ -1566,15 +1570,16 @@ function dailyReport(){
   const lastOf=a=>a.length?fmtDate(new Date(Math.max(...a.map(r=>+r.date)))):"—";
   let h=`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — والشهر حتى اليوم من <b>${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</b> إلى <b>${fmtDate(t)}</b>.</div>`;
   h+=`<div class="report-kpis z-daily-kpis">${kpi("إنتاج اليوم",num(T.qty,1)+" م³","blue")}${kpi("إنتاج الشهر حتى اليوم",num(M.qty,1)+" م³","blue")}${kpi("الأسمنت المستلم (الشهر)",num(M.crec,1)+" طن")}${kpi("المحروقات (الشهر)",money(M.fuel)+" ر.س","red")}</div>`;
-  h+=`<div class="report-card z-keep" style="margin-bottom:14px"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:40%"><col style="width:30%"><col style="width:30%"></colgroup><thead>
-    <tr><th class="z-lbl">البند</th><th>اليوم<br><small>${fmtDate(t)}</small></th><th class="z-sep">الشهر حتى اليوم<br><small>${num(t.getDate())} يوم</small></th></tr></thead><tbody>`+
-    grp("الإنتاج")+row("الإنتاج","م³","qty",1,1)+row("عدد النقلات","","trips",0,1)+row("متوسط حمولة النقلة","م³","avg",2,1)+row("أيام التشغيل","","days",0,1)+
-    grp("الأسمنت")+row("الأسمنت المستلم","طن","crec",1,0)+row("عدد الحمولات","","crecN",0,0)+row("المستهلك حسب الخلطة","طن","ccon",1,0)+row("الفرق (مستلم − مستهلك)","طن","cdiff",1,null)+
-    grp("المواد الخام (من المصروفات)")+row("بطحاء","ر.س",null,2,-1,o=>o.mat["بطحاء"])+row("بحص","ر.س",null,2,-1,o=>o.mat["بحص"])+row("إضافات وكيماويات","ر.س",null,2,-1,o=>o.mat["إضافات وكيماويات"])+row("إجمالي المواد","ر.س","matT",2,-1)+
-    grp("المحروقات")+row("قيمة المحروقات","ر.س","fuel",2,-1)+row("اللترات المسجلة","لتر","liters",0,-1)+row("عدد التعبئات","","fuelN",0,0)+row("المحروقات لكل م³","ر.س","fuelM3",2,-1)+
-    grp(`الوايت ${WATER_TRUCK}`)+row("عدد الردود","","wtrips",0,0)+row("عدد الأذونات","","wperm",0,0)+
-    grp("المصروفات المسجلة")+row("إجمالي المصروفات","ر.س","exp",2,-1)+row("عدد القيود","","expN",0,0)+
-    `</tbody></table></div><div class="z-src">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المصروفات: ${lastOf(DB.E)}</div></div><!--SUM-->`;
+  // جدول منفصل لكل بند: البند | اليوم | الشهر حتى اليوم
+  const tbl=(title,rows)=>`<div class="report-card z-keep z-mini-cmp"><h3>${title}</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:44%"><col style="width:28%"><col style="width:28%"></colgroup><thead><tr><th class="z-lbl">البند</th><th>اليوم</th><th class="z-sep">الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  h+=`<div class="report-grid z-daily-grid z-sum-grid">`+
+    tbl("الإنتاج",row("الإنتاج","م³","qty",1,1)+row("عدد النقلات","","trips",0,1)+row("متوسط حمولة النقلة","م³","avg",2,1)+row("أيام التشغيل","","days",0,1))+
+    tbl("الأسمنت",row("الأسمنت المستلم","طن","crec",1,0)+row("عدد الحمولات","","crecN",0,0)+row("المستهلك حسب الخلطة","طن","ccon",1,0)+row("الفرق (مستلم − مستهلك)","طن","cdiff",1,null))+
+    tbl("المواد الخام (من المصروفات)",row("بطحاء","ر.س",null,2,-1,o=>o.mat["بطحاء"])+row("بحص","ر.س",null,2,-1,o=>o.mat["بحص"])+row("إضافات وكيماويات","ر.س",null,2,-1,o=>o.mat["إضافات وكيماويات"])+row("إجمالي المواد","ر.س","matT",2,-1))+
+    tbl("المحروقات",row("قيمة المحروقات","ر.س","fuel",2,-1)+row("اللترات المسجلة","لتر","liters",0,-1)+row("عدد التعبئات","","fuelN",0,0)+row("المحروقات لكل م³","ر.س","fuelM3",2,-1))+
+    tbl(`الوايت ${WATER_TRUCK}`,row("عدد الردود","","wtrips",0,0)+row("عدد الأذونات","","wperm",0,0))+
+    tbl("المصروفات المسجلة",row("إجمالي المصروفات","ر.س","exp",2,-1)+row("عدد القيود","","expN",0,0))+
+    `<div class="z-src" style="grid-column:1/-1;border:1px solid var(--border);border-radius:10px">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المصروفات: ${lastOf(DB.E)}</div></div><!--SUM-->`;
   // تفاصيل اليوم — جداول متناسقة، والأقسام الفارغة تُجمع في ملاحظة واحدة
   const d=T.d;const q=T.qty;const empty=[];const cards=[];
   const sec=(title,head,rows,total,full)=>{if(!rows.length){empty.push(title);return;}cards.push(card(title,table(head,rows,total),full));};
