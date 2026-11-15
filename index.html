@@ -662,6 +662,7 @@ bdi{unicode-bidi:isolate}
   .z-cv-info td{font-size:16.5pt!important;text-align:center!important}
 }
 @media print{.z-cv-info th{font-size:17.6pt!important;width:36%}.z-cv-info{width:150mm}}
+.report-table td.num{white-space:nowrap!important}
 </style>
 </head>
 <body>
@@ -951,7 +952,7 @@ const dKey=d=>d?`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`:
 const mKey=d=>d?`${d.getFullYear()}-${pad(d.getMonth()+1)}`:"";
 const mLabel=k=>{const [y,m]=k.split("-");return `${monthNames[+m-1]} ${y}`;};
 const mShort=k=>{const [y,m]=k.split("-");return `${monthNames[+m-1]} ${y.slice(2)}`;};
-const fmtDate=d=>d?`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`:"—";
+const fmtDate=d=>d?`${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}`:"—"; // يوم - شهر - سنة
 const today=()=>{const t=new Date();t.setHours(0,0,0,0);return t;};
 function toNum(v){if(v==null||v==="")return null;if(typeof v==="number")return v;const x=String(v).replace(/[,\s٬]/g,"").replace(/٫/g,".").replace(/[^\d.-]/g,"");const n=parseFloat(x);return isNaN(n)?null:n;}
 function toDate(v){
@@ -1298,10 +1299,10 @@ function toolbar(kind){
 const kpi=(l,v,c="")=>`<div class="report-kpi"><label>${l}</label><strong class="${c}">${v}</strong></div>`;
 const card=(t,body,full)=>`<div class="report-card"${full?' style="grid-column:1/-1"':""}><h3>${t}</h3>${body}</div>`;
 function table(head,rows,total){return `<div class="report-table-wrap"><table class="report-table"><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.length?rows.join(""):`<tr><td colspan="${head.length}" style="text-align:center;color:var(--muted)">لا توجد بيانات</td></tr>`}${total||""}</tbody></table></div>`;}
-const isNumCell=c=>/^[+\-−]?[\d,]+(\.\d+)?%?$/.test(String(c).replace(/<[^>]+>/g,"").trim());
+const isNumCell=c=>{const t=String(c).replace(/<[^>]+>/g,"").trim();return /^[+\-−]?[\d,]+(\.\d+)?%?$/.test(t)||/^\d{2}-\d{2}-\d{4}$/.test(t);};
 const tr=(cells,cls)=>`<tr${cls?` class="${cls}"`:""}>${cells.map(c=>`<td${isNumCell(c)?' class="num"':""}>${c}</td>`).join("")}</tr>`;
-function fixBidi(root){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const list=[];let n;while(n=w.nextNode()){if(/[+\-−]\s?\d/.test(n.nodeValue)&&!n.parentNode.closest("bdi"))list.push(n);}
-  list.forEach(t=>{const f=document.createElement("span");f.innerHTML=esc(t.nodeValue).replace(/([+\-−]\s?\d[\d,]*(?:\.\d+)?%?)/g,'<bdi dir="ltr">$1</bdi>');t.replaceWith(...f.childNodes);});}
+function fixBidi(root){if(!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const list=[];let n;while(n=w.nextNode()){if(/(?<!\d)[+\-−]\s?\d/.test(n.nodeValue)&&!n.parentNode.closest("bdi"))list.push(n);}
+  list.forEach(t=>{const f=document.createElement("span");f.innerHTML=esc(t.nodeValue).replace(/(?<!\d)([+\-−]\s?\d[\d,]*(?:\.\d+)?%?)/g,'<bdi dir="ltr">$1</bdi>');t.replaceWith(...f.childNodes);});}
 function rangeData(){return filt({from:RS.from,to:RS.to,mixer:RS.mixer});}
 function rangeLabel(){return `${RS.from?fmtDate(toDate(RS.from)):fmtDate(DB.minD)} — ${RS.to?fmtDate(toDate(RS.to)):fmtDate(DB.maxD)}`;}
 function prodKpis(d){const q=sum(d.P,"qty"),c=sum(d.P,"cement")/1000,rc=sum(d.C,"tons"),fu=sum(d.F,"value");const days=new Set(d.P.map(r=>dKey(r.date))).size;
@@ -1332,7 +1333,7 @@ function drawReport(){
       card("الخلاطات",table(["الخلاطة","النقلات","الإنتاج م³","متوسط الرحلة"],mixerRows(dm.P).map(x=>tr([`<b>${esc(x.m)}</b>`,num(x.n),num(x.q,1),x.trip?num(x.trip)+" د":"—"]))))+
       card("الإنتاج اليومي",table(["اليوم","النقلات","الإنتاج م³"],Object.entries(days).sort().map(([dk,v])=>tr([fmtDate(toDate(dk)),num(v.n),num(v.q,1)])),tr(["الإجمالي",num(a.n),num(a.q,1)],"total")),true)+`</div>`;}
   if(id==="daily"){const k=RS.day;const dd=toDate(k);const d=filt({from:k,to:k}),mtd=filt({from:k.slice(0,8)+"01",to:k});
-    h=`<div class="report-note">اليوم: <b>${fmtDate(dd)}</b> — مع تراكم الشهر من 01/${pad(dd.getMonth()+1)} حتى تاريخه</div>
+    h=`<div class="report-note">اليوم: <b>${fmtDate(dd)}</b> — مع تراكم الشهر من 01-${pad(dd.getMonth()+1)} حتى تاريخه</div>
     <div class="report-kpis">${kpi("إنتاج اليوم",num(sum(d.P,"qty"),1)+" م³","blue")}${kpi("نقلات اليوم",num(d.P.length))}${kpi("أسمنت مستلم اليوم",num(sum(d.C,"tons"),1)+" طن")}${kpi("محروقات اليوم",money(sum(d.F,"value"))+" ر.س","red")}
     ${kpi("إنتاج الشهر حتى تاريخه",num(sum(mtd.P,"qty"),1)+" م³","blue")}${kpi("نقلات الشهر",num(mtd.P.length))}${kpi("أسمنت الشهر",num(sum(mtd.C,"tons"),1)+" طن")}${kpi("محروقات الشهر",money(sum(mtd.F,"value"))+" ر.س","red")}</div><div class="report-grid">`+
     card("نقلات اليوم",table(["الإيصال","الخلاطة","السائق","الضغط","الكمية م³","المضخة","الخروج","الرجوع"],d.P.slice().sort((a,b)=>(toNum(a.receipt)||0)-(toNum(b.receipt)||0)).map(r=>tr([esc(r.receipt||"—"),esc(r.mixer),esc(r.driver),esc(r.grade),num(r.qty,1),esc(r.pump),esc(r.out??""),esc(r.back??"")])),tr(["الإجمالي","","","",num(sum(d.P,"qty"),1),"","",""],"total")),true)+
