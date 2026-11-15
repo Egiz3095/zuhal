@@ -642,6 +642,12 @@ bdi{unicode-bidi:isolate}
   .z-cv-toc{color:#2b3a55!important}
   .z-cv-foot{color:#5d6980!important;border-top-color:#d9e0ea!important}
 }
+/* حذف المحتويات وتذييل الغلاف */
+@media print{
+  .z-cv-tocwrap,.z-cv-foot{display:none!important}
+  .z-cover{justify-content:flex-start!important}
+  .z-cv-mid{flex:1;justify-content:center;margin-top:0!important;padding-bottom:18mm}
+}
 </style>
 </head>
 <body>
