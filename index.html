@@ -1051,6 +1051,9 @@ bdi{unicode-bidi:isolate}
   .z-dpage>.report-card .report-table{height:100%!important}
 }
 @media print{.z-dpage>.report-card{overflow:visible!important}}
+.report-table.z-simple thead th{background:#dfe8f7!important;color:#13296a!important;text-align:center!important;border-bottom:2px solid #13296a!important}
+@media print{.report-table.z-simple thead th{background:#dfe8f7!important;text-align:center!important;border-bottom:0.6mm solid #13296a!important}}
+.report-table.z-simple thead th.z-sl,.report-table.z-simple thead th:first-child{text-align:center!important}@media print{.report-table.z-simple thead th:first-child{text-align:center!important}}
 </style>
 </head>
 <body>
@@ -1894,7 +1897,7 @@ function dailyReport(){
     row("mat","المواد الخام",cell(num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),"حمولة",`تكلفة ${money(M.matT)} ر.س`))+
     row("fuel","المحروقات<br><small>قبل الضريبة</small>",cell(money(T.fuel),"ر.س",`${num(T.liters)} لتر • ${num(T.fuelN)} تعبئة`),cell(money(M.fuel),"ر.س",`${num(M.liters)} لتر • ${num(M.fuelN)} تعبئة`))+
     row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),"رد",wPl(T)),cell(num(M.wtrips),"رد",wPl(M)));
-  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>اليوم <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
+  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
   const p1=[];const add=(pg,title,head,rows,total)=>{if(!rows.length){empty.push(title);return;}(pg<0?p1:pages[pg]).push(card(title,table(head,rows,total),true));};
