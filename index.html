@@ -1620,8 +1620,9 @@ function coverItems(){const L=[];if(document.querySelector("#reportBody .z-summa
 /* ================= التقرير اليومي ================= */
 const WATER_TRUCK="5770";
 function sameDayPrevMonth(d){const y=d.getFullYear(),m=d.getMonth();const last=new Date(y,m,0).getDate();return new Date(y,m-1,Math.min(d.getDate(),last));}
+const VAT=1.15;const exV=v=>v/VAT;
 function dailyMetrics(from,to){const d=filt({from,to});
-  const qty=sum(d.P,"qty"),fuel=sum(d.F,"value"),W=d.W.filter(r=>String(r.truck).includes(WATER_TRUCK));const ccon=sum(d.P,"cement")/1000,crec=sum(d.C,"tons");
+  const qty=sum(d.P,"qty"),fuel=exV(sum(d.F,"value")),W=d.W.filter(r=>String(r.truck).includes(WATER_TRUCK));const ccon=sum(d.P,"cement")/1000,crec=sum(d.C,"tons");
   const MZ=d.M.filter(r=>r.zahal);const mat={};["بطحى لزحل","بحص 3-4 بوصة","بحص 3-8 بوصة"].forEach(k=>mat[k]=MZ.filter(r=>r.type===k).length);
   mat["أخرى"]=MZ.length-mat["بطحى لزحل"]-mat["بحص 3-4 بوصة"]-mat["بحص 3-8 بوصة"];
   const matLoads=MZ.length,matPrice=sum(MZ,"price"),matTrans=sum(MZ,"transport"),matTip=sum(MZ,"tip"),matT=matPrice+matTrans+matTip;
@@ -1639,13 +1640,13 @@ function prodMatrix(o,title){const P=o.d.P,F=o.d.F;if(!P.length)return "";
   const Q=sum(P,"qty")||1;const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
   const grades=[...groupBy(P,r=>gl(r.grade||"غير محدد"))].sort((a,b)=>gn(a[0])-gn(b[0]));
   const pumps=[...groupBy(P,r=>r.pump||"غير محدد")].map(([k,rs])=>({k:/^\d+$/.test(k)?"مضخة "+k:k,rs,q:sum(rs,"qty")})).sort((a,b)=>(/ماسورة/.test(a.k)-/ماسورة/.test(b.k))||a.k.localeCompare(b.k,"ar"));
-  const fuelMx=m=>{const k=dig(m);return k?sum(F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value"):0;};
-  const pumpFuel=sum(F.filter(r=>/مضخة/.test(r.center)),"value");
+  const fuelMx=m=>{const k=dig(m);return k?sum(F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")/VAT:0;};
+  const pumpFuel=exV(sum(F.filter(r=>/مضخة/.test(r.center)),"value"));
   const maxCell=Math.max(...grades.flatMap(([g,rs])=>mx.map(x=>sum(rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty"))),1);
   const heat=v=>v?` style="background:rgba(14,138,102,${(0.10+0.38*v/maxCell).toFixed(2)})!important"`:"";
   const c=(v,dec=1)=>v?num(v,dec):"";
   const hd=x=>/^\d+$/.test(x.m)?`<small>خلاطة</small><br>${esc(x.m)}`:esc(x.m);
-  let h=`<thead><tr><th class="z-mx-l">البيان</th>${mx.map(x=>`<th>${hd(x)}</th>`).join("")}<th class="z-mx-t">الإجمالي</th><th>النسبة</th><th>الديزل ر.س</th></tr></thead><tbody>`;
+  let h=`<thead><tr><th class="z-mx-l">البيان</th>${mx.map(x=>`<th>${hd(x)}</th>`).join("")}<th class="z-mx-t">الإجمالي</th><th>النسبة</th><th>الديزل ر.س<br><small>قبل الضريبة</small></th></tr></thead><tbody>`;
   const N=mx.length+4;const band=t=>`<tr class="z-mx-band"><td colspan="${N}">${t}</td></tr>`;
   h+=band("الإنتاج حسب درجة الضغط (م³)");
   grades.forEach(([g,rs])=>{const q=sum(rs,"qty");h+=`<tr><td class="z-mx-l">${esc(g)}</td>${mx.map(x=>{const v=sum(rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty");return `<td class="num"${heat(v)}>${c(v)}</td>`;}).join("")}<td class="num z-mx-t">${num(q,1)}</td><td class="num">${pct(q/Q)}</td><td></td></tr>`;});
@@ -1656,7 +1657,7 @@ function prodMatrix(o,title){const P=o.d.P,F=o.d.F;if(!P.length)return "";
   pumps.forEach((pp,i)=>{h+=`<tr><td class="z-mx-l">${esc(pp.k)}</td>${mx.map(x=>{const v=sum(pp.rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty");return `<td class="num"${heat(v)}>${c(v)}</td>`;}).join("")}<td class="num z-mx-t">${num(pp.q,1)}</td><td class="num">${pct(pp.q/Q)}</td>${i===0?`<td class="num z-mx-fuel" rowspan="${pumps.length}">${pumpFuel?money(pumpFuel)+'<br><small>ديزل المضخات</small>':"—"}</td>`:""}</tr>`;});
   h+=band("التكاليف والأسمنت");
   const fm=mx.map(x=>fuelMx(x.m));const fT=fm.reduce((a,b)=>a+b,0);
-  h+=`<tr><td class="z-mx-l">ديزل الخلاطات ر.س</td>${fm.map(v=>`<td class="num">${v?money(v):""}</td>`).join("")}<td class="num z-mx-t">${money(fT)}</td><td></td><td class="num z-mx-fuel">${money(fT+pumpFuel)}<br><small>إجمالي الديزل</small></td></tr>`;
+  h+=`<tr><td class="z-mx-l">ديزل الخلاطات ر.س <small>قبل الضريبة</small></td>${fm.map(v=>`<td class="num">${v?money(v):""}</td>`).join("")}<td class="num z-mx-t">${money(fT)}</td><td></td><td class="num z-mx-fuel">${money(fT+pumpFuel)}<br><small>إجمالي الديزل</small></td></tr>`;
   h+=`<tr><td class="z-mx-l">ديزل لكل م³ ر.س</td>${mx.map((x,i)=>`<td class="num">${fm[i]&&x.q?money(fm[i]/x.q):""}</td>`).join("")}<td class="num z-mx-t">${money(fT/Q)}</td><td></td><td></td></tr>`;
   const cm=mx.map(x=>sum(x.rs,"cement")/1000);
   h+=`<tr><td class="z-mx-l">الأسمنت المستهلك طن</td>${cm.map(v=>`<td class="num">${c(v,2)}</td>`).join("")}<td class="num z-mx-t">${num(cm.reduce((a,b)=>a+b,0),2)}</td><td></td><td></td></tr>`;
@@ -1672,7 +1673,7 @@ function dailyReport(){
   const pdNote=(PD.trips?"":` <em class="z-off">${pd.getDay()===5?"جمعة":"بلا تشغيل"}</em>`);
   const lastOf=a=>a.length?fmtDate(new Date(Math.max(...a.map(r=>+r.date)))):"—";
   let h=`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — والشهر حتى اليوم من <b>${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</b> إلى <b>${fmtDate(t)}</b>.</div>`;
-  h+=`<div class="report-kpis z-daily-kpis">${kpi("إنتاج اليوم",num(T.qty,1)+" م³","blue")}${kpi("إنتاج الشهر حتى اليوم",num(M.qty,1)+" م³","blue")}${kpi("الأسمنت المستلم (الشهر)",num(M.crec,1)+" طن")}${kpi("المحروقات (الشهر)",money(M.fuel)+" ر.س","red")}</div>`;
+  h+=`<div class="report-kpis z-daily-kpis">${kpi("إنتاج اليوم",num(T.qty,1)+" م³","blue")}${kpi("إنتاج الشهر حتى اليوم",num(M.qty,1)+" م³","blue")}${kpi("الأسمنت المستلم (الشهر)",num(M.crec,1)+" طن")}${kpi("المحروقات قبل الضريبة (الشهر)",money(M.fuel)+" ر.س","red")}</div>`;
   // جدول منفصل لكل بند: البند | اليوم | الشهر حتى اليوم
   const tbl=(title,rows)=>`<div class="report-card z-keep z-mini-cmp"><h3>${title}</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:44%"><col style="width:28%"><col style="width:28%"></colgroup><thead><tr><th class="z-lbl">البند</th><th>اليوم</th><th class="z-sep">الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   h+=`<div class="report-grid z-daily-grid z-sum-grid">`+
@@ -1680,7 +1681,7 @@ function dailyReport(){
     tbl("الأسمنت",row("الأسمنت المستلم","طن","crec",1,0)+row("عدد الحمولات","","crecN",0,0)+row("المستهلك حسب الخلطة","طن","ccon",1,0)+row("الفرق (مستلم − مستهلك)","طن","cdiff",1,null))+
     tbl("المواد الخام (الحمولات الواردة لزحل)",row("بطحى لزحل","حمولة",null,0,0,o=>o.mat["بطحى لزحل"])+row("بحص 3-4 بوصة","حمولة",null,0,0,o=>o.mat["بحص 3-4 بوصة"])+row("بحص 3-8 بوصة","حمولة",null,0,0,o=>o.mat["بحص 3-8 بوصة"])+row("مواد أخرى","حمولة",null,0,0,o=>o.mat["أخرى"])+row("إجمالي الحمولات","حمولة","matLoads",0,0)+
       row("قيمة المواد (سعر المصدر)","ر.س","matPrice",2,-1)+row("أجور النقل","ر.س","matTrans",2,-1)+row("الإكراميات","ر.س","matTip",2,-1)+row("إجمالي تكلفة المواد","ر.س","matT",2,-1))+
-    tbl("المحروقات",row("قيمة المحروقات","ر.س","fuel",2,-1)+row("اللترات المسجلة","لتر","liters",0,-1)+row("عدد التعبئات","","fuelN",0,0)+row("المحروقات لكل م³","ر.س","fuelM3",2,-1))+
+    tbl("المحروقات",row("قيمة المحروقات (قبل الضريبة)","ر.س","fuel",2,-1)+row("اللترات المسجلة","لتر","liters",0,-1)+row("عدد التعبئات","","fuelN",0,0)+row("المحروقات لكل م³ (قبل الضريبة)","ر.س","fuelM3",2,-1))+
     tbl(`الوايت ${WATER_TRUCK}`,row("عدد الردود","","wtrips",0,0)+row("عدد الأذونات","","wperm",0,0))+
     tbl("المصروفات المسجلة",row("إجمالي المصروفات","ر.س","exp",2,-1)+row("عدد القيود","","expN",0,0))+
     `<div class="z-src" style="grid-column:1/-1;border:1px solid var(--border);border-radius:10px">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المواد: ${lastOf(DB.M||[])} • المصروفات: ${lastOf(DB.E)}</div></div><!--SUM-->`;
@@ -1693,7 +1694,7 @@ function dailyReport(){
    sec("المواد الخام حسب النوع",["نوع المادة","الحمولات","قيمة المصدر","النقل والإكرامية","الإجمالي ر.س"],grpT.map(([k,rs])=>tr([`<b>${esc(k)}</b>`,num(rs.length),money(sum(rs,"price")),money(sum(rs,"transport")+sum(rs,"tip")),money(sum(rs,"total"))])),tr(["الإجمالي",num(MZ.length),money(T.matPrice),money(T.matTrans+T.matTip),money(T.matT)],"total"));
    sec("المواد الخام حسب المصدر",["مصدر التحميل","الحمولات","الإجمالي ر.س"],[...groupBy(MZ,r=>r.source)].sort((a,b)=>b[1].length-a[1].length).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"total"))])),tr(["الإجمالي",num(MZ.length),money(T.matT)],"total"));
    sec("حمولات المواد اليوم",["مستند المصدر","نوع المادة","المصدر","السائق","المعدة","سعر المصدر","النقل","الإكرامية"],MZ.map(r=>tr([esc(r.doc||"—"),esc(r.type),esc(r.source),esc(r.driver),esc(r.equip),money(r.price),money(r.transport),money(r.tip)])),tr(["الإجمالي","","","","",money(T.matPrice),money(T.matTrans),money(T.matTip)],"total"),true);}
-  sec("المحروقات حسب المعدة",["المعدة","اللترات","القيمة ر.س"],[...groupBy(d.F,r=>cc(r.center))].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(sum(rs.filter(r=>r.liters),"liters")),money(sum(rs,"value"))])),tr(["الإجمالي",num(T.liters),money(T.fuel)],"total"));
+  sec("المحروقات حسب المعدة",["المعدة","اللترات","القيمة قبل الضريبة ر.س"],[...groupBy(d.F,r=>cc(r.center))].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(sum(rs.filter(r=>r.liters),"liters")),money(exV(sum(rs,"value")))])),tr(["الإجمالي",num(T.liters),money(T.fuel)],"total"));
   sec(`الوايت ${WATER_TRUCK}`,["مركز التكلفة","مكان التحميل","الردود"],[...groupBy(T.W,r=>r.center+"|"+r.place)].map(([k,rs])=>tr([esc(k.split("|")[0]),esc(k.split("|")[1]),num(sum(rs,"trips"))])),tr(["الإجمالي","",num(T.wtrips)],"total"));
   sec("المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.cat)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
   sec("المصروفات حسب المعدة",["المعدة","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.equip)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
@@ -1731,7 +1732,7 @@ function summaryFor(id){
     L.push(X.T.trips?`إنتاج اليوم <b>${num(X.T.qty,1)} م³</b> في ${num(X.T.trips)} نقلة بمتوسط ${num(X.T.avg,2)} م³ للنقلة.`:`لا يوجد إنتاج مسجّل في ${fmtDate(X.t)}.`);
     L.push(`إنتاج الشهر حتى اليوم <b>${num(X.M.qty,1)} م³</b> في ${num(X.M.trips)} نقلة خلال ${num(X.M.days)} يوم تشغيل.`);
     L.push(`المواد الواردة لزحل: ${num(X.T.matLoads)} حمولة اليوم و<b>${num(X.M.matLoads)}</b> حمولة حتى اليوم بتكلفة ${money(X.M.matT)} ر.س.`);
-    L.push(`الأسمنت حتى اليوم: مستلم ${num(X.M.crec,1)} طن ومستهلك حسب الخلطة ${num(X.M.ccon,1)} طن، والمحروقات ${money(X.M.fuel)} ر.س بمعدل ${num(X.M.fuelM3,2)} ر.س/م³.`);
+    L.push(`الأسمنت حتى اليوم: مستلم ${num(X.M.crec,1)} طن ومستهلك حسب الخلطة ${num(X.M.ccon,1)} طن، والمحروقات قبل الضريبة ${money(X.M.fuel)} ر.س بمعدل ${num(X.M.fuelM3,2)} ر.س/م³.`);
     L.push(`الوايت 5770: ${num(X.T.wtrips)} رد اليوم و${num(X.M.wtrips)} رد حتى اليوم، والمصروفات المسجلة حتى اليوم ${money(X.M.exp)} ر.س.`);}
   if(id==="veh"){const c=s=>DB.V.reduce((x,v)=>x+Object.values(v.docs).filter(z=>z.s===s).length,0);const ins=DB.V.filter(v=>v.docs.ins.s==="near"||v.docs.ins.s==="expired").length;
     L.push(`${num(DB.V.length)} مركبة: <b>${num(c("expired"))}</b> مستند منتهٍ و<b>${num(c("near"))}</b> يقارب الانتهاء.`);if(ins)L.push(`تأمين <b>${num(ins)}</b> مركبة منتهٍ أو ينتهي خلال ${NEAR_DAYS} يوماً.`);}
