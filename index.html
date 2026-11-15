@@ -1141,6 +1141,13 @@ bdi{unicode-bidi:isolate}
 /* أشرطة نسبة الإنتاج باللون الأخضر */
 .z-bar{background:linear-gradient(to left,rgba(14,138,102,.35) var(--w),transparent var(--w))!important}
 @media print{.z-bar{background:linear-gradient(to left,rgba(14,138,102,.35) var(--w),transparent var(--w))!important}}
+/* تظليل المعدات المعبأة في يوم التقرير */
+.report-table tr.z-fueled td{background:#e3f4ec!important;color:#0b4f3c}
+.report-table tr.z-fueled td:first-child{box-shadow:inset -4px 0 0 #0e8a66}
+@media print{.report-table tr.z-fueled td{background:#e3f4ec!important}.report-table tr.z-fueled td:first-child{box-shadow:inset -1.2mm 0 0 #0e8a66!important}}
+.z-daily-grid .report-table tbody tr.z-fueled:nth-child(n) td{background:#e3f4ec!important}
+@media print{.z-daily-grid .report-table tbody tr.z-fueled:nth-child(n) td{background:#e3f4ec!important}}
+#reportBody .z-daily-grid .report-table tbody tr.z-fueled.z-fueled:nth-child(n):not(.z-grp):not(.total) td{background:#e3f4ec!important}
 </style>
 </head>
 <body>
@@ -2037,7 +2044,7 @@ function dailyReport(){
   // الصفحة 3: المحروقات
   {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const lit=rs=>sum(rs.filter(r=>r.liters),"liters");
    const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...gM.keys()].sort((a,b)=>sum(gM.get(b),"value")-sum(gM.get(a),"value"));
-   const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
+   const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))],t_.length?"z-fueled":"");});
    add(WK?1:0,"محروقات المعدات (قبل الضريبة)",["المعدة",`تعبئات ${L.per}`,`لترات ${L.per}`,`قيمة ${L.per} ر.س`,"تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
   {const dg=x=>(String(x).match(/\d{3,}/)||[""])[0];const on=new Set(T.d.P.map(r=>dg(r.mixer)));const f30=new Date(t.getFullYear(),t.getMonth(),t.getDate()-30);
