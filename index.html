@@ -877,6 +877,10 @@ bdi{unicode-bidi:isolate}
 .z-db-v{font-size:19px}
 @media (max-width:900px){.z-db-row{grid-template-columns:repeat(2,30%)!important}.z-db-v{font-size:16px}.z-db-l{font-size:11px}}
 @media print{.z-db-row{grid-template-columns:repeat(4,15%)!important}.z-db-v{font-size:10.5pt!important}.z-db-s{font-size:5.8pt!important}}
+/* 3 مربعات × صفّين بعرض الصفحة */
+.z-db-row.z-db3{grid-template-columns:repeat(3,1fr)!important}
+@media (max-width:600px){.z-db-row.z-db3{grid-template-columns:repeat(2,1fr)!important}}
+@media print{.z-db-row.z-db3{grid-template-columns:repeat(3,1fr)!important}.z-db-v{font-size:12pt!important}.z-db-s{font-size:6.5pt!important}}
 </style>
 </head>
 <body>
@@ -1700,14 +1704,14 @@ function dailyReport(){
   /* ===== الصفحة 1: مربعات + تنبيهات + جدول ملخص ===== */
   const box=(k,ic,label,val,unit,sub,extra)=>`<div class="z-db z-db-${k}${extra?" "+extra:""}"><div class="z-db-h"><span class="z-db-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic]}</svg></span><span class="z-db-l">${label}</span></div><div class="z-db-v">${val}${unit?` <small>${unit}</small>`:""}</div><div class="z-db-s">${sub}</div></div>`;
   const bal=M.cdiff;const perM3=M.qty?(M.fuel+M.matT+oexp(M))/M.qty:0;
-  h+=`<div class="z-dpt">القسم 1: الملخص</div><div class="z-dboxes"><div class="z-db-row"><div class="z-db-cap">اليوم <bdi dir="ltr">${fmtDate(t)}</bdi></div>`+
-    box("prod","prod","الإنتاج",num(T.qty,1),"م³",`${num(T.trips)} نقلة • متوسط ${num(T.avg,2)} م³`)+
-    box("cem","cem","الأسمنت المستهلك",num(T.ccon,1),"طن",`المستلم اليوم ${num(T.crec,1)} طن`)+
-    box("mat","mat","المواد الواردة",num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`)+
-    box("fuel","fuel","المحروقات",money(T.fuel),"ر.س",`قبل الضريبة • ${money(T.qty?T.fuel/T.qty:0)} ر.س/م³`)+
-    `</div><div class="z-db-row"><div class="z-db-cap">الشهر حتى اليوم</div>`+
-    box("prod","cal","إنتاج الشهر",num(M.qty,1),"م³",`${num(M.days)} يوم تشغيل • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`)+
-    box("bal","bal","رصيد الأسمنت",`<bdi dir="ltr">${bal>=0?"+":"−"}${num(Math.abs(bal),1)}</bdi>`,"طن",`مستلم ${num(M.crec,1)} − مستهلك ${num(M.ccon,1)}`,bal<0?"z-db-bad":"z-db-good")+
+  h+=`<div class="z-dpt">القسم 1: الملخص</div><div class="z-dboxes"><div class="z-db-row z-db3">`+
+    box("prod","prod","إنتاج اليوم",num(T.qty,1),"م³",`${num(T.trips)} نقلة • متوسط ${num(T.avg,2)} م³`)+
+    box("cem","cem","الأسمنت المستهلك اليوم",num(T.ccon,1),"طن",`المستلم اليوم ${num(T.crec,1)} طن`)+
+    box("mat","mat","المواد الواردة اليوم",num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`)+
+    box("fuel","fuel","محروقات اليوم",money(T.fuel),"ر.س",`قبل الضريبة • ${money(T.qty?T.fuel/T.qty:0)} ر.س/م³`)+
+    
+    box("prod","cal","إنتاج الشهر حتى اليوم",num(M.qty,1),"م³",`${num(M.days)} يوم تشغيل • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`)+
+    box("bal","bal","رصيد الأسمنت (الشهر)",`<bdi dir="ltr">${bal>=0?"+":"−"}${num(Math.abs(bal),1)}</bdi>`,"طن",`مستلم ${num(M.crec,1)} − مستهلك ${num(M.ccon,1)}`,bal<0?"z-db-bad":"z-db-good")+
     ``+`</div></div>`;
   {const al=[];const tk=dKey(t);
    if(!T.trips)al.push("لا يوجد إنتاج مسجّل في هذا اليوم.");
