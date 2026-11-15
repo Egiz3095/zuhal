@@ -914,6 +914,38 @@ bdi{unicode-bidi:isolate}
 }
 .z-dsum .report-table tr.z-grp td{background:#e9eef7;color:#13296a}
 .z-daily-grid .report-card .z-dnote{padding:8px 14px}
+/* ================= ملخص اليوم الاحترافي (6 أعمدة) ================= */
+.z-cmp6 td.z-unit{color:var(--muted);font-size:11.5px;text-align:center}
+.z-cmp6 td.z-n,.z-cmp6 th:nth-child(n+3){text-align:left!important;font-variant-numeric:tabular-nums;padding-inline-end:14px}
+.z-cmp6 th:nth-child(n+3){text-align:center!important}
+.z-cmp6 td.z-avg,.z-cmp6 td.z-sh{color:#5d6980}
+.z-cmp6 td.z-neg{color:#c4314b!important;font-weight:800}.z-cmp6 td.z-pos{color:#0e8a66!important;font-weight:800}
+.z-cmp6 tr.z-grp td{font-weight:800}
+.z-cmp6 tr.z-grp td.z-n{color:#13296a;font-size:12.5px}
+.z-cmp6 tr.z-grp td small{font-weight:600;color:#5d6980;font-size:10.5px}
+.z-cmp6 tr.z-sub-t td{background:#f2f5fb}
+.z-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.z-chips-l{font-weight:700;color:var(--muted)}
+.z-chip{display:inline-flex;gap:4px;align-items:center;padding:2px 9px;border-radius:999px;background:#e9f6f0;color:#0b6b50;border:1px solid #bfe5d4;font-size:11.5px;font-weight:600}
+.z-chip.z-stale{background:#fdecef;color:#a3233a;border-color:#f3c3cc}
+@media print{
+  .z-cmp6 td.z-unit{font-size:6.8pt!important}
+  .z-cmp6 td.z-n{padding-inline-end:3mm!important}
+  .z-cmp6 th{font-size:7pt!important}
+  .z-cmp6 tr.z-grp td.z-n{font-size:8pt!important;color:#13296a!important}
+  .z-cmp6 tr.z-grp td small{font-size:6.5pt!important}
+  .z-cmp6 tr.z-sub-t td{background:#f2f5fb!important}
+  .z-cmp6 td.z-neg{color:#c4314b!important}.z-cmp6 td.z-pos{color:#0e8a66!important}
+  .z-chips{gap:1.2mm!important}
+  .z-chip{padding:0.3mm 2mm!important;font-size:6.6pt!important;background:#e9f6f0!important;border:0.25mm solid #bfe5d4!important}
+  .z-chip.z-stale{background:#fdecef!important;border-color:#f3c3cc!important;color:#a3233a!important}
+}
+.z-dsum .report-table.z-cmp6 tr.z-grp td{border-inline-start:0!important}
+.z-dsum .report-table.z-cmp6 tr.z-grp td:first-child{border-inline-start:4px solid #d6a84b!important}
+.z-cmp6 tr.z-grp td.z-unit{color:#5d6980;font-weight:600}
+@media print{.z-dsum .report-table.z-cmp6 tr.z-grp td{border-inline-start:0!important}
+  .z-dsum .report-table.z-cmp6 tr.z-grp td:first-child{border-inline-start:1mm solid #d6a84b!important}
+  .z-dsum .report-table.z-cmp6 tr.z-grp td{background:#e9eef7!important;color:#13296a!important}}
 </style>
 </head>
 <body>
@@ -1745,19 +1777,25 @@ function dailyReport(){
     box("prod","cal","إنتاج الشهر حتى اليوم",num(M.qty,1),"م³",`${num(M.days)} يوم تشغيل • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`)+
     box("bal","bal","رصيد الأسمنت (الشهر)",`<bdi dir="ltr">${bal>=0?"+":"−"}${num(Math.abs(bal),1)}</bdi>`,"طن",`مستلم ${num(M.crec,1)} − مستهلك ${num(M.ccon,1)}`,bal<0?"z-db-bad":"z-db-good")+
     ``+`</div></div>`;
-  const R=(label,unit,a,c,dec,cls)=>`<tr${cls?` class="${cls}"`:""}><td class="z-lbl">${label}${unit?` <small>${unit}</small>`:""}</td><td class="num">${typeof a==="string"?a:num(a,dec)}</td><td class="num z-sep">${typeof c==="string"?c:num(c,dec)}</td></tr>`;
-  const r=(label,unit,f,dec,cls)=>R(label,unit,f(T),f(M),dec,cls);
-  const G=x=>`<tr class="z-grp"><td colspan="3">${x}</td></tr>`;
-  const mny=(label,f,cls)=>R(label,"ر.س",money(f(T)),money(f(M)),0,cls);
+  const DD=M.days||1;const fv=(v,dec,m)=>m?money(v):num(v,dec);
+  const R=o=>{const a=o.f(T)||0,c=o.f(M)||0;if(!a&&!c)return "";
+    const sg=v=>o.sign?(v<0?" z-neg":v>0?" z-pos":""):"";const sv=v=>o.sign&&v>0?"+"+fv(v,o.dec,o.m):fv(v,o.dec,o.m);
+    const av=o.add?fv(c/DD,o.dec,o.m):"—",sh=o.add&&c?pct(a/c):"—";
+    return `<tr${o.cls?` class="${o.cls}"`:""}><td class="z-lbl">${o.l}</td><td class="z-unit">${o.u||""}</td><td class="num z-n${sg(a)}">${sv(a)}</td><td class="num z-n z-sep${sg(c)}">${sv(c)}</td><td class="num z-n z-avg">${av}</td><td class="num z-n z-sh">${sh}</td></tr>`;};
+  const r=(l,u,f,dec,cls)=>R({l,u,f,dec,cls,add:true});
+  const nr=(l,u,f,dec,x)=>R({l,u,f,dec,add:false,...(x||{})});
+  const mny=(l,f,cls)=>R({l,u:"ر.س",f,m:true,add:true,cls});
+  const G=(x,f,u,dec,m)=>{const a=f(T)||0,c=f(M)||0;return `<tr class="z-grp"><td>${x}</td><td class="z-unit">${u}</td><td class="num z-n">${fv(a,dec,m)}</td><td class="num z-n z-sep">${fv(c,dec,m)}</td><td class="num z-n">${fv(c/DD,dec,m)}</td><td class="num z-n">${c?pct(a/c):"—"}</td></tr>`;};
   const per=(o,v)=>o.qty?v/o.qty:0;
-  let rows=G("الإنتاج")+r("الإنتاج","م³",o=>o.qty,1)+r("عدد النقلات","",o=>o.trips,0)+r("متوسط حمولة النقلة","م³",o=>o.avg,2)+r("أيام التشغيل","",o=>o.days,0)+
-    G("الأسمنت")+r("الأسمنت المستلم","طن",o=>o.crec,1)+r("عدد الحمولات","",o=>o.crecN,0)+r("المستهلك حسب الخلطة","طن",o=>o.ccon,1)+r("الفرق (مستلم − مستهلك)","طن",o=>o.cdiff,1)+r("الأسمنت المستهلك / م³","طن",o=>per(o,o.ccon),3)+
-    G("المواد الخام الواردة لزحل")+["بطحى لزحل","بحص 3-4 بوصة","بحص 3-8 بوصة","أخرى"].filter(k=>M.mat[k]).map(k=>r(k==="أخرى"?"مواد أخرى":k,"حمولة",o=>o.mat[k],0)).join("")+
-      r("إجمالي الحمولات","حمولة",o=>o.matLoads,0,"z-sub-t")+mny("قيمة المواد (سعر المصدر)",o=>o.matPrice)+mny("النقل والإكراميات",o=>o.matTrans+o.matTip)+mny("إجمالي تكلفة المواد",o=>o.matT,"z-sub-t")+
-    G("المحروقات (قبل الضريبة)")+mny("قيمة المحروقات",o=>o.fuel)+r("اللترات المسجلة","لتر",o=>o.liters,0)+r("عدد التعبئات","",o=>o.fuelN,0)+
-    G(`الوايت ${WATER_TRUCK}`)+r("عدد الردود","",o=>o.wtrips,0)+r("عدد الأذونات","",o=>o.wperm,0);
-  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:46%"><col style="width:27%"><col style="width:27%"></colgroup><thead><tr><th class="z-lbl">البند</th><th>اليوم</th><th class="z-sep">الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <div class="z-dnote">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المواد: ${lastOf(DB.M||[])}</div></div></div><!--NOSUM-->`;
+  let rows=G("الإنتاج",o=>o.qty,"م³",1)+r("عدد النقلات","نقلة",o=>o.trips,0)+nr("متوسط حمولة النقلة","م³",o=>o.avg,2)+nr("أيام التشغيل","يوم",o=>o.days,0)+
+    G("الأسمنت المستلم",o=>o.crec,"طن",1)+r("عدد الحمولات","حمولة",o=>o.crecN,0)+r("المستهلك حسب الخلطة","طن",o=>o.ccon,1)+nr("الفرق (مستلم − مستهلك)","طن",o=>o.cdiff,1,{sign:true})+nr("الأسمنت المستهلك / م³","طن",o=>per(o,o.ccon),3)+
+    G("المواد الخام الواردة لزحل",o=>o.matLoads,"حمولة",0)+["بطحى لزحل","بحص 3-4 بوصة","بحص 3-8 بوصة","أخرى"].map(k=>r(k==="أخرى"?"مواد أخرى":k,"حمولة",o=>o.mat[k],0)).join("")+
+      mny("قيمة المواد (سعر المصدر)",o=>o.matPrice)+mny("النقل والإكراميات",o=>o.matTrans+o.matTip)+mny("إجمالي تكلفة المواد",o=>o.matT,"z-sub-t")+
+    G("المحروقات قبل الضريبة",o=>o.fuel,"ر.س",2,true)+r("اللترات المسجلة","لتر",o=>o.liters,0)+r("عدد التعبئات","تعبئة",o=>o.fuelN,0)+
+    G(`الوايت ${WATER_TRUCK} — الردود`,o=>o.wtrips,"رد",0)+r("عدد الأذونات","إذن",o=>o.wperm,0);
+  const chip=(n,a)=>{const mx=a.length?Math.max(...a.map(r=>+r.date)):0;const st=!mx||dKey(new Date(mx))<dKey(t);return `<span class="z-chip${st?" z-stale":""}">${n}: <bdi dir="ltr">${mx?fmtDate(new Date(mx)):"—"}</bdi></span>`;};
+  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-cmp z-cmp6"><colgroup><col style="width:29%"><col style="width:9%"><col style="width:16%"><col style="width:16%"><col style="width:15%"><col style="width:15%"></colgroup><thead><tr><th class="z-lbl">البند</th><th>الوحدة</th><th>اليوم</th><th class="z-sep">الشهر حتى اليوم</th><th>المتوسط اليومي</th><th>نسبة اليوم من الشهر</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="z-dnote z-chips"><span class="z-chips-l">آخر تاريخ مسجّل:</span>${chip("الإنتاج",DB.P)}${chip("الأسمنت",DB.C)}${chip("المحروقات",DB.F)}${chip("الوايت",DB.W)}${chip("المواد",DB.M||[])}</div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
   const add=(pg,title,head,rows,total)=>{if(!rows.length){empty.push(title);return;}pages[pg].push(card(title,table(head,rows,total),true));};
