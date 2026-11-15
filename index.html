@@ -1856,7 +1856,7 @@ function dailyReport(){
   /* ===== الصفحة 1: مربعات + تنبيهات + جدول ملخص ===== */
   const box=(k,ic,label,val,unit,sub,extra)=>`<div class="z-db z-db-${k}${extra?" "+extra:""}"><div class="z-db-h"><span class="z-db-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic]}</svg></span><span class="z-db-l">${label}</span></div><div class="z-db-v">${val}${unit?` <small>${unit}</small>`:""}</div><div class="z-db-s">${sub}</div></div>`;
   const bal=M.cdiff;
-  h+=`<div class="z-dpt">القسم 1: الملخص</div><div class="z-dboxes"><div class="z-db-row z-db3">`+
+  h+=`<div class="z-dboxes"><div class="z-db-row z-db3">`+
     box("prod","prod","إنتاج اليوم",num(T.qty,1),"م³",`${num(T.trips)} نقلة • متوسط ${num(T.avg,2)} م³`)+
     box("cem","cem","الأسمنت المستهلك اليوم",num(T.ccon,1),"طن",`المستلم اليوم ${num(T.crec,1)} طن`)+
     box("mat","mat","المواد الواردة اليوم",num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`)+
@@ -1886,7 +1886,7 @@ function dailyReport(){
   const fuelOf=m=>{const k=dig(m);return k?exV(sum(d.F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")):0;};
   {const mr=mixerRows(d.P);const mxq=Math.max(0,...mr.map(x=>x.q));let tf=0,tc=0;const rows_=mr.map(x=>{const rs=d.P.filter(r=>r.mixer===x.m);const cem=sum(rs,"cement")/1000,f=fuelOf(x.m);tf+=f;tc+=cem;
       return tr([`<b>${esc(x.m)}</b>`,esc(x.drs),num(x.n),`<span class="z-bar" style="--w:${(x.q/(mxq||1)*100).toFixed(0)}%">${num(x.q,1)}</span>`,num(cem,2),f?money(f):"—",f&&x.q?money(f/x.q):"—"]);});
-   add(-1,"الخلاطات: الإنتاج والأسمنت والديزل",["الخلاطة","السائق","النقلات","الإنتاج م³","الأسمنت طن","الديزل ر.س*","ديزل/م³"],rows_,tr(["الإجمالي","",num(d.P.length),num(T.qty,1),num(tc,2),money(tf),T.qty?money(tf/T.qty):"—"],"total"));}
+   add(-1,"الخلاطات: الإنتاج والأسمنت والديزل",["الخلاطة","السائق","النقلات","الإنتاج م³","الأسمنت طن","الديزل ر.س","ديزل/م³"],rows_,tr(["الإجمالي","",num(d.P.length),num(T.qty,1),num(tc,2),money(tf),T.qty?money(tf/T.qty):"—"],"total"));}
   {const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
    const g1=[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const g2=[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty"));
    const rr=([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/q)]);
@@ -1901,8 +1901,7 @@ function dailyReport(){
    const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
    add(0,"محروقات المعدات (قبل الضريبة)",["المعدة","تعبئات اليوم","لترات اليوم","قيمة اليوم ر.س","تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
-  if(p1.length)h+=`<div class="z-dnote" style="margin-top:6px">* ديزل الخلاطة = تعبئات اليوم المسجلة على نفس رقم الخلاطة، قبل الضريبة.</div>`;
-  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage"><div class="z-dpt">${PT[i].replace(/\d/,pn+1)}</div>${pg.join("")}</div>`;}});
+  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage">${pg.join("")}</div>`;}});
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`;
   return h;
 }
