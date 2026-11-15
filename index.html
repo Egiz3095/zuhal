@@ -737,6 +737,27 @@ bdi{unicode-bidi:isolate}
   .z-src{font-size:7.5pt;background:#f6f8fb!important}
 }
 @media print{.z-daily-kpis{display:none!important}.z-cmp td,.z-cmp th{padding:1.15mm 2mm!important}.z-cmp tr.z-grp td{padding:1mm 2mm!important}}
+/* ===== تنظيم التقرير اليومي ===== */
+.z-cmp{table-layout:fixed}
+.z-cmp td.z-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.z-daily-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;align-items:start}
+.z-daily-grid .report-table{table-layout:fixed;width:100%}
+.z-daily-grid .report-table th,.z-daily-grid .report-table td{text-align:center}
+.z-daily-grid .report-table td:first-child,.z-daily-grid .report-table th:first-child{text-align:right;width:38%}
+.z-daily-grid .report-card[style*="1/-1"] .report-table td:first-child,.z-daily-grid .report-card[style*="1/-1"] .report-table th:first-child{width:auto}
+.z-desc{display:block;text-align:right;font-size:11px;color:var(--muted);white-space:normal;line-height:1.5}
+.z-emptyline{padding:10px 14px;border:1px dashed var(--border-strong);border-radius:12px;color:var(--muted);font-size:12px;background:var(--surface-soft)}
+@media print{
+  .report-grid.z-daily-grid{display:grid!important;grid-template-columns:1fr 1fr!important;column-gap:5mm!important;row-gap:4mm!important;counter-reset:psec}
+  .z-daily-grid .report-card{margin:0!important;break-inside:avoid}
+  .z-daily-grid .report-card[style*="1/-1"]{break-inside:auto}
+  .z-daily-grid .report-table{font-size:8pt!important}
+  .z-daily-grid .report-table th,.z-daily-grid .report-table td{padding:1.2mm 1.6mm!important;text-align:center!important}
+  .z-daily-grid .report-table td:first-child,.z-daily-grid .report-table th:first-child{text-align:right!important}
+  .z-desc{font-size:7pt!important;color:#5d6980!important}
+  .z-emptyline{font-size:8pt;padding:2.5mm 3mm;border-radius:2mm;background:#f6f8fb!important}
+  .z-cmp td.z-lbl{white-space:normal}
+}
 </style>
 </head>
 <body>
@@ -1545,7 +1566,7 @@ function dailyReport(){
   const lastOf=a=>a.length?fmtDate(new Date(Math.max(...a.map(r=>+r.date)))):"—";
   let h=`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — يُقارن بـ <b>${fmtDate(pd)}</b> (${DOW[pd.getDay()]})، والشهر حتى اليوم (<b>${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</b> إلى <b>${fmtDate(t)}</b>) يُقارن بالفترة من <b>${fmtDate(new Date(pd.getFullYear(),pd.getMonth(),1))}</b> إلى <b>${fmtDate(pd)}</b>.</div>`;
   h+=`<div class="report-kpis z-daily-kpis">${kpi("إنتاج اليوم",num(T.qty,1)+" م³","blue")}${kpi("إنتاج الشهر حتى اليوم",num(M.qty,1)+" م³","blue")}${kpi("الأسمنت المستلم (الشهر)",num(M.crec,1)+" طن")}${kpi("المحروقات (الشهر)",money(M.fuel)+" ر.س","red")}</div>`;
-  h+=`<div class="report-card z-keep" style="margin-bottom:14px"><h3>المقارنة: اليوم والشهر حتى اليوم مقابل الشهر الماضي</h3><div class="report-table-wrap"><table class="report-table z-cmp"><thead>
+  h+=`<div class="report-card z-keep" style="margin-bottom:14px"><h3>المقارنة: اليوم والشهر حتى اليوم مقابل الشهر الماضي</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:26%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.3%"><col style="width:12.5%"></colgroup><thead>
     <tr><th rowspan="2" class="z-lbl">البند</th><th colspan="3">اليوم</th><th colspan="3" class="z-sep">الشهر حتى اليوم</th></tr>
     <tr><th>${fmtDate(t)}</th><th>${fmtDate(pd)}${pdNote}</th><th>التغير</th><th class="z-sep">${num(t.getDate())} يوم</th><th>نفس المدة السابقة</th><th>التغير</th></tr></thead><tbody>`+
     grp("الإنتاج")+row("الإنتاج","م³","qty",1,1)+row("عدد النقلات","","trips",0,1)+row("متوسط حمولة النقلة","م³","avg",2,1)+row("أيام التشغيل","","days",0,1)+
@@ -1555,16 +1576,22 @@ function dailyReport(){
     grp(`الوايت ${WATER_TRUCK}`)+row("عدد الردود","","wtrips",0,0)+row("عدد الأذونات","","wperm",0,0)+
     grp("المصروفات المسجلة")+row("إجمالي المصروفات","ر.س","exp",2,-1)+row("عدد القيود","","expN",0,0)+
     `</tbody></table></div><div class="z-src">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المصروفات: ${lastOf(DB.E)}</div></div><!--SUM-->`;
-  // تفاصيل اليوم
-  const d=T.d;const q=T.qty;h+=`<div class="report-grid">`;
-  h+=card("الإنتاج حسب الخلاطة",table(["الخلاطة","السائق","النقلات","الإنتاج م³","متوسط الرحلة"],mixerRows(d.P).map(x=>tr([`<b>${esc(x.m)}</b>`,esc(x.drs),num(x.n),num(x.q,1),x.trip?num(x.trip)+" د":"—"])),d.P.length?tr(["الإجمالي","",num(d.P.length),num(q,1),""],"total"):""));
-  h+=card("حسب درجة الضغط والمضخة",table(["البند","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>/ضغط/.test(r.grade)?r.grade:"ضغط "+r.grade)].sort((a,b)=>(toNum(a[0].replace(/\D/g,""))||0)-(toNum(b[0].replace(/\D/g,""))||0)).concat([...groupBy(d.P,r=>"معدة "+r.pump)]).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(q||1))]))));
-  h+=card("حمولات الأسمنت اليوم",table(["رقم الإذن","المورد","الكمية طن"],d.C.map(r=>tr([esc(r.permit||"—"),esc(r.supplier),num(r.tons,2)])),d.C.length?tr(["الإجمالي","",num(T.crec,2)],"total"):""));
-  h+=card("المحروقات اليوم",table(["المعدة / مركز التكلفة","اللترات","القيمة ر.س"],[...groupBy(d.F,r=>r.center)].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(sum(rs.filter(r=>r.liters),"liters")),money(sum(rs,"value"))])),d.F.length?tr(["الإجمالي",num(T.liters),money(T.fuel)],"total"):""));
-  h+=card(`الوايت ${WATER_TRUCK} اليوم`,table(["مركز التكلفة","مكان التحميل","الردود"],[...groupBy(T.W,r=>r.center+"|"+r.place)].map(([k,rs])=>tr([esc(k.split("|")[0]),esc(k.split("|")[1]),num(sum(rs,"trips"))])),T.W.length?tr(["الإجمالي","",num(T.wtrips)],"total"):""));
-  h+=card("المصروفات المسجلة اليوم حسب التصنيف",table(["التصنيف","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.cat)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),d.E.length?tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"):""));
-  if(d.E.length)h+=card("قيود المصروفات اليوم",table(["رقم القيد","التصنيف","الفرعي","المعدة","المبلغ","البيان"],d.E.map(r=>tr([esc(r.entry),esc(r.cat),esc(r.sub),esc(r.equip),money(r.amount),esc(r.desc)]))),true);
-  h+=card("نقلات اليوم",table(["الإيصال","الخلاطة","السائق","الضغط","الكمية م³","المضخة","الخروج","الرجوع"],d.P.slice().sort((a,b)=>(toNum(a.receipt)||0)-(toNum(b.receipt)||0)).map(r=>tr([esc(r.receipt||"—"),esc(r.mixer),esc(r.driver),esc(r.grade),num(r.qty,1),esc(r.pump),esc(r.out??""),esc(r.back??"")])),d.P.length?tr(["الإجمالي","","","",num(q,1),"","",""],"total"):""),true);
+  // تفاصيل اليوم — جداول متناسقة، والأقسام الفارغة تُجمع في ملاحظة واحدة
+  const d=T.d;const q=T.qty;const empty=[];const cards=[];
+  const sec=(title,head,rows,total,full)=>{if(!rows.length){empty.push(title);return;}cards.push(card(title,table(head,rows,total),full));};
+  sec("الإنتاج حسب الخلاطة",["الخلاطة","السائق","النقلات","الإنتاج م³","متوسط الرحلة"],mixerRows(d.P).map(x=>tr([`<b>${esc(x.m)}</b>`,esc(x.drs),num(x.n),num(x.q,1),x.trip?num(x.trip)+" د":"—"])),tr(["الإجمالي","",num(d.P.length),num(q,1),""],"total"),true);
+  const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;
+  sec("الإنتاج حسب درجة الضغط",["الدرجة","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>(toNum(a[0].replace(/\D/g,""))||0)-(toNum(b[0].replace(/\D/g,""))||0)).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(q||1))])),tr(["الإجمالي",num(d.P.length),num(q,1),"100%"],"total"));
+  sec("الإنتاج حسب معدة الصب",["المعدة","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty")).map(([k,rs])=>tr([esc(/^\d+$/.test(k)?"مضخة "+k:k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(q||1))])),tr(["الإجمالي",num(d.P.length),num(q,1),"100%"],"total"));
+  sec("حمولات الأسمنت",["رقم الإذن","المورد","الكمية طن"],d.C.map(r=>tr([esc(r.permit||"—"),esc(r.supplier),num(r.tons,2)])),tr(["الإجمالي","",num(T.crec,2)],"total"));
+  const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();
+  sec("المحروقات حسب المعدة",["المعدة","اللترات","القيمة ر.س"],[...groupBy(d.F,r=>cc(r.center))].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(sum(rs.filter(r=>r.liters),"liters")),money(sum(rs,"value"))])),tr(["الإجمالي",num(T.liters),money(T.fuel)],"total"));
+  sec(`الوايت ${WATER_TRUCK}`,["مركز التكلفة","مكان التحميل","الردود"],[...groupBy(T.W,r=>r.center+"|"+r.place)].map(([k,rs])=>tr([esc(k.split("|")[0]),esc(k.split("|")[1]),num(sum(rs,"trips"))])),tr(["الإجمالي","",num(T.wtrips)],"total"));
+  sec("المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.cat)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
+  sec("المصروفات حسب المعدة",["المعدة","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.equip)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
+  sec("قيود المصروفات",["رقم القيد","التصنيف","الفرعي","المعدة","المبلغ","البيان"],d.E.map(r=>tr([esc(r.entry),esc(r.cat),esc(r.sub),esc(r.equip),money(r.amount),`<span class="z-desc">${esc(r.desc)}</span>`])),tr(["الإجمالي","","","",money(T.exp),""],"total"),true);
+  sec("نقلات اليوم",["الإيصال","الخلاطة","السائق","الضغط","الكمية م³","المضخة","الخروج","الرجوع"],d.P.slice().sort((a,b)=>(toNum(a.receipt)||0)-(toNum(b.receipt)||0)).map(r=>tr([esc(r.receipt||"—"),esc(r.mixer),esc(r.driver),esc(gl(r.grade)),num(r.qty,1),esc(r.pump),esc(r.out??""),esc(r.back??"")])),tr(["الإجمالي","","","",num(q,1),"","",""],"total"),true);
+  h+=`<div class="report-grid z-daily-grid">`+cards.join("")+(empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`:"");
   return h+`</div>`;
 }
 function periodLabel(id){
