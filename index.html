@@ -791,36 +791,7 @@ bdi{unicode-bidi:isolate}
 @page:first{@bottom-left{content:none}}
 @media print{.z-cover.z-cv2{background:#fff!important;z-index:50!important}}
 
-/* ================= مصفوفة الإنتاج ================= */
-.z-mx{font-variant-numeric:tabular-nums}
-.z-mx th,.z-mx td{text-align:center;white-space:nowrap}
-.z-mx th small{font-weight:600;opacity:.75;font-size:.82em}
-.z-mx .z-mx-l{text-align:start!important;font-weight:700;background:var(--surface-soft);position:sticky;inset-inline-start:0}
-.z-mx .z-mx-t{font-weight:800;background:rgba(47,107,255,.08)}
-.z-mx tr.z-mx-band td{background:#0f1a33!important;color:#fff!important;font-weight:800;text-align:start!important;padding:6px 10px;border-inline-start:4px solid #d6a84b}
-.z-mx tr.z-mx-sum td{background:#f4f6fa;font-weight:700}
-.z-mx td.z-mx-fuel{font-weight:800;color:#0f1a33;background:rgba(214,168,75,.16)!important;vertical-align:middle}
-.z-mx td.z-mx-fuel small{font-weight:600;color:var(--muted)}
-.z-mx-grid{margin-bottom:12px}
-@media print{
-  .z-mx-card{break-inside:avoid}
-  .z-mx{font-size:7.4pt!important;table-layout:auto!important}
-  .z-mx th{font-size:7pt!important;padding:1.2mm 1mm!important;background:#13296a!important;color:#fff!important;border-bottom:0.6mm solid #d6a84b!important}
-  .z-mx td{padding:1.1mm 1mm!important;white-space:nowrap!important;border:0.15mm solid #e3e8f0!important}
-  .z-mx .z-mx-l{background:#eef2f7!important;padding-inline:2mm!important}
-  .z-mx .z-mx-t{background:#e9f0ff!important}
-  .z-mx tr.z-mx-band td{background:#0f1a33!important;color:#fff!important;padding:1.2mm 2mm!important}
-  .z-mx tbody tr:nth-child(even):not(.z-mx-band) td:not([style]):not(.z-mx-l):not(.z-mx-t):not(.z-mx-fuel){background:#fff!important}
-  .z-mx tr.z-mx-sum td{background:#f4f6fa!important}
-  .z-mx tr.total td{background:#e9f0ff!important}
-  .z-mx td.z-mx-fuel{background:#fbf3e2!important}
-}
 
-@media print{.z-mx th.z-mx-l,.z-mx th.z-mx-t{background:#13296a!important;color:#fff!important}
-  .z-mx tr.z-mx-band td{background:#0f1a33!important;color:#fff!important}}
-.z-mx th.z-mx-l,.z-mx th.z-mx-t{background:#13296a;color:#fff}
-.report-table.z-mx tbody tr.z-mx-band td{background:#0f1a33!important;color:#fff!important}
-.report-table.z-mx thead th{background:#13296a!important;color:#fff!important}
 </style>
 </head>
 <body>
@@ -1633,35 +1604,6 @@ function dailyCtx(){const k=RS.day||dKey(DB.maxD);const t=toDate(k);const pd=sam
   return {k,t,pd,T:dailyMetrics(k,k),PD:dailyMetrics(dKey(pd),dKey(pd)),M:dailyMetrics(k.slice(0,8)+"01",k),PM:dailyMetrics(dKey(new Date(pd.getFullYear(),pd.getMonth(),1)),dKey(pd))};}
 function chgTxt(a,b){if(!b)return a?"جديد":"—";const c=(a-b)/b;return (c>=0?"+":"−")+Math.abs(c*100).toFixed(1)+"%";}
 const DOW=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
-/* مصفوفة الإنتاج: الخلاطات × درجات الضغط + معدات الصب + الديزل والأسمنت */
-function prodMatrix(o,title){const P=o.d.P,F=o.d.F;if(!P.length)return "";
-  const dig=x=>(String(x).match(/\d{3,}/)||[""])[0];
-  const mx=[...groupBy(P,r=>r.mixer||"غير محدد")].map(([m,rs])=>({m,rs,q:sum(rs,"qty")})).sort((a,b)=>b.q-a.q);
-  const Q=sum(P,"qty")||1;const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
-  const grades=[...groupBy(P,r=>gl(r.grade||"غير محدد"))].sort((a,b)=>gn(a[0])-gn(b[0]));
-  const pumps=[...groupBy(P,r=>r.pump||"غير محدد")].map(([k,rs])=>({k:/^\d+$/.test(k)?"مضخة "+k:k,rs,q:sum(rs,"qty")})).sort((a,b)=>(/ماسورة/.test(a.k)-/ماسورة/.test(b.k))||a.k.localeCompare(b.k,"ar"));
-  const fuelMx=m=>{const k=dig(m);return k?sum(F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")/VAT:0;};
-  const pumpFuel=exV(sum(F.filter(r=>/مضخة/.test(r.center)),"value"));
-  const maxCell=Math.max(...grades.flatMap(([g,rs])=>mx.map(x=>sum(rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty"))),1);
-  const heat=v=>v?` style="background:rgba(14,138,102,${(0.10+0.38*v/maxCell).toFixed(2)})!important"`:"";
-  const c=(v,dec=1)=>v?num(v,dec):"";
-  const hd=x=>/^\d+$/.test(x.m)?`<small>خلاطة</small><br>${esc(x.m)}`:esc(x.m);
-  let h=`<thead><tr><th class="z-mx-l">البيان</th>${mx.map(x=>`<th>${hd(x)}</th>`).join("")}<th class="z-mx-t">الإجمالي</th><th>النسبة</th><th>الديزل ر.س<br><small>قبل الضريبة</small></th></tr></thead><tbody>`;
-  const N=mx.length+4;const band=t=>`<tr class="z-mx-band"><td colspan="${N}">${t}</td></tr>`;
-  h+=band("الإنتاج حسب درجة الضغط (م³)");
-  grades.forEach(([g,rs])=>{const q=sum(rs,"qty");h+=`<tr><td class="z-mx-l">${esc(g)}</td>${mx.map(x=>{const v=sum(rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty");return `<td class="num"${heat(v)}>${c(v)}</td>`;}).join("")}<td class="num z-mx-t">${num(q,1)}</td><td class="num">${pct(q/Q)}</td><td></td></tr>`;});
-  h+=`<tr class="z-mx-sum"><td class="z-mx-l">عدد النقلات</td>${mx.map(x=>`<td class="num">${num(x.rs.length)}</td>`).join("")}<td class="num z-mx-t">${num(P.length)}</td><td></td><td></td></tr>`;
-  h+=`<tr class="total"><td class="z-mx-l">الكمية م³</td>${mx.map(x=>`<td class="num">${num(x.q,1)}</td>`).join("")}<td class="num z-mx-t">${num(Q,1)}</td><td class="num">100%</td><td></td></tr>`;
-  h+=`<tr class="z-mx-sum"><td class="z-mx-l">نسبة الخلاطة</td>${mx.map(x=>`<td class="num">${pct(x.q/Q)}</td>`).join("")}<td class="num z-mx-t">100%</td><td></td><td></td></tr>`;
-  h+=band("معدات الصب (م³)");
-  pumps.forEach((pp,i)=>{h+=`<tr><td class="z-mx-l">${esc(pp.k)}</td>${mx.map(x=>{const v=sum(pp.rs.filter(r=>(r.mixer||"غير محدد")===x.m),"qty");return `<td class="num"${heat(v)}>${c(v)}</td>`;}).join("")}<td class="num z-mx-t">${num(pp.q,1)}</td><td class="num">${pct(pp.q/Q)}</td>${i===0?`<td class="num z-mx-fuel" rowspan="${pumps.length}">${pumpFuel?money(pumpFuel)+'<br><small>ديزل المضخات</small>':"—"}</td>`:""}</tr>`;});
-  h+=band("التكاليف والأسمنت");
-  const fm=mx.map(x=>fuelMx(x.m));const fT=fm.reduce((a,b)=>a+b,0);
-  h+=`<tr><td class="z-mx-l">ديزل الخلاطات ر.س <small>قبل الضريبة</small></td>${fm.map(v=>`<td class="num">${v?money(v):""}</td>`).join("")}<td class="num z-mx-t">${money(fT)}</td><td></td><td class="num z-mx-fuel">${money(fT+pumpFuel)}<br><small>إجمالي الديزل</small></td></tr>`;
-  h+=`<tr><td class="z-mx-l">ديزل لكل م³ ر.س</td>${mx.map((x,i)=>`<td class="num">${fm[i]&&x.q?money(fm[i]/x.q):""}</td>`).join("")}<td class="num z-mx-t">${money(fT/Q)}</td><td></td><td></td></tr>`;
-  const cm=mx.map(x=>sum(x.rs,"cement")/1000);
-  h+=`<tr><td class="z-mx-l">الأسمنت المستهلك طن</td>${cm.map(v=>`<td class="num">${c(v,2)}</td>`).join("")}<td class="num z-mx-t">${num(cm.reduce((a,b)=>a+b,0),2)}</td><td></td><td></td></tr>`;
-  return `<div class="report-card z-mx-card"><h3>${title}</h3><div class="report-table-wrap"><table class="report-table z-mx">${h}</tbody></table></div></div>`;}
 function dailyReport(){
   const X=dailyCtx();const {t,pd,T,PD,M,PM}=X;
   const cell=(a,b,dir,dec)=>{const v=`<span class="z-v">${typeof a==="string"?a:num(a,dec)}</span>`;return v;};
@@ -1688,6 +1630,10 @@ function dailyReport(){
   // تفاصيل اليوم — جداول متناسقة، والأقسام الفارغة تُجمع في ملاحظة واحدة
   const d=T.d;const q=T.qty;const empty=[];const cards=[];
   const sec=(title,head,rows,total,full)=>{if(!rows.length){empty.push(title);return;}cards.push(card(title,table(head,rows,total),full));};
+  sec("الإنتاج حسب الخلاطة",["الخلاطة","السائق","النقلات","الإنتاج م³","متوسط الرحلة"],mixerRows(d.P).map(x=>tr([`<b>${esc(x.m)}</b>`,esc(x.drs),num(x.n),num(x.q,1),x.trip?num(x.trip)+" د":"—"])),tr(["الإجمالي","",num(d.P.length),num(q,1),""],"total"),true);
+  const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;
+  sec("الإنتاج حسب درجة الضغط",["الدرجة","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>(toNum(a[0].replace(/\D/g,""))||0)-(toNum(b[0].replace(/\D/g,""))||0)).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(q||1))])),tr(["الإجمالي",num(d.P.length),num(q,1),"100%"],"total"));
+  sec("الإنتاج حسب معدة الصب",["المعدة","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty")).map(([k,rs])=>tr([esc(/^\d+$/.test(k)?"مضخة "+k:k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(q||1))])),tr(["الإجمالي",num(d.P.length),num(q,1),"100%"],"total"));
   sec("حمولات الأسمنت",["رقم الإذن","المورد","الكمية طن"],d.C.map(r=>tr([esc(r.permit||"—"),esc(r.supplier),num(r.tons,2)])),tr(["الإجمالي","",num(T.crec,2)],"total"));
   const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();
   {const MZ=T.MZ;const grpT=[...groupBy(MZ,r=>r.type)].sort((a,b)=>b[1].length-a[1].length);
@@ -1699,8 +1645,6 @@ function dailyReport(){
   sec("المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.cat)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
   sec("المصروفات حسب المعدة",["المعدة","القيود","المبلغ ر.س"],[...groupBy(d.E,r=>r.equip)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([esc(k),num(rs.length),money(sum(rs,"amount"))])),tr(["الإجمالي",num(d.E.length),money(T.exp)],"total"));
   sec("قيود المصروفات",["رقم القيد","التصنيف","الفرعي","المعدة","المبلغ","البيان"],d.E.map(r=>tr([esc(r.entry),esc(r.cat),esc(r.sub),esc(r.equip),money(r.amount),`<span class="z-desc">${esc(r.desc)}</span>`])),tr(["الإجمالي","","","",money(T.exp),""],"total"),true);
-  {const mA=prodMatrix(T,`مصفوفة الإنتاج — اليوم <bdi dir="ltr">${fmtDate(t)}</bdi>`),mB=prodMatrix(M,`مصفوفة الإنتاج — الشهر حتى اليوم (<bdi dir="ltr">${fmtDate(new Date(t.getFullYear(),t.getMonth(),1))}</bdi> إلى <bdi dir="ltr">${fmtDate(t)}</bdi>)`);
-   h+=`<div class="report-grid z-daily-grid z-mx-grid">`+(mA||`<div class="z-emptyline">لا يوجد إنتاج مسجّل في هذا اليوم.</div>`)+mB+`</div>`;}
   h+=`<div class="report-grid z-daily-grid">`+cards.join("")+(empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`:"");
   return h+`</div>`;
 }
