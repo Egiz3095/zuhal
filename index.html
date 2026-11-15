@@ -1444,7 +1444,7 @@ function model(raw){
       driver:clean(pick(r,"السائق"))||"غير محدد",out:pick(r,"وقت الخروج"),back:pick(r,"وقت الرجوع"),_raw:r};}).filter(r=>r.date);
   P.forEach(r=>{const a=toMin(r.out),b=toMin(r.back);let d=null;if(a!=null&&b!=null){d=b-a;if(d<0)d+=720;if(d<0)d+=720;if(d>480||d<=0)d=null;}r.trip=d;});
   const C=(raw.cement||[]).map(r=>({date:toDate(pick(r,"التاريخ")),permit:clean(pick(r,"رقم الإذن")),tons:toNum(pick(r,"الكمية - طن","الكمية"))||0,
-    supplier:clean(pick(r,"المورد"))||"غير محدد",price:toNum(pick(r,"سعر المورد")),invoice:clean(pick(r,"رقم الفاتورة")),entry:clean(pick(r,"رقم القيد")),paid:toNum(pick(r,"دفعات للمورد"))})).filter(r=>r.date);
+    supplier:clean(pick(r,"المورد"))||"غير محدد",price:toNum(pick(r,"سعر المورد")),invoice:clean(pick(r,"رقم الفاتورة")),entry:clean(pick(r,"رقم القيد")),paid:toNum(pick(r,"دفعات للمورد")),rval:toNum(pick(r,"قيمة الرد"))})).filter(r=>r.date);
   C.forEach(r=>{const s=r.supplier.split("-");r.supName=clean(s[0]);r.supType=clean(s[1]||"");});
   const F=(raw.fuel||[]).map(r=>({date:toDate(pick(r,"التاريخ")),vehicle:clean(pick(r,"رقم المركبة")),center:clean(pick(r,"مركز التكلفة"))||"غير محدد",
     km:toNum(pick(r,"قراءة العداد")),liters:toNum(pick(r,"الكمية لتر","الكمية")),value:toNum(pick(r,"القيمة ريال","القيمة"))||0,
@@ -1927,10 +1927,10 @@ function dailyReport(){
    const g1=[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const g2=[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty"));
    const rr=([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/q)]);
    add(0,"توزيع الإنتاج",["البيان","النقلات","الإنتاج م³","النسبة"],d.P.length?[gtr("حسب درجة الضغط",4),...g1.map(rr),gtr("حسب معدة الصب",4),...g2.map(([k,rs])=>rr([/^\d+$/.test(k)?"مضخة "+k:k,rs]))]:[],"");}
-  {const MZ=T.MZ;const cr=[...groupBy(d.C,r=>r.supplier||"غير محدد")].filter(([k,rs])=>sum(rs,"tons")>0).map(([k,rs])=>{const v=rs.reduce((a,r)=>a+(r.tons||0)*(r.price||0),0);return tr([esc(k),num(rs.length),num(sum(rs,"tons"),2)+" طن",v?money(v):"—"]);});
+  {const MZ=T.MZ;const cr=[...groupBy(d.C,r=>r.supplier||"غير محدد")].filter(([k,rs])=>sum(rs,"tons")>0).map(([k,rs])=>{const v=rs.reduce((a,r)=>a+(r.rval||(r.tons||0)*(r.price||0)),0);return tr([esc(k),num(rs.length),num(sum(rs,"tons"),2)+" طن",v?money(v):"—"]);});
    const mr=[...groupBy(MZ,r=>r.type)].sort((a,b)=>b[1].length-a[1].length).map(([k,rs])=>tr([esc(k),num(rs.length),esc([...new Set(rs.map(r=>r.source))].slice(0,3).join("، ")),money(sum(rs,"total"))]));
    const rows_=[...(cr.length?[gtr("الأسمنت (حسب المورد)",4),...cr]:[]),...(mr.length?[gtr("المواد الخام الواردة لزحل (حسب النوع)",4),...mr]:[])];
-   add(0,"الأسمنت والمواد الواردة اليوم",["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.filter(r=>r.tons>0).length+MZ.length),T.crec?`${num(T.crec,2)} طن أسمنت`:"",money(T.matT+d.C.reduce((a,r)=>a+(r.tons||0)*(r.price||0),0))],"total"):"");}
+   add(0,"الأسمنت والمواد الواردة اليوم",["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.filter(r=>r.tons>0).length+MZ.length),T.crec?`${num(T.crec,2)} طن أسمنت`:"",money(T.matT+d.C.reduce((a,r)=>a+(r.rval||(r.tons||0)*(r.price||0)),0))],"total"):"");}
   // الصفحة 3: المحروقات
   {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const lit=rs=>sum(rs.filter(r=>r.liters),"liters");
    const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...gM.keys()].sort((a,b)=>sum(gM.get(b),"value")-sum(gM.get(a),"value"));
