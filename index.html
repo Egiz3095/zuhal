@@ -894,6 +894,26 @@ bdi{unicode-bidi:isolate}
   .z-db3 .z-db{padding:1.4mm 1mm!important}
   .z-db3 .z-db-v{font-size:10pt!important}.z-db3 .z-db-v small{font-size:6pt!important}
   .z-db3 .z-db-l{font-size:6.6pt!important}.z-db3 .z-db-s{font-size:5.6pt!important}}
+/* ================= شكل أ: شريط عنوان كحلي لأقسام التقرير اليومي ================= */
+#reportBody:has(.z-dboxes){counter-reset:dsec}
+.z-daily-grid .report-card{counter-increment:dsec;border:1px solid #d9e0ea;border-radius:12px;overflow:hidden;background:var(--surface)}
+.z-daily-grid .report-card h3{display:flex;align-items:center;gap:10px;background:#13296a!important;color:#fff!important;border:0!important;border-bottom:3px solid #d6a84b!important;padding:9px 14px!important;margin:0!important;font-size:14px}
+.z-daily-grid .report-card h3::before{content:counter(dsec,decimal-leading-zero)!important;display:inline-grid;place-items:center;min-width:28px;height:22px;padding:0 6px;border-radius:6px;background:#d6a84b!important;color:#13296a!important;font-weight:800;font-size:12px}
+.z-daily-grid .report-table th{background:#f4f6fa;color:#5d6980}
+.z-daily-grid .report-table tbody tr:nth-child(even) td{background:#f8fafc}
+.z-daily-grid .report-table tr.total td{border-top:1.5px solid #9aa6b8}
+@media print{
+  .z-daily-grid .report-card{border:0.3mm solid #d9e0ea!important;border-radius:2.5mm!important;overflow:hidden!important;background:#fff!important;margin-bottom:4mm!important}
+  .z-daily-grid .report-card h3{background:#13296a!important;color:#fff!important;border-bottom:0.8mm solid #d6a84b!important;padding:1.6mm 3mm!important;margin:0!important;font-size:9.5pt!important;gap:2.5mm!important}
+  .z-daily-grid .report-card h3::before{content:counter(dsec,decimal-leading-zero)!important;background:#d6a84b!important;color:#13296a!important;min-width:6mm!important;height:4.6mm!important;border-radius:1.2mm!important;font-size:7.5pt!important;font-weight:800}
+  .z-daily-grid .report-table th{background:#f4f6fa!important;color:#5d6980!important;border-bottom:0.3mm solid #c9d2df!important}
+  .z-daily-grid .report-table tbody tr:nth-child(even):not(.z-grp):not(.total) td{background:#f8fafc!important}
+  .z-daily-grid .report-table tr.total td{border-top:0.4mm solid #9aa6b8!important;background:#eef2f7!important}
+  .z-daily-grid .report-card .z-dnote{padding:1.2mm 3mm!important}
+  .z-dsum .report-table tr.z-grp td{background:#e9eef7!important;color:#13296a!important;border-inline-start:1mm solid #d6a84b!important}
+}
+.z-dsum .report-table tr.z-grp td{background:#e9eef7;color:#13296a}
+.z-daily-grid .report-card .z-dnote{padding:8px 14px}
 </style>
 </head>
 <body>
@@ -1765,7 +1785,7 @@ function dailyReport(){
   {const MZ=T.MZ;const cr=[...groupBy(d.C,r=>r.supplier||"غير محدد")].map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"tons"),2)+" طن","—"]));
    const mr=[...groupBy(MZ,r=>r.type)].sort((a,b)=>b[1].length-a[1].length).map(([k,rs])=>tr([esc(k),num(rs.length),esc([...new Set(rs.map(r=>r.source))].slice(0,3).join("، ")),money(sum(rs,"total"))]));
    const rows_=[...(cr.length?[gtr("الأسمنت (حسب المورد)",4),...cr]:[]),...(mr.length?[gtr("المواد الخام الواردة لزحل (حسب النوع)",4),...mr]:[])];
-   add(0,"الأسمنت والمواد الواردة اليوم",["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.length+MZ.length),`${num(T.crec,2)} طن أسمنت`,money(T.matT)],"total"):"");}
+   add(0,"الأسمنت والمواد الواردة اليوم",["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.length+MZ.length),T.crec?`${num(T.crec,2)} طن أسمنت`:"",money(T.matT)],"total"):"");}
   // الصفحة 3: المحروقات والمصروفات
   {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const oth=d.F.filter(r=>!/خلاطة/.test(r.center));
    add(1,"محروقات المعدات الأخرى (قبل الضريبة)",["المعدة","التعبئات","اللترات","القيمة ر.س"],[...groupBy(oth,r=>cc(r.center))].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs.filter(r=>r.liters),"liters")),money(exV(sum(rs,"value")))])),tr(["الإجمالي",num(oth.length),num(sum(oth.filter(r=>r.liters),"liters")),money(exV(sum(oth,"value")))],"total"));}
