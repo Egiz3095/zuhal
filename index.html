@@ -964,6 +964,16 @@ bdi{unicode-bidi:isolate}
 .report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child,.report-table.z-cmp6 thead th:last-child{text-align:center!important}
 @media print{.report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child{text-align:center!important}}
 .report-table.z-cmp6 tbody tr:not(.z-grp) td:nth-child(5),.report-table.z-cmp6 tbody tr:not(.z-grp) td:nth-child(6){background:transparent!important}
+/* الملخص يملأ باقي الصفحة الأولى في الطباعة */
+@media print{
+  .z-daily-grid .report-card.z-dsum{height:196mm!important;display:flex!important;flex-direction:column!important;break-inside:avoid!important}
+  .z-dsum .report-table-wrap{flex:1 1 auto!important;display:flex!important}
+  .z-dsum .report-table.z-cmp6{height:100%!important}
+  .z-dsum .report-table.z-cmp6 td{font-size:9pt!important;padding-top:0!important;padding-bottom:0!important}
+  .z-dsum .report-table.z-cmp6 tr.z-grp td{font-size:9.5pt!important}
+  .z-dsum .report-table.z-cmp6 th{font-size:8pt!important;padding:2mm 1.5mm!important}
+  .z-dsum .z-chips{padding:2mm 3mm!important}
+}
 </style>
 </head>
 <body>
