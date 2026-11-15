@@ -1758,13 +1758,11 @@ function dailyReport(){
   const mny=(label,f,cls)=>R(label,"ر.س",money(f(T)),money(f(M)),0,cls);
   const per=(o,v)=>o.qty?v/o.qty:0;
   let rows=G("الإنتاج")+r("الإنتاج","م³",o=>o.qty,1)+r("عدد النقلات","",o=>o.trips,0)+r("متوسط حمولة النقلة","م³",o=>o.avg,2)+r("أيام التشغيل","",o=>o.days,0)+
-    G("الأسمنت")+r("الأسمنت المستلم","طن",o=>o.crec,1)+r("عدد الحمولات","",o=>o.crecN,0)+r("المستهلك حسب الخلطة","طن",o=>o.ccon,1)+r("الفرق (مستلم − مستهلك)","طن",o=>o.cdiff,1)+
+    G("الأسمنت")+r("الأسمنت المستلم","طن",o=>o.crec,1)+r("عدد الحمولات","",o=>o.crecN,0)+r("المستهلك حسب الخلطة","طن",o=>o.ccon,1)+r("الفرق (مستلم − مستهلك)","طن",o=>o.cdiff,1)+r("الأسمنت المستهلك / م³","طن",o=>per(o,o.ccon),3)+
     G("المواد الخام الواردة لزحل")+["بطحى لزحل","بحص 3-4 بوصة","بحص 3-8 بوصة","أخرى"].filter(k=>M.mat[k]).map(k=>r(k==="أخرى"?"مواد أخرى":k,"حمولة",o=>o.mat[k],0)).join("")+
       r("إجمالي الحمولات","حمولة",o=>o.matLoads,0,"z-sub-t")+mny("قيمة المواد (سعر المصدر)",o=>o.matPrice)+mny("النقل والإكراميات",o=>o.matTrans+o.matTip)+mny("إجمالي تكلفة المواد",o=>o.matT,"z-sub-t")+
     G("المحروقات (قبل الضريبة)")+mny("قيمة المحروقات",o=>o.fuel)+r("اللترات المسجلة","لتر",o=>o.liters,0)+r("عدد التعبئات","",o=>o.fuelN,0)+
-    G(`الوايت ${WATER_TRUCK}`)+r("عدد الردود","",o=>o.wtrips,0)+r("عدد الأذونات","",o=>o.wperm,0)+
-    G("تكلفة المتر المكعب (ر.س / م³)")+mny("المحروقات / م³",o=>per(o,o.fuel))+mny("المواد الخام / م³",o=>per(o,o.matT))+
-      mny("إجمالي (محروقات + مواد) / م³",o=>per(o,o.fuel+o.matT),"total")+r("الأسمنت المستهلك / م³","طن",o=>per(o,o.ccon),3);
+    G(`الوايت ${WATER_TRUCK}`)+r("عدد الردود","",o=>o.wtrips,0)+r("عدد الأذونات","",o=>o.wperm,0);
   h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-cmp"><colgroup><col style="width:46%"><col style="width:27%"><col style="width:27%"></colgroup><thead><tr><th class="z-lbl">البند</th><th>اليوم</th><th class="z-sep">الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div class="z-dnote">آخر تاريخ مسجّل — الإنتاج: ${lastOf(DB.P)} • الأسمنت: ${lastOf(DB.C)} • المحروقات: ${lastOf(DB.F)} • الوايت: ${lastOf(DB.W)} • المواد: ${lastOf(DB.M||[])}</div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
