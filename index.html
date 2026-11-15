@@ -1116,6 +1116,15 @@ bdi{unicode-bidi:isolate}
 #reportBody{counter-reset:dsec}
 .report-grid.z-daily-grid{counter-reset:none!important}
 @media print{#reportBody{counter-reset:dsec!important}.report-grid.z-daily-grid{counter-reset:none!important}}
+/* توحيد الألوان: كحلي وذهبي أساس، والأحمر للمشاكل فقط */
+.z-simple td.z-sl .z-db-ic{--c:#13296a!important;background:#f6ecd6!important;color:#13296a!important}
+.z-ss b.z-pos{color:#13296a!important}
+.z-bar{background:linear-gradient(to left,rgba(19,41,106,.16) var(--w),transparent var(--w))!important}
+@media print{
+  .z-simple td.z-sl .z-db-ic{background:#f6ecd6!important;color:#13296a!important}
+  .z-ss b.z-pos{color:#13296a!important}
+  .z-bar{background:linear-gradient(to left,rgba(19,41,106,.16) var(--w),transparent var(--w))!important}
+}
 </style>
 </head>
 <body>
@@ -1927,7 +1936,7 @@ function printStamp(){const nw=new Date();return `تاريخ الطباعة: ${f
 function fillCover(title,period,items){const c=document.querySelector(".z-cover");if(!c)return;
   {const dy=c.querySelector(".z-cv-day");if(CUR==="daily"){const t=toDate(RS.day||dKey(DB.maxD));const g=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(t);let hj="";try{hj=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"}).format(t);}catch(e){}
      c.querySelector(".z-cv-dayg").textContent=g;c.querySelector(".z-cv-dayh").textContent=hj;dy.style.display="";}else dy.style.display="none";
-   const n=document.querySelectorAll("#reportBody .report-card > h3").length;c.querySelector(".z-cv-doc").textContent=`النسخة 1.0${n?` • ${n} أقسام`:""}`;
+   const n=document.querySelectorAll("#reportBody .report-card > h3").length;c.querySelector(".z-cv-doc").textContent=`النسخة 1.0${n?` • ${arN(n,"قسم")}`:""}`;
    c.querySelector(".z-cv-by2").textContent=PREPARED_BY;
    const ci=COMPANY_INFO,parts=[ci.unified&&`الرقم الموحد: ${ci.unified}`,ci.cr&&`س.ت: ${ci.cr}`,ci.address,ci.phone&&`هاتف: ${ci.phone}`,ci.email].filter(Boolean);const co=c.querySelector(".z-cv-coinfo");co.textContent=parts.join("  •  ");co.style.display=parts.length?"":"none";}
   c.querySelector(".z-cv-title").textContent=title;c.querySelector(".z-cv-period").textContent=period;
@@ -1953,6 +1962,9 @@ function dailyMetrics(from,to){const d=filt({from,to});
 function dailyCtx(){const k=RS.day||dKey(DB.maxD);const t=toDate(k);const pd=sameDayPrevMonth(t);
   return {k,t,pd,T:dailyMetrics(k,k),PD:dailyMetrics(dKey(pd),dKey(pd)),M:dailyMetrics(k.slice(0,8)+"01",k),PM:dailyMetrics(dKey(new Date(pd.getFullYear(),pd.getMonth(),1)),dKey(pd))};}
 function chgTxt(a,b){if(!b)return a?"جديد":"—";const c=(a-b)/b;return (c>=0?"+":"−")+Math.abs(c*100).toFixed(1)+"%";}
+const ARW={"نقلة":["نقلة","نقلتان","نقلات"],"حمولة":["حمولة","حمولتان","حمولات"],"تعبئة":["تعبئة","تعبئتان","تعبئات"],"رد":["رد","ردّان","ردود"],"لتر":["لتر","لتران","لترات"],"قسم":["قسم","قسمان","أقسام"],"يوم":["يوم","يومان","أيام"]};
+function arW(n,k){const f=ARW[k];if(!f)return k;const r=Math.round(n)%100;return n===2?f[1]:(r>=3&&r<=10&&Math.round(n)===n)?f[2]:f[0];}
+function arN(n,k){const f=ARW[k];if(!f)return `${num(n)} ${k}`;if(n===1)return `${f[0]} ${/ة$/.test(f[0])?"واحدة":"واحد"}`;if(n===2)return f[1];return `${num(n)} ${arW(n,k)}`;}
 const DOW=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const ZIC={"prod": "<path d=\"M3 21h18M5 21V10l7-5 7 5v11\"/><path d=\"M9 21v-6h6v6\"/>", "cem": "<path d=\"M4 7h16l-2 13H6z\"/><path d=\"M8 7V4h8v3\"/>", "mat": "<path d=\"M3 17l5-9 4 6 3-4 6 7z\"/>", "fuel": "<path d=\"M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16\"/><path d=\"M5 11h10M15 8h2a2 2 0 0 1 2 2v6a2 2 0 0 0 2 2\"/>", "cal": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "cost": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15 9.5a3 3 0 0 0-3-1.5c-1.7 0-3 .9-3 2s1.3 1.7 3 2 3 .9 3 2-1.3 2-3 2a3 3 0 0 1-3-1.5M12 6v2M12 16v2\"/>", "bal": "<path d=\"M12 3v18M5 7h14M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z\"/>", "exp": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>"};
 function dailyReport(){
@@ -1972,11 +1984,11 @@ function dailyReport(){
   const row=(ic,label,a,c)=>`<tr><td class="z-sl"><span class="z-db-ic z-db-${ic}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic==="bal"?"cem":ic]}</svg></span>${label}</td>${a}${c}</tr>`;
   const sgn=v=>`<bdi dir="ltr">${v>0?"+":v<0?"−":""}${num(Math.abs(v),1)}</bdi>`;
   const rows=
-    row("prod","الإنتاج",cell(num(T.qty,1),"م³",`${num(T.trips)} نقلة • متوسط ${num(T.avg,2)} م³`),cell(num(M.qty,1),"م³",`${num(M.trips)} نقلة • متوسط ${num(M.days?M.qty/M.days:0,1)} م³/يوم`))+
+    row("prod","الإنتاج",cell(num(T.qty,1),"م³",`${arN(T.trips,"نقلة")} • متوسط ${num(T.avg,2)} م³`),cell(num(M.qty,1),"م³",`${arN(M.trips,"نقلة")} • متوسط ${num(M.days?M.qty/M.days:0,1)} م³/يوم`))+
     row("cem","الأسمنت",cell(`<small>مستلم</small> ${num(T.crec,1)}`,"طن",`مستهلك ${num(T.ccon,1)} طن`),cell(`<small>مستلم</small> ${num(M.crec,1)}`,"طن",`مستهلك ${num(M.ccon,1)} • رصيد <b class="${M.cdiff<0?"z-neg":"z-pos"}">${sgn(M.cdiff)}</b> طن`))+
-    row("mat","المواد الخام",cell(num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),"حمولة",`تكلفة ${money(M.matT)} ر.س`))+
-    row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} لتر • ${num(T.fuelN)} تعبئة`),cell(money(M.fuel),"ر.س",`${num(M.liters)} لتر • ${num(M.fuelN)} تعبئة`))+
-    row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),"رد",wPl(T)),cell(num(M.wtrips),"رد",wPl(M)));
+    row("mat","المواد الخام",cell(num(T.matLoads),arW(T.matLoads,"حمولة"),`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),arW(M.matLoads,"حمولة"),`تكلفة ${money(M.matT)} ر.س`))+
+    row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} ${arW(T.liters,"لتر")} • ${arN(T.fuelN,"تعبئة")}`),cell(money(M.fuel),"ر.س",`${num(M.liters)} ${arW(M.liters,"لتر")} • ${arN(M.fuelN,"تعبئة")}`))+
+    row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),arW(T.wtrips,"رد"),wPl(T)),cell(num(M.wtrips),arW(M.wtrips,"رد"),wPl(M)));
   h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
@@ -2372,8 +2384,10 @@ function showHelp(){modal("اختصارات لوحة المفاتيح",`<table c
 
 document.querySelectorAll(".report-list > *").forEach((el,i)=>el.style.setProperty("order",String(i),"important"));
 function fillFoot(){const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";const r=document.querySelector(".z-pf-rep");if(r)r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t;const m=document.querySelector(".z-pf-meta");if(m){const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;}}
-addEventListener("beforeprint",()=>{fillFoot();const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
+let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
+
+addEventListener("afterprint",()=>{if(_docTitle)document.title=_docTitle;});
 
 </script>
 </body>
