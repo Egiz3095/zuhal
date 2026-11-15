@@ -1070,6 +1070,18 @@ bdi{unicode-bidi:isolate}
   .z-p1 .report-table thead th{height:10.7mm!important;vertical-align:middle!important}
   .z-dpage .report-table thead th{height:8.4mm!important;vertical-align:middle!important}
 }
+/* خطوط عمودية بين الأعمدة في جداول التقرير اليومي */
+.z-daily-grid .report-table td,.z-daily-grid .report-table th{border-inline-start:1px solid #dde3ec!important}
+.z-daily-grid .report-table td:first-child,.z-daily-grid .report-table th:first-child{border-inline-start:0!important}
+.z-daily-grid .report-table thead th{border-inline-start-color:rgba(255,255,255,.22)!important}
+.z-daily-grid .report-table tr.z-grp td{border-inline-start:0!important}
+@media print{
+  .z-daily-grid .report-table td,.z-daily-grid .report-table th{border-inline-start:0.25mm solid #d3dae5!important}
+  .z-daily-grid .report-table td:first-child,.z-daily-grid .report-table th:first-child{border-inline-start:0!important}
+  .z-daily-grid .report-table thead th{border-inline-start:0.25mm solid rgba(255,255,255,.3)!important}
+  .z-daily-grid .report-table thead th:first-child{border-inline-start:0!important}
+  .z-daily-grid .report-table tr.z-grp td{border-inline-start:0!important}
+}
 </style>
 </head>
 <body>
