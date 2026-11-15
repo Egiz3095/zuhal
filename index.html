@@ -762,6 +762,10 @@ bdi{unicode-bidi:isolate}
 .z-mini-cmp .z-cmp td.z-lbl{white-space:normal}
 @media print{.report-grid.z-sum-grid{margin-bottom:5mm!important}.z-mini-cmp .report-card,.z-mini-cmp{break-inside:avoid}}
 @media print{#reportBody{counter-reset:psec}.report-grid.z-daily-grid{counter-reset:none!important}}
+/* كل جدول بعرض الصفحة في التقرير اليومي */
+.z-daily-grid{grid-template-columns:1fr!important}
+.z-daily-grid .report-table td:first-child,.z-daily-grid .report-table th:first-child{width:auto}
+@media print{.report-grid.z-daily-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
