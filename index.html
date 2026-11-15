@@ -589,6 +589,19 @@ bdi{unicode-bidi:isolate}
   .z-empty{break-inside:avoid;padding:5mm!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;box-shadow:none!important;text-shadow:none!important}
 }
+/* رأس التقرير المطبوع: خلفية كحلية ونصوص بيضاء */
+@media print{
+  .z-print-head{background:linear-gradient(120deg,#08112a 0%,#0f1f4a 60%,#13296a 100%)!important;border-radius:2.5mm;overflow:hidden;border-bottom:1.2mm solid #d6a84b;margin-bottom:5mm}
+  .z-ph-top{padding:3.5mm 5mm 3mm!important;border-bottom:0.3mm solid rgba(255,255,255,.14)}
+  .z-ph-top img{border-radius:1.5mm}
+  .z-ph-co b{color:#fff!important}
+  .z-ph-co span{color:#d6deef!important}
+  .z-ph-co small{color:#9fb0d4!important}
+  .z-ph-meta{color:#d6deef!important}
+  .z-ph-band{background:transparent!important;border-bottom:0!important;border-radius:0!important;padding:3mm 5mm 3.5mm!important}
+  .z-ph-band h1{color:#fff!important}
+  .z-ph-period{color:#f0cf86!important}
+}
 </style>
 </head>
 <body>
