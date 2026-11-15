@@ -1034,6 +1034,23 @@ bdi{unicode-bidi:isolate}
   .z-p1{margin-top:0!important}
 }
 .z-simple td.z-sc{padding:6px 12px!important}
+/* جداول الصفحة الثانية تملأ الصفحة */
+@media print{
+  .report-grid.z-daily-grid.z-dpage{display:flex!important;flex-direction:column!important;min-height:247mm!important}
+  .z-dpage>.report-card{flex:var(--fg,1) 1 auto!important;display:flex!important;flex-direction:column!important;margin-bottom:3mm!important}
+  .z-dpage>.report-card:last-child{margin-bottom:0!important}
+  .z-dpage>.report-card>.report-table-wrap{flex:1 1 auto!important;display:flex!important}
+  .z-dpage>.report-card .report-table{height:100%!important}
+  .z-dpage .report-table td{font-size:8.6pt!important}
+  .z-dpage .report-table th{font-size:7.8pt!important}
+}
+@media print{
+  .report-grid.z-daily-grid.z-dpage{height:247mm!important;min-height:0!important}
+  .z-dpage>.report-card{min-height:0!important;overflow:hidden!important}
+  .z-dpage>.report-card>.report-table-wrap{display:block!important;flex:1 1 0!important;min-height:0!important}
+  .z-dpage>.report-card .report-table{height:100%!important}
+}
+@media print{.z-dpage>.report-card{overflow:visible!important}}
 </style>
 </head>
 <body>
@@ -1901,7 +1918,7 @@ function dailyReport(){
    const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
    add(0,"محروقات المعدات (قبل الضريبة)",["المعدة","تعبئات اليوم","لترات اليوم","قيمة اليوم ر.س","تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
-  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage">${pg.join("")}</div>`;}});
+  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`;
   return h;
 }
