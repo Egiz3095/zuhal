@@ -1408,7 +1408,7 @@ const SHEETS = {
 const NEAR_DAYS = 30;
 const PREPARED_BY = "أ. محمد فوزي";  // اسم مُعدّ التقرير في ورقة الغلاف               // مستند «قارب على الانتهاء» خلال هذه المدة
 /* بيانات الشركة في أسفل الغلاف — اتركها فاضية لإخفائها */
-const COMPANY_INFO={cr:"",address:"بلجرشي – حي النور – طريق الملك عبدالعزيز",phone:"",email:"info@alassaf.com"};
+const COMPANY_INFO={unified:"7011729733",cr:"",address:"بلجرشي – حي النور – طريق الملك عبدالعزيز",phone:"",email:"info@alassaf.com"};
 const CACHE_KEY = "zahal_dashboard_v1";
 const CACHE_MAX_AGE = 30*60*1000;
 
@@ -1913,7 +1913,7 @@ function fillCover(title,period,items){const c=document.querySelector(".z-cover"
      c.querySelector(".z-cv-dayg").textContent=g;c.querySelector(".z-cv-dayh").textContent=hj;dy.style.display="";}else dy.style.display="none";
    const n=document.querySelectorAll("#reportBody .report-card > h3").length;c.querySelector(".z-cv-doc").textContent=`النسخة 1.0${n?` • ${n} أقسام`:""}`;
    c.querySelector(".z-cv-by2").textContent=PREPARED_BY;
-   const ci=COMPANY_INFO,parts=[ci.cr&&`س.ت: ${ci.cr}`,ci.address,ci.phone&&`هاتف: ${ci.phone}`,ci.email].filter(Boolean);const co=c.querySelector(".z-cv-coinfo");co.textContent=parts.join("  •  ");co.style.display=parts.length?"":"none";}
+   const ci=COMPANY_INFO,parts=[ci.unified&&`الرقم الموحد: ${ci.unified}`,ci.cr&&`س.ت: ${ci.cr}`,ci.address,ci.phone&&`هاتف: ${ci.phone}`,ci.email].filter(Boolean);const co=c.querySelector(".z-cv-coinfo");co.textContent=parts.join("  •  ");co.style.display=parts.length?"":"none";}
   c.querySelector(".z-cv-title").textContent=title;c.querySelector(".z-cv-period").textContent=period;
   c.querySelector(".z-cv-toc").innerHTML=(items||[]).map(x=>`<li>${esc(x)}</li>`).join("");c.querySelector(".z-cv-tocwrap").style.display=(items&&items.length)?"":"none";
   c.querySelector(".z-cv-date").textContent=printStamp();
