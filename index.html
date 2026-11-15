@@ -627,6 +627,21 @@ bdi{unicode-bidi:isolate}
   .z-cv-toc li{break-inside:avoid}
   .z-cv-foot{display:flex;justify-content:space-between;font-size:9pt;color:#c9d4ee;border-top:.3mm solid rgba(255,255,255,.15);padding-top:3mm}
 }
+/* الغلاف بخلفية بيضاء */
+@media print{
+  .z-cover{background:#fff!important;color:#0f1a33!important;border:.4mm solid #d9e0ea;border-top:2.2mm solid #0f1a33}
+  .z-cover::after{height:1.6mm}
+  .z-cv-kicker{color:#a87a22!important}
+  .z-cv-logo{box-shadow:0 2mm 6mm rgba(15,26,51,.18)!important}
+  .z-cv-co b{color:#0f1a33!important}
+  .z-cv-co span{color:#5d6980!important}
+  .z-cv-title{color:#0f1a33!important}
+  .z-cv-period{color:#8a5f12!important;background:#fbf3df!important;border-color:#e3c27a!important}
+  .z-cv-tocwrap{background:#f6f8fb!important;border-color:#d9e0ea!important}
+  .z-cv-toch{color:#1d4fd6!important}
+  .z-cv-toc{color:#2b3a55!important}
+  .z-cv-foot{color:#5d6980!important;border-top-color:#d9e0ea!important}
+}
 </style>
 </head>
 <body>
