@@ -1116,16 +1116,6 @@ bdi{unicode-bidi:isolate}
 #reportBody{counter-reset:dsec}
 .report-grid.z-daily-grid{counter-reset:none!important}
 @media print{#reportBody{counter-reset:dsec!important}.report-grid.z-daily-grid{counter-reset:none!important}}
-/* الصفحة الأولى: الملخص + الخلاطات يملآن الصفحة */
-@media print{
-  .z-pg1{display:flex!important;flex-direction:column!important;height:247mm!important}
-  .z-pg1>.z-sum-grid{flex:0 0 auto!important;margin-bottom:3mm!important}
-  .z-pg1>.z-p1{flex:1 1 0!important;display:flex!important;flex-direction:column!important;min-height:0!important;margin:0!important}
-  .z-pg1>.z-p1>.report-card{flex:1 1 0!important;display:flex!important;flex-direction:column!important;min-height:0!important;margin:0!important}
-  .z-pg1>.z-p1>.report-card>.report-table-wrap{flex:1 1 0!important;display:block!important;min-height:0!important}
-  .z-pg1>.z-p1 .report-table{height:100%!important}
-  .z-pg1>.z-p1 .report-table td{font-size:9pt!important}
-}
 </style>
 </head>
 <body>
@@ -1987,7 +1977,7 @@ function dailyReport(){
     row("mat","المواد الخام",cell(num(T.matLoads),"حمولة",`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),"حمولة",`تكلفة ${money(M.matT)} ر.س`))+
     row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} لتر • ${num(T.fuelN)} تعبئة`),cell(money(M.fuel),"ر.س",`${num(M.liters)} لتر • ${num(M.fuelN)} تعبئة`))+
     row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),"رد",wPl(T)),cell(num(M.wtrips),"رد",wPl(M)));
-  h+=`<div class="z-pg1"><div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
+  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
   const p1=[];const add=(pg,title,head,rows,total)=>{if(!rows.length){empty.push(title);return;}(pg<0?p1:pages[pg]).push(card(title,table(head,rows,total),true));};
@@ -2011,7 +2001,6 @@ function dailyReport(){
    const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
    add(0,"محروقات المعدات (قبل الضريبة)",["المعدة","تعبئات اليوم","لترات اليوم","قيمة اليوم ر.س","تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
-  h+=`</div>`;
   const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`;
   return h;
