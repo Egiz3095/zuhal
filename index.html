@@ -1023,6 +1023,17 @@ bdi{unicode-bidi:isolate}
 /* رأس جدول الملخص المبسط: تظليل مختلف وحجم أكبر */
 .report-table.z-simple thead th{background:#f6ecd6!important;color:#13296a!important;font-size:15px!important;font-weight:800!important;padding:12px 10px!important;border-bottom:2px solid #d6a84b!important}
 @media print{.report-table.z-simple thead th{background:#f6ecd6!important;color:#13296a!important;font-size:11pt!important;font-weight:800!important;padding:3mm 2mm!important;border-bottom:0.6mm solid #d6a84b!important}}
+/* الملخص بارتفاع طبيعي + جدول الخلاطات في الصفحة الأولى */
+@media print{
+  .z-daily-grid .report-card.z-dsum2{height:auto!important;display:block!important}
+  .z-dsum2 .report-table-wrap{display:block!important}
+  .z-dsum2 .report-table.z-simple{height:auto!important}
+  .z-simple td.z-sc{padding:1.6mm 2mm!important}
+  .z-simple td.z-sl{padding-top:1.6mm!important;padding-bottom:1.6mm!important}
+  .z-sv{font-size:14pt!important}.z-ss{font-size:8pt!important;margin-top:0.4mm!important}
+  .z-p1{margin-top:0!important}
+}
+.z-simple td.z-sc{padding:6px 12px!important}
 </style>
 </head>
 <body>
@@ -1869,13 +1880,13 @@ function dailyReport(){
   h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص اليوم والشهر حتى اليوم</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>اليوم <bdi dir="ltr">${fmtDate(t)}</bdi></th><th>الشهر حتى اليوم</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
-  const add=(pg,title,head,rows,total)=>{if(!rows.length){empty.push(title);return;}pages[pg].push(card(title,table(head,rows,total),true));};
+  const p1=[];const add=(pg,title,head,rows,total)=>{if(!rows.length){empty.push(title);return;}(pg<0?p1:pages[pg]).push(card(title,table(head,rows,total),true));};
   const gtr=(x,n)=>`<tr class="z-grp"><td colspan="${n}">${x}</td></tr>`;
   // الصفحة 2: التشغيل
   const fuelOf=m=>{const k=dig(m);return k?exV(sum(d.F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")):0;};
   {const mr=mixerRows(d.P);const mxq=Math.max(0,...mr.map(x=>x.q));let tf=0,tc=0;const rows_=mr.map(x=>{const rs=d.P.filter(r=>r.mixer===x.m);const cem=sum(rs,"cement")/1000,f=fuelOf(x.m);tf+=f;tc+=cem;
       return tr([`<b>${esc(x.m)}</b>`,esc(x.drs),num(x.n),`<span class="z-bar" style="--w:${(x.q/(mxq||1)*100).toFixed(0)}%">${num(x.q,1)}</span>`,num(cem,2),f?money(f):"—",f&&x.q?money(f/x.q):"—"]);});
-   add(0,"الخلاطات: الإنتاج والأسمنت والديزل",["الخلاطة","السائق","النقلات","الإنتاج م³","الأسمنت طن","الديزل ر.س*","ديزل/م³"],rows_,tr(["الإجمالي","",num(d.P.length),num(T.qty,1),num(tc,2),money(tf),T.qty?money(tf/T.qty):"—"],"total"));}
+   add(-1,"الخلاطات: الإنتاج والأسمنت والديزل",["الخلاطة","السائق","النقلات","الإنتاج م³","الأسمنت طن","الديزل ر.س*","ديزل/م³"],rows_,tr(["الإجمالي","",num(d.P.length),num(T.qty,1),num(tc,2),money(tf),T.qty?money(tf/T.qty):"—"],"total"));}
   {const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
    const g1=[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const g2=[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty"));
    const rr=([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/q)]);
@@ -1889,8 +1900,9 @@ function dailyReport(){
    const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...gM.keys()].sort((a,b)=>sum(gM.get(b),"value")-sum(gM.get(a),"value"));
    const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
    add(0,"محروقات المعدات (قبل الضريبة)",["المعدة","تعبئات اليوم","لترات اليوم","قيمة اليوم ر.س","تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
+  if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
+  if(p1.length)h+=`<div class="z-dnote" style="margin-top:6px">* ديزل الخلاطة = تعبئات اليوم المسجلة على نفس رقم الخلاطة، قبل الضريبة.</div>`;
   const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage"><div class="z-dpt">${PT[i].replace(/\d/,pn+1)}</div>${pg.join("")}</div>`;}});
-  if(pages[0].length)h+=`<div class="z-dnote" style="margin-top:6px">* ديزل الخلاطة = تعبئات اليوم المسجلة على نفس رقم الخلاطة، قبل الضريبة.</div>`;
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`;
   return h;
 }
