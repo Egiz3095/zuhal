@@ -974,6 +974,13 @@ bdi{unicode-bidi:isolate}
   .z-dsum .report-table.z-cmp6 th{font-size:8pt!important;padding:2mm 1.5mm!important}
   .z-dsum .z-chips{padding:2mm 3mm!important}
 }
+@media print{
+  .z-dpage .report-table td{padding:0.55mm 2mm!important;font-size:7.6pt!important;line-height:1.25!important}
+  .z-dpage .report-table th{padding:0.9mm 1.5mm!important;font-size:7pt!important;line-height:1.2!important}
+  .z-dpage .report-card{margin-bottom:2.5mm!important}
+  .z-dpage .report-card h3{padding:1.1mm 3mm!important;font-size:8.8pt!important}
+  .z-dpage>.z-dpt{margin-bottom:1.5mm!important}
+}
 </style>
 </head>
 <body>
@@ -1842,8 +1849,10 @@ function dailyReport(){
    const rows_=[...(cr.length?[gtr("الأسمنت (حسب المورد)",4),...cr]:[]),...(mr.length?[gtr("المواد الخام الواردة لزحل (حسب النوع)",4),...mr]:[])];
    add(0,"الأسمنت والمواد الواردة اليوم",["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.filter(r=>r.tons>0).length+MZ.length),T.crec?`${num(T.crec,2)} طن أسمنت`:"",money(T.matT)],"total"):"");}
   // الصفحة 3: المحروقات
-  {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const oth=d.F.filter(r=>!/خلاطة/.test(r.center));
-   add(0,"محروقات المعدات الأخرى (قبل الضريبة)",["المعدة","التعبئات","اللترات","القيمة ر.س"],[...groupBy(oth,r=>cc(r.center))].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs.filter(r=>r.liters),"liters")),money(exV(sum(rs,"value")))])),tr(["الإجمالي",num(oth.length),num(sum(oth.filter(r=>r.liters),"liters")),money(exV(sum(oth,"value")))],"total"));}
+  {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const lit=rs=>sum(rs.filter(r=>r.liters),"liters");
+   const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...gM.keys()].sort((a,b)=>sum(gM.get(b),"value")-sum(gM.get(a),"value"));
+   const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))]);});
+   add(0,"محروقات المعدات (قبل الضريبة)",["المعدة","تعبئات اليوم","لترات اليوم","قيمة اليوم ر.س","تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage"><div class="z-dpt">${PT[i].replace(/\d/,pn+1)}</div>${pg.join("")}</div>`;}});
   if(pages[0].length)h+=`<div class="z-dnote" style="margin-top:6px">* ديزل الخلاطة = تعبئات اليوم المسجلة على نفس رقم الخلاطة، قبل الضريبة.</div>`;
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة في هذا اليوم في: <b>${empty.map(esc).join("، ")}</b></div>`;
