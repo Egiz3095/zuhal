@@ -1054,6 +1054,16 @@ bdi{unicode-bidi:isolate}
 .report-table.z-simple thead th{background:#dfe8f7!important;color:#13296a!important;text-align:center!important;border-bottom:2px solid #13296a!important}
 @media print{.report-table.z-simple thead th{background:#dfe8f7!important;text-align:center!important;border-bottom:0.6mm solid #13296a!important}}
 .report-table.z-simple thead th.z-sl,.report-table.z-simple thead th:first-child{text-align:center!important}@media print{.report-table.z-simple thead th:first-child{text-align:center!important}}
+/* عناوين الأقسام: لسان بخلفية ذهبية فاتحة بعرض 40% — ورؤوس الجداول كحلية بشريط ذهبي */
+.z-daily-grid .report-card h3{width:40%;min-width:260px;box-sizing:border-box;background:#f6ecd6!important;color:#13296a!important;border-bottom:0!important;border-end-end-radius:12px;border-inline-end:0!important}
+.z-daily-grid .report-card h3::before{background:#13296a!important;color:#f0cf86!important}
+.z-daily-grid .report-table thead th,.report-table.z-simple thead th{background:#13296a!important;color:#fff!important;border-bottom:3px solid #d6a84b!important}
+.z-daily-grid .report-table thead th small{color:#d6deef!important}
+@media print{
+  .z-daily-grid .report-card h3{width:40%!important;background:#f6ecd6!important;color:#13296a!important;border-bottom:0!important;border-end-end-radius:2.5mm!important}
+  .z-daily-grid .report-card h3::before{background:#13296a!important;color:#f0cf86!important}
+  .z-daily-grid .report-table thead th,.report-table.z-simple thead th{background:#13296a!important;color:#fff!important;border-bottom:0.8mm solid #d6a84b!important}
+}
 </style>
 </head>
 <body>
