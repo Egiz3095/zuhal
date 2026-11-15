@@ -946,6 +946,23 @@ bdi{unicode-bidi:isolate}
 @media print{.z-dsum .report-table.z-cmp6 tr.z-grp td{border-inline-start:0!important}
   .z-dsum .report-table.z-cmp6 tr.z-grp td:first-child{border-inline-start:1mm solid #d6a84b!important}
   .z-dsum .report-table.z-cmp6 tr.z-grp td{background:#e9eef7!important;color:#13296a!important}}
+/* فصل الأرقام: توسيط داخل كل عمود + فواصل عمودية خفيفة */
+.z-cmp6 td.z-n,.z-cmp6 th:nth-child(n+2){text-align:center!important;padding-inline:10px!important}
+.z-cmp6 td,.z-cmp6 th{border-inline-start:1px solid #e3e8f0}
+.z-cmp6 td:first-child,.z-cmp6 th:first-child{border-inline-start:0}
+.z-cmp6 td.z-sep,.z-cmp6 th.z-sep{border-inline-start:1px solid #e3e8f0!important}
+.z-cmp6 td:nth-child(5),.z-cmp6 th:nth-child(5){border-inline-start:2px solid #c9d2df!important}
+.z-cmp6 tbody td:nth-child(5),.z-cmp6 tbody td:nth-child(6){background:#fafbfd}
+.z-cmp6 tr.z-grp td:nth-child(5),.z-cmp6 tr.z-grp td:nth-child(6){background:#e9eef7}
+@media print{
+  .z-cmp6 td.z-n,.z-cmp6 th:nth-child(n+2){text-align:center!important;padding-inline:1.5mm!important}
+  .z-cmp6 td,.z-cmp6 th{border-inline-start:0.2mm solid #e3e8f0!important}
+  .z-cmp6 td:first-child,.z-cmp6 th:first-child{border-inline-start:0!important}
+  .z-cmp6 td:nth-child(5),.z-cmp6 th:nth-child(5){border-inline-start:0.5mm solid #c9d2df!important}
+  .z-dsum .report-table.z-cmp6 tr.z-grp td:first-child{border-inline-start:1mm solid #d6a84b!important}
+}
+.report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child,.report-table.z-cmp6 thead th:last-child{text-align:center!important}
+@media print{.report-table.z-cmp6 tbody td.z-n,.report-table.z-cmp6 tbody td:last-child{text-align:center!important}}
 </style>
 </head>
 <body>
