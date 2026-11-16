@@ -1823,12 +1823,14 @@ function toolbar(kind){
   if(kind==="month")h+=`<label class="report-filter">الشهر<select id="rMonth">${months.map(m=>`<option value="${m}"${m===RS.month?" selected":""}>${mLabel(m)}</option>`).join("")}</select></label>`;
   if(kind==="day")h+=`<label class="report-filter"><span>&nbsp;</span><span class="z-daynav"><button type="button" id="rDayPrev">→ ${CUR==="weekly"?"الأسبوع السابق":"اليوم السابق"}</button><button type="button" id="rDayNext">${CUR==="weekly"?"الأسبوع التالي":"اليوم التالي"} ←</button></span></label>`;
   if(kind==="day")h+=`<label class="report-filter">${CUR==="weekly"?"أي يوم في الأسبوع":"اليوم"}<input type="date" id="rDay" value="${RS.day}" min="${dKey(DB.minD)}" max="${dKey(DB.maxD)}"></label>`;
+  if(kind==="docs")h+=brSelect(DB.V.map(v=>v.dept));
+  if(kind==="follow")h+=brSelect([...DB.V.map(v=>v.dept),...DB.G.map(g=>g.branch)]);
   if(kind==="docs")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label>`;
   if(kind==="range"&&CUR==="expenses"){const cs=[...new Set(DB.E.map(r=>r.cat))].sort((a,b)=>a.localeCompare(b,"ar"));h+=`<label class="report-filter">التصنيف<select id="rCat"><option value="">جميع التصنيفات</option>${cs.map(c=>`<option${RS.cat===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
   if(kind==="range"&&CUR==="equip"){const ts=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة").map(r=>r.etype))].sort((a,b)=>a.localeCompare(b,"ar"));const es=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة"&&(!RS.etype||r.etype===RS.etype)).map(r=>r.equip))].sort((a,b)=>a.localeCompare(b,"ar",{numeric:true}));
     h+=`<label class="report-filter">نوع المعدة<select id="rEtype"><option value="">جميع الأنواع</option>${ts.map(c=>`<option${RS.etype===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label><label class="report-filter">المعدة<select id="rEquip"><option value="">كل المعدات</option>${es.map(c=>`<option${RS.equip===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
   if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","بانتظار المعالجة"],["done","تمت معالجتها"],["all","الكل"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
-  if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label><label class="report-filter">الفرع<select id="rBranch"><option value="">جميع الفروع</option>${[...new Set(DB.G.map(g=>g.branch))].map(b=>`<option${RS.branch===b?" selected":""}>${esc(b)}</option>`).join("")}</select></label>`;
+  if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label>`+brSelect(DB.G.map(g=>g.branch));
   if(kind==="range"&&CUR==="water"){const trs=[...sumBy(DB.W,r=>r.truck,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).filter(Boolean);
     if(!Array.isArray(RS.wtr))RS.wtr=trs.includes(WATER_TRUCK)?[WATER_TRUCK]:[];const sel=RS.wtr.filter(x=>trs.includes(x));
     const lbl=sel.length?sel.join("، "):"كل الوايتات";
@@ -1836,7 +1838,7 @@ function toolbar(kind){
   h+=`<label class="report-filter"><span>&nbsp;</span><button type="button" id="rExcel" style="background:#1f9d68">تصدير Excel</button></label>`;
   $("reportToolbar").innerHTML=h;
   // التطبيق المباشر: أي تغيير في الفلاتر يحدّث التقرير فوراً دون زر
-  const MAP={rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch",rCat:"cat",rEtype:"etype",rEquip:"equip"};let tmr;
+  const MAP={rFrom:"from",rTo:"to",rMonth:"month",rDay:"day",rStatus:"status",rBranch:"branch",rBr:"br",rCat:"cat",rEtype:"etype",rEquip:"equip"};let tmr;
   const applyNow=()=>{clearTimeout(tmr);tmr=setTimeout(()=>{let ok=true;Object.keys(MAP).forEach(id=>{const e=$(id);if(!e)return;if(e.type==="date"&&e.value&&!/^\d{4}-\d{2}-\d{2}$/.test(e.value)){ok=false;return;}RS[MAP[id]]=e.value;});
     if(!ok)return;if(RS.from&&RS.to&&RS.from>RS.to){toast("تاريخ «من» بعد تاريخ «إلى»");return;}KEEP_TB=true;drawReport();KEEP_TB=false;},250);};
   Object.keys(MAP).forEach(id=>{const e=$(id);if(e){e.addEventListener("change",applyNow);if(e.type==="date")e.addEventListener("input",applyNow);}});
@@ -1919,16 +1921,16 @@ function drawReport(){
     card("حسب الوايت",table(["الوايت","المسؤول","الردود"],[...groupBy(d.W,r=>r.truck)].sort((a,b)=>sum(b[1],"trips")-sum(a[1],"trips")).map(([w,rs])=>tr([`<b>${esc(w)}</b>`,esc([...new Set(rs.map(r=>r.resp))].join("، ")),num(sum(rs,"trips"))]))))+
     card("حسب مكان التحميل",table(["المكان","الردود"],[...sumBy(d.W,r=>r.place,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(([c,v])=>tr([esc(c),num(v)]))))+
     card("شهرياً",table(["الشهر","الردود"],monthly(d).filter(([,v])=>v.water).map(([k,v])=>tr([mLabel(k),num(v.water)]))))+`</div>`;}
-  if(id==="veh"){const V=DB.V.filter(v=>!RS.status||Object.values(v.docs).some(s=>s.s===RS.status));
-    const cnt=s=>DB.V.reduce((a,v)=>a+Object.values(v.docs).filter(x=>x.s===s).length,0);
+  if(id==="veh"){const V=vF().filter(v=>!RS.status||Object.values(v.docs).some(s=>s.s===RS.status));
+    const cnt=s=>vF().reduce((a,v)=>a+Object.values(v.docs).filter(x=>x.s===s).length,0);
     const cell=s=>`${chip(s.s)}<div class="z-sub">${s.d?fmtDate(s.d):""}<span class="z-days">${s.days!=null?" • "+daysTxt(s):""}</span></div>`;
-    h=`<div class="report-note">الحالة محسوبة من التواريخ الميلادية مقارنة باليوم (${fmtDate(today())})، و«قارب على الانتهاء» = خلال ${NEAR_DAYS} يوماً.</div>
-    <div class="report-kpis">${kpi("عدد المركبات",num(DB.V.length))}${kpi("مستندات منتهية",num(cnt("expired")),"red")}${kpi("قاربت على الانتهاء",num(cnt("near")))}${kpi("سارية",num(cnt("valid")),"green")}</div>`+
+    h=`<div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — الحالة محسوبة من التواريخ الميلادية مقارنة باليوم (${fmtDate(today())})، و«قارب على الانتهاء» = خلال ${NEAR_DAYS} يوماً.</div>
+    <div class="report-kpis">${kpi("عدد المركبات",num(vF().length))}${kpi("مستندات منتهية",num(cnt("expired")),"red")}${kpi("قاربت على الانتهاء",num(cnt("near")))}${kpi("سارية",num(cnt("valid")),"green")}</div>`+
     card(`المركبات (${num(V.length)})`,table(["#","اللوحة","المركبة","القسم","السائق","كارت التشغيل","الفحص","الرخصة","التأمين"],V.map((v,i)=>tr([i+1,`<b>${esc(v.plate)}</b>`,esc(v.brand+" "+v.model)+(v.year?` <span class="z-sub">${esc(v.year)}</span>`:""),esc(v.dept),esc(v.driver),cell(v.docs.card),cell(v.docs.insp),cell(v.docs.lic),cell(v.docs.ins)]))),true);}
-  if(id==="gov"){const G=DB.G.filter(g=>(!RS.status||g.st.s===RS.status)&&(!RS.branch||g.branch===RS.branch)).sort((a,b)=>(a.exp||new Date(9e15))-(b.exp||new Date(9e15)));
-    const c=s=>DB.G.filter(g=>g.st.s===s).length;
-    h=`<div class="report-kpis">${kpi("إجمالي المستندات",num(DB.G.length))}${kpi("منتهية",num(c("expired")),"red")}${kpi("قاربت على الانتهاء",num(c("near")))}${kpi("سارية",num(c("valid")),"green")}</div><div class="report-grid">`+
-    card("ملخص حسب الفرع",table(["الفرع","الإجمالي","منتهي","قارب","ساري"],[...groupBy(DB.G,g=>g.branch)].map(([b,gs])=>tr([`<b>${esc(b)}</b>`,num(gs.length),`<span class="red">${num(gs.filter(g=>g.st.s==="expired").length)}</span>`,num(gs.filter(g=>g.st.s==="near").length),`<span class="green">${num(gs.filter(g=>g.st.s==="valid").length)}</span>`]))),true)+
+  if(id==="gov"){const G=gF().filter(g=>(!RS.status||g.st.s===RS.status)&&true).sort((a,b)=>(a.exp||new Date(9e15))-(b.exp||new Date(9e15)));
+    const c=s=>gF().filter(g=>g.st.s===s).length;
+    h=`<div class="report-note">الفرع: <b>${esc(brLabel())}</b></div><div class="report-kpis">${kpi("إجمالي المستندات",num(gF().length))}${kpi("منتهية",num(c("expired")),"red")}${kpi("قاربت على الانتهاء",num(c("near")))}${kpi("سارية",num(c("valid")),"green")}</div><div class="report-grid">`+
+    card("ملخص حسب الفرع",table(["الفرع","الإجمالي","منتهي","قارب","ساري"],[...groupBy(gF(),g=>nb(g.branch))].map(([b,gs])=>tr([`<b>${esc(b)}</b>`,num(gs.length),`<span class="red">${num(gs.filter(g=>g.st.s==="expired").length)}</span>`,num(gs.filter(g=>g.st.s==="near").length),`<span class="green">${num(gs.filter(g=>g.st.s==="valid").length)}</span>`]))),true)+
     card(`المستندات (${num(G.length)})`,table(["الفرع","البيان","الرقم","التجديد","الانتهاء","المتبقي","الحالة","المسؤول","ملاحظات"],G.map(g=>tr([esc(g.branch),`<b>${esc(g.title)}</b>`,esc(g.no),fmtDate(g.renew),fmtDate(g.exp),daysTxt(g.st),chip(g.st.s),esc(g.owner||"—"),esc(g.notes)]))),true)+`</div>`;}
   if(id==="dq")h=dqReport();
   if(id==="follow")h=followReport();
@@ -2109,10 +2111,10 @@ function summaryFor(id){
     L.push(`المواد الواردة لزحل: ${num(X.T.matLoads)} حمولة اليوم و<b>${num(X.M.matLoads)}</b> حمولة حتى اليوم بتكلفة ${money(X.M.matT)} ر.س.`);
     L.push(`الأسمنت حتى اليوم: مستلم ${num(X.M.crec,1)} طن ومستهلك حسب الخلطة ${num(X.M.ccon,1)} طن، والمحروقات قبل الضريبة ${money(X.M.fuel)} ر.س بمعدل ${num(X.M.fuelM3,2)} ر.س/م³.`);
     L.push(`الوايت 5770: ${num(X.T.wtrips)} رد اليوم و${num(X.M.wtrips)} رد حتى اليوم، والمصروفات المسجلة حتى اليوم ${money(X.M.exp)} ر.س.`);}
-  if(id==="veh"){const c=s=>DB.V.reduce((x,v)=>x+Object.values(v.docs).filter(z=>z.s===s).length,0);const ins=DB.V.filter(v=>v.docs.ins.s==="near"||v.docs.ins.s==="expired").length;
-    L.push(`${num(DB.V.length)} مركبة: <b>${num(c("expired"))}</b> مستند منتهٍ و<b>${num(c("near"))}</b> يقارب الانتهاء.`);if(ins)L.push(`تأمين <b>${num(ins)}</b> مركبة منتهٍ أو ينتهي خلال ${NEAR_DAYS} يوماً.`);}
-  if(id==="gov"){const c=s=>DB.G.filter(g=>g.st.s===s).length;const nx=DB.G.filter(g=>g.st.s==="near").sort((a,b)=>a.exp-b.exp)[0];
-    L.push(`${num(DB.G.length)} مستند حكومي: <b>${num(c("expired"))}</b> منتهٍ، <b>${num(c("near"))}</b> يقارب الانتهاء، ${num(c("valid"))} ساري.`);if(nx)L.push(`الأقرب انتهاءً: ${esc(nx.title)} — ${esc(nx.branch)} — في ${fmtDate(nx.exp)}.`);}
+  if(id==="veh"){const c=s=>vF().reduce((x,v)=>x+Object.values(v.docs).filter(z=>z.s===s).length,0);const ins=vF().filter(v=>v.docs.ins.s==="near"||v.docs.ins.s==="expired").length;
+    L.push(`${num(vF().length)} مركبة: <b>${num(c("expired"))}</b> مستند منتهٍ و<b>${num(c("near"))}</b> يقارب الانتهاء.`);if(ins)L.push(`تأمين <b>${num(ins)}</b> مركبة منتهٍ أو ينتهي خلال ${NEAR_DAYS} يوماً.`);}
+  if(id==="gov"){const c=s=>gF().filter(g=>g.st.s===s).length;const nx=gF().filter(g=>g.st.s==="near").sort((a,b)=>a.exp-b.exp)[0];
+    L.push(`${num(gF().length)} مستند حكومي: <b>${num(c("expired"))}</b> منتهٍ، <b>${num(c("near"))}</b> يقارب الانتهاء، ${num(c("valid"))} ساري.`);if(nx)L.push(`الأقرب انتهاءً: ${esc(nx.title)} — ${esc(nx.branch)} — في ${fmtDate(nx.exp)}.`);}
   return L.length?L:null;
 }
 function dqReport(){
@@ -2226,9 +2228,15 @@ function monthData(k){const [y,m]=k.split("-").map(Number);return filt({from:`${
 function lastFull(){let k=curMonth();if(isPartial(k)){const [y,m]=k.split("-").map(Number);k=mKey(new Date(y,m-2,1));}return k;}
 function prevKey(k){const [y,m]=k.split("-").map(Number);return mKey(new Date(y,m-2,1));}
 function handledMap(){return LS.get(ZK.handled,{});}
+const nb=x=>String(x||"").replace(/\u0640/g,"").replace(/\s+/g," ").trim();
+function brOk(x){const b=RS.br===undefined?"زحل":RS.br;if(!b)return true;return b==="زحل"?/زحل/.test(nb(x)):nb(x)===b;}
+const vF=()=>DB.V.filter(v=>brOk(v.dept)),gF=()=>DB.G.filter(g=>brOk(g.branch));
+function brLabel(){const b=RS.br===undefined?"زحل":RS.br;return b||"جميع الفروع";}
+function brSelect(list){const b=RS.br===undefined?"زحل":RS.br;const opts=[...new Set(list.map(nb).filter(Boolean))].filter(x=>!/زحل/.test(x)).sort((a,c)=>a.localeCompare(c,"ar"));
+  return `<label class="report-filter">الفرع / القسم<select id="rBr"><option value=""${b===""?" selected":""}>جميع الفروع</option><option value="زحل"${b==="زحل"?" selected":""}>زحل</option>${opts.map(o=>`<option${b===o?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;}
 function followItems(){
   const H=handledMap();const al=docAlerts();
-  return al.list.map(a=>{const isV=a.kind==="veh";const key=isV?`v|${a.v.plate}|${a.k}|${a.s.d?dKey(a.s.d):""}`:`g|${a.g.branch}|${a.g.title}|${a.g.exp?dKey(a.g.exp):""}`;
+  return al.list.filter(a=>a.kind==="veh"?brOk(a.v.dept):brOk(a.g.branch)).map(a=>{const isV=a.kind==="veh";const key=isV?`v|${a.v.plate}|${a.k}|${a.s.d?dKey(a.s.d):""}`:`g|${a.g.branch}|${a.g.title}|${a.g.exp?dKey(a.g.exp):""}`;
     return {a,key,done:!!H[key],title:isV?DOCN[a.k]:a.g.title,who:isV?`${a.v.plate} — ${a.v.brand} ${a.v.model}`:a.g.branch,owner:isV?a.v.driver:a.g.owner,exp:a.s.d,s:a.s};})
    .sort((x,y)=>(x.s.s==="near"?0:1)-(y.s.s==="near"?0:1)||(x.s.s==="near"?x.s.days-y.s.days:(y.s.days??-1e9)-(x.s.days??-1e9)));
 }
@@ -2337,7 +2345,7 @@ function followReport(){
   const all=followItems();const mode=RS.status||"pending";const F=all.filter(x=>mode==="all"||(mode==="done"?x.done:!x.done));
   const n7=all.filter(x=>!x.done&&x.s.s==="near"&&x.s.days<=7).length;
   return `<div class="report-kpis">${kpi("بانتظار المعالجة",num(all.filter(x=>!x.done).length),"red")}${kpi("تنتهي خلال 7 أيام",num(n7),n7?"red":"")}${kpi("منتهية",num(all.filter(x=>!x.done&&x.s.s==="expired").length))}${kpi("تمت معالجتها",num(all.filter(x=>x.done).length),"green")}</div>
-  <div class="report-note">«تمت المعالجة» يُخفي المستند من القائمة على هذا الجهاز حتى يتغير تاريخ انتهائه في الشيت (أي بعد التجديد الفعلي).</div>`+
+  <div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — «تمت المعالجة» يُخفي المستند من القائمة على هذا الجهاز حتى يتغير تاريخ انتهائه في الشيت (أي بعد التجديد الفعلي).</div>`+
   card(`قائمة المتابعة (${num(F.length)})`,table(["المستند","المركبة / الفرع","الانتهاء","المتبقي","المسؤول / السائق","الحالة","إجراء"],
     F.map(x=>tr([`<b>${esc(x.title)}</b>`,esc(x.who),fmtDate(x.exp),daysTxt(x.s),esc(x.owner||"—"),chip(x.s.s),`<button type="button" class="z-act${x.done?" done":""}" data-hkey="${esc(x.key)}">${x.done?"↺ تراجع":"✓ تمت المعالجة"}</button>`]))),true);
 }
