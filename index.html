@@ -1148,6 +1148,23 @@ bdi{unicode-bidi:isolate}
 .z-daily-grid .report-table tbody tr.z-fueled:nth-child(n) td{background:#e3f4ec!important}
 @media print{.z-daily-grid .report-table tbody tr.z-fueled:nth-child(n) td{background:#e3f4ec!important}}
 #reportBody .z-daily-grid .report-table tbody tr.z-fueled.z-fueled:nth-child(n):not(.z-grp):not(.total) td{background:#e3f4ec!important}
+/* اختيار متعدد للوايت */
+.z-ms{position:relative}
+.z-ms>summary{list-style:none;cursor:pointer;min-width:170px;padding:9px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-weight:700;color:var(--text);white-space:nowrap}
+.z-ms>summary::-webkit-details-marker{display:none}
+.z-ms>summary::after{content:"▾";margin-inline-start:10px;color:var(--muted)}
+.z-ms-pop{position:absolute;z-index:30;top:calc(100% + 6px);inset-inline-start:0;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 30px rgba(15,26,51,.18);padding:8px;display:flex;flex-direction:column;gap:2px}
+.z-ms-pop label{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;cursor:pointer;font-weight:600}
+.z-ms-pop label:hover{background:var(--surface-soft)}
+.z-ms-pop input{width:16px;height:16px;accent-color:#13296a}
+.z-ms-act{display:flex;gap:6px;border-top:1px solid var(--border);margin-top:4px;padding-top:6px}
+.z-ms-act button{flex:1;font-size:12px;padding:6px 8px;border-radius:8px}
+.z-ms-pop label{flex-direction:row!important;justify-content:flex-start!important;white-space:nowrap;font-size:13px;color:var(--text)}
+.z-ms-pop input[type=checkbox]{width:16px!important;height:16px!important;flex:0 0 16px!important;margin:0!important;padding:0!important}
+.z-ms-act button{background:#13296a!important;color:#fff!important;border:0}
+.z-ms-pop label{display:flex!important;gap:10px!important;grid-template-columns:none!important}.z-ms-pop label input{order:0}
+#reportToolbar .z-ms-pop input[type=checkbox],.report-toolbar .z-ms-pop input[type=checkbox]{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px!important;padding:0!important}
+.z-ms-pop{min-width:230px}.z-ms-act button{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1812,6 +1829,10 @@ function toolbar(kind){
     h+=`<label class="report-filter">نوع المعدة<select id="rEtype"><option value="">جميع الأنواع</option>${ts.map(c=>`<option${RS.etype===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label><label class="report-filter">المعدة<select id="rEquip"><option value="">كل المعدات</option>${es.map(c=>`<option${RS.equip===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
   if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","بانتظار المعالجة"],["done","تمت معالجتها"],["all","الكل"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
   if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label><label class="report-filter">الفرع<select id="rBranch"><option value="">جميع الفروع</option>${[...new Set(DB.G.map(g=>g.branch))].map(b=>`<option${RS.branch===b?" selected":""}>${esc(b)}</option>`).join("")}</select></label>`;
+  if(kind==="range"&&CUR==="water"){const trs=[...sumBy(DB.W,r=>r.truck,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).filter(Boolean);
+    if(!Array.isArray(RS.wtr))RS.wtr=trs.includes(WATER_TRUCK)?[WATER_TRUCK]:[];const sel=RS.wtr.filter(x=>trs.includes(x));
+    const lbl=sel.length?sel.join("، "):"كل الوايتات";
+    h+=`<div class="report-filter"><span>الوايت</span><details class="z-ms" id="rWtr"><summary>${esc(lbl)}</summary><div class="z-ms-pop">${trs.map(w=>`<label><input type="checkbox" value="${esc(w)}"${sel.includes(w)?" checked":""}> وايت ${esc(w)}</label>`).join("")}<div class="z-ms-act"><button type="button" data-a="all">تحديد الكل</button><button type="button" data-a="def">الأساسي ${WATER_TRUCK}</button></div></div></details></div>`;}
   h+=`<label class="report-filter"><span>&nbsp;</span><button type="button" id="rExcel" style="background:#1f9d68">تصدير Excel</button></label>`;
   $("reportToolbar").innerHTML=h;
   // التطبيق المباشر: أي تغيير في الفلاتر يحدّث التقرير فوراً دون زر
@@ -1820,6 +1841,9 @@ function toolbar(kind){
     if(!ok)return;if(RS.from&&RS.to&&RS.from>RS.to){toast("تاريخ «من» بعد تاريخ «إلى»");return;}KEEP_TB=true;drawReport();KEEP_TB=false;},250);};
   Object.keys(MAP).forEach(id=>{const e=$(id);if(e){e.addEventListener("change",applyNow);if(e.type==="date")e.addEventListener("input",applyNow);}});
   if($("rEtype"))$("rEtype").addEventListener("change",e=>{clearTimeout(tmr);RS.etype=e.target.value;RS.equip="";drawReport();});
+  if($("rWtr")){const box=$("rWtr");const upd=()=>{RS.wtr=[...box.querySelectorAll("input:checked")].map(i=>i.value);box.querySelector("summary").textContent=RS.wtr.length?RS.wtr.join("، "):"كل الوايتات";KEEP_TB=true;drawReport();KEEP_TB=false;};
+    box.addEventListener("change",upd);box.querySelectorAll(".z-ms-act button").forEach(b=>b.onclick=()=>{box.querySelectorAll("input").forEach(i=>i.checked=b.dataset.a==="all"||i.value===WATER_TRUCK);upd();});
+    document.addEventListener("click",e=>{if(box.open&&!box.contains(e.target))box.open=false;});}
   $("rExcel").onclick=()=>exportTables($("reportBody"),REPORTS[CUR].t);
   const shiftDay=n=>{if(CUR==="weekly")n*=7;const d=toDate(RS.day)||DB.maxD;d.setDate(d.getDate()+n);RS.day=dKey(d);drawReport();};
   if($("rDayPrev")){$("rDayPrev").onclick=()=>shiftDay(-1);$("rDayNext").onclick=()=>shiftDay(1);}
@@ -1889,8 +1913,8 @@ function drawReport(){
     card("حسب المجموعة",table(["المجموعة","التعبئات","القيمة ر.س","النسبة"],[...groupBy(d.F,r=>r.group)].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([g,rs])=>tr([`<b>${esc(g)}</b>`,num(rs.length),money(sum(rs,"value")),pct(sum(rs,"value")/(fu||1))]))))+
     card("شهرياً",table(["الشهر","القيمة ر.س","الإنتاج م³","ريال/م³"],monthly(d).map(([k,v])=>tr([mLabel(k),money(v.fuel),num(v.qty,1),num(v.qty?v.fuel/v.qty:0,2)]))))+
     card("حسب مركز التكلفة",table(["مركز التكلفة","المجموعة","التعبئات","اللترات","القيمة ر.س","النسبة"],[...groupBy(d.F,r=>r.center)].sort((a,b)=>sum(b[1],"value")-sum(a[1],"value")).map(([c,rs])=>tr([`<b>${esc(c)}</b>`,esc(rs[0].group),num(rs.length),num(sum(rs.filter(x=>x.liters),"liters")),money(sum(rs,"value")),pct(sum(rs,"value")/(fu||1))])),tr(["الإجمالي","",num(d.F.length),num(sum(lit,"liters")),money(fu),"100%"],"total")),true)+`</div>`;}
-  if(id==="water"){const d=rangeData();const t=sum(d.W,"trips");
-    h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b></div><div class="report-kpis">${kpi("إجمالي الردود",num(t),"blue")}${kpi("عدد الأذونات",num(d.W.length))}${kpi("عدد مراكز التكلفة",num(new Set(d.W.map(r=>r.center)).size))}${kpi("عدد الوايتات",num(new Set(d.W.map(r=>r.truck)).size))}</div><div class="report-grid">`+
+  if(id==="water"){const d=rangeData();if(Array.isArray(RS.wtr)&&RS.wtr.length)d.W=d.W.filter(r=>RS.wtr.includes(r.truck));const t=sum(d.W,"trips");
+    h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b> — الوايت: <b>${Array.isArray(RS.wtr)&&RS.wtr.length?RS.wtr.join("، "):"كل الوايتات"}</b></div><div class="report-kpis">${kpi("إجمالي الردود",num(t),"blue")}${kpi("عدد الأذونات",num(d.W.length))}${kpi("عدد مراكز التكلفة",num(new Set(d.W.map(r=>r.center)).size))}${kpi("عدد الوايتات",num(new Set(d.W.map(r=>r.truck)).size))}</div><div class="report-grid">`+
     card("حسب مركز التكلفة",table(["مركز التكلفة","الردود","النسبة"],[...sumBy(d.W,r=>r.center,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(([c,v])=>tr([`<b>${esc(c)}</b>`,num(v),pct(v/(t||1))]))))+
     card("حسب الوايت",table(["الوايت","المسؤول","الردود"],[...groupBy(d.W,r=>r.truck)].sort((a,b)=>sum(b[1],"trips")-sum(a[1],"trips")).map(([w,rs])=>tr([`<b>${esc(w)}</b>`,esc([...new Set(rs.map(r=>r.resp))].join("، ")),num(sum(rs,"trips"))]))))+
     card("حسب مكان التحميل",table(["المكان","الردود"],[...sumBy(d.W,r=>r.place,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(([c,v])=>tr([esc(c),num(v)]))))+
@@ -2069,7 +2093,7 @@ function summaryFor(id){
     if(["exec","cement"].includes(id)){const v=rc-c;L.push(`الأسمنت المستلم <b>${num(rc,1)} طن</b> مقابل مستهلك حسب الخلطة <b>${num(c,1)} طن</b>؛ الفرق ${v>=0?"زيادة":"عجز"} <b>${num(Math.abs(v),1)} طن</b> بنسبة ${pct(c?Math.abs(v)/c:0)}.`);
       if(id==="cement"){const pr=d.C.filter(x=>x.price).length;L.push(`${num(pr)} من ${num(d.C.length)} حمولة فقط مسجّل لها سعر — تكلفة الأسمنت غير مكتملة.`);}}
     if(["exec","fuel"].includes(id)){const fg=[...sumBy(d.F,r=>r.group,r=>r.value)].sort((a,b)=>b[1]-a[1])[0];L.push(`تكلفة المحروقات <b>${money(fu)} ر.س</b> بمعدل <b>${num(q?fu/q:0,2)} ر.س</b> لكل م³${fg?`، وتستحوذ ${esc(fg[0])} على ${pct(fg[1]/(fu||1))} منها`:""}.`);}
-    if(id==="water"){const t=sum(d.W,"trips");const c1=[...sumBy(d.W,r=>r.center,r=>r.trips)].sort((a,b)=>b[1]-a[1])[0];L.push(`إجمالي ${num(t)} رد ماء في ${num(d.W.length)} إذن${c1?`، أكثرها لـ ${esc(c1[0])} بنسبة ${pct(c1[1]/(t||1))}`:""}.`);}
+    if(id==="water"){const WW=Array.isArray(RS.wtr)&&RS.wtr.length?d.W.filter(r=>RS.wtr.includes(r.truck)):d.W;const t=sum(WW,"trips");const c1=[...sumBy(WW,r=>r.center,r=>r.trips)].sort((a,b)=>b[1]-a[1])[0];L.push(`إجمالي ${num(t)} رد ماء في ${num(WW.length)} إذن${c1?`، أكثرها لـ ${esc(c1[0])} بنسبة ${pct(c1[1]/(t||1))}`:""}.`);}
     if(id==="equip"){const rows=equipRows(d);if(rows[0]){const t=sum(rows,"tot");L.push(`مصروفات المعدات <b>${money(t)} ر.س</b>، أعلاها <b>${esc(rows[0].eq)}</b> بـ ${money(rows[0].tot)} ر.س.`);
       const mx=rows.filter(x=>x.q>500).map(x=>({...x,r:x.tot/x.q})).sort((a,b)=>b.r-a.r);if(mx[0])L.push(`أعلى تكلفة للمتر: ${esc(mx[0].eq)} بـ ${num(mx[0].r,2)} ر.س/م³${mx.length>1?`، وأقلها ${esc(mx[mx.length-1].eq)} بـ ${num(mx[mx.length-1].r,2)} ر.س/م³`:""}.`);
       const ty=rows.slice().sort((a,b)=>b.c["إطارات"]-a.c["إطارات"])[0];if(ty&&ty.c["إطارات"])L.push(`أعلى مصروف إطارات: ${esc(ty.eq)} بـ ${money(ty.c["إطارات"])} ر.س.`);}}
