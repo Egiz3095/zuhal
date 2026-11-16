@@ -1165,6 +1165,24 @@ bdi{unicode-bidi:isolate}
 .z-ms-pop label{display:flex!important;gap:10px!important;grid-template-columns:none!important}.z-ms-pop label input{order:0}
 #reportToolbar .z-ms-pop input[type=checkbox],.report-toolbar .z-ms-pop input[type=checkbox]{width:16px!important;min-width:16px!important;max-width:16px!important;height:16px!important;padding:0!important}
 .z-ms-pop{min-width:230px}.z-ms-act button{white-space:nowrap}
+/* ===== لوحة الامتثال ===== */
+.z-comp{display:flex;align-items:center;gap:16px;padding:14px 16px;border-bottom:1px solid #e3e8f0;background:#f8fafc}
+.z-comp-v{font-size:34px;font-weight:800;color:#13296a;min-width:110px;text-align:center;border-inline-end:3px solid #d6a84b;padding-inline-end:14px}
+.z-comp b{display:block;color:#13296a;font-size:15px}.z-comp span{color:#5d6980;font-size:13px;font-weight:600}
+.z-subt{padding:8px 14px;font-weight:800;color:#13296a;background:#f6ecd6;border-top:1px solid #e3e8f0}
+.z-ok{padding:16px;text-align:center;font-weight:800;color:#0e8a66}
+.report-table tr.z-allok td{color:#5d6980}
+.report-table td.z-okcell{color:#0e8a66!important;font-weight:800;text-align:center}
+.report-table tr.z-grp-e td{background:#fdecef!important;color:#a3233a!important}
+.report-table tr.z-grp-n td{background:#fbf3e2!important;color:#8a5a00!important}
+.report-table tr.z-grp-m td{background:#eef2f7!important;color:#13296a!important}
+@media print{
+  .z-comp{padding:2.5mm 3mm!important;background:#f8fafc!important;gap:4mm!important}
+  .z-comp-v{font-size:22pt!important;min-width:25mm!important}
+  .z-comp b{font-size:10.5pt!important}.z-comp span{font-size:8.5pt!important}
+  .z-subt{padding:1.5mm 3mm!important;background:#f6ecd6!important;font-size:9pt}
+  .report-table tr.z-grp-e td{background:#fdecef!important}.report-table tr.z-grp-n td{background:#fbf3e2!important}.report-table tr.z-grp-m td{background:#eef2f7!important}
+}
 </style>
 </head>
 <body>
@@ -1921,17 +1939,8 @@ function drawReport(){
     card("حسب الوايت",table(["الوايت","المسؤول","الردود"],[...groupBy(d.W,r=>r.truck)].sort((a,b)=>sum(b[1],"trips")-sum(a[1],"trips")).map(([w,rs])=>tr([`<b>${esc(w)}</b>`,esc([...new Set(rs.map(r=>r.resp))].join("، ")),num(sum(rs,"trips"))]))))+
     card("حسب مكان التحميل",table(["المكان","الردود"],[...sumBy(d.W,r=>r.place,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(([c,v])=>tr([esc(c),num(v)]))))+
     card("شهرياً",table(["الشهر","الردود"],monthly(d).filter(([,v])=>v.water).map(([k,v])=>tr([mLabel(k),num(v.water)]))))+`</div>`;}
-  if(id==="veh"){const V=vF().filter(v=>!RS.status||Object.values(v.docs).some(s=>s.s===RS.status));
-    const cnt=s=>vF().reduce((a,v)=>a+Object.values(v.docs).filter(x=>x.s===s).length,0);
-    const cell=s=>`${chip(s.s)}<div class="z-sub">${s.d?fmtDate(s.d):""}<span class="z-days">${s.days!=null?" • "+daysTxt(s):""}</span></div>`;
-    h=`<div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — الحالة محسوبة من التواريخ الميلادية مقارنة باليوم (${fmtDate(today())})، و«قارب على الانتهاء» = خلال ${NEAR_DAYS} يوماً.</div>
-    <div class="report-kpis">${kpi("عدد المركبات",num(vF().length))}${kpi("مستندات منتهية",num(cnt("expired")),"red")}${kpi("قاربت على الانتهاء",num(cnt("near")))}${kpi("سارية",num(cnt("valid")),"green")}</div>`+
-    card(`المركبات (${num(V.length)})`,table(["#","اللوحة","المركبة","القسم","السائق","كارت التشغيل","الفحص","الرخصة","التأمين"],V.map((v,i)=>tr([i+1,`<b>${esc(v.plate)}</b>`,esc(v.brand+" "+v.model)+(v.year?` <span class="z-sub">${esc(v.year)}</span>`:""),esc(v.dept),esc(v.driver),cell(v.docs.card),cell(v.docs.insp),cell(v.docs.lic),cell(v.docs.ins)]))),true);}
-  if(id==="gov"){const G=gF().filter(g=>(!RS.status||g.st.s===RS.status)&&true).sort((a,b)=>(a.exp||new Date(9e15))-(b.exp||new Date(9e15)));
-    const c=s=>gF().filter(g=>g.st.s===s).length;
-    h=`<div class="report-note">الفرع: <b>${esc(brLabel())}</b></div><div class="report-kpis">${kpi("إجمالي المستندات",num(gF().length))}${kpi("منتهية",num(c("expired")),"red")}${kpi("قاربت على الانتهاء",num(c("near")))}${kpi("سارية",num(c("valid")),"green")}</div><div class="report-grid">`+
-    card("ملخص حسب الفرع",table(["الفرع","الإجمالي","منتهي","قارب","ساري"],[...groupBy(gF(),g=>nb(g.branch))].map(([b,gs])=>tr([`<b>${esc(b)}</b>`,num(gs.length),`<span class="red">${num(gs.filter(g=>g.st.s==="expired").length)}</span>`,num(gs.filter(g=>g.st.s==="near").length),`<span class="green">${num(gs.filter(g=>g.st.s==="valid").length)}</span>`]))),true)+
-    card(`المستندات (${num(G.length)})`,table(["الفرع","البيان","الرقم","التجديد","الانتهاء","المتبقي","الحالة","المسؤول","ملاحظات"],G.map(g=>tr([esc(g.branch),`<b>${esc(g.title)}</b>`,esc(g.no),fmtDate(g.renew),fmtDate(g.exp),daysTxt(g.st),chip(g.st.s),esc(g.owner||"—"),esc(g.notes)]))),true)+`</div>`;}
+  if(id==="veh")h=docsDash("veh");
+  if(id==="gov")h=docsDash("gov");
   if(id==="dq")h=dqReport();
   if(id==="follow")h=followReport();
   if(id==="equip")h=equipReport();
@@ -2234,6 +2243,50 @@ const vF=()=>DB.V.filter(v=>brOk(v.dept)),gF=()=>DB.G.filter(g=>brOk(g.branch));
 function brLabel(){const b=RS.br===undefined?"زحل":RS.br;return b||"جميع الفروع";}
 function brSelect(list){const b=RS.br===undefined?"زحل":RS.br;const opts=[...new Set(list.map(nb).filter(Boolean))].filter(x=>!/زحل/.test(x)).sort((a,c)=>a.localeCompare(c,"ar"));
   return `<label class="report-filter">الفرع / القسم<select id="rBr"><option value=""${b===""?" selected":""}>جميع الفروع</option><option value="زحل"${b==="زحل"?" selected":""}>زحل</option>${opts.map(o=>`<option${b===o?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;}
+/* ===== لوحة الامتثال للمستندات (السيارات والحكومية) ===== */
+const hij=d=>{if(!d)return "";try{const p=new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn",{day:"2-digit",month:"2-digit",year:"numeric"}).formatToParts(d);const g=t=>(p.find(x=>x.type===t)||{}).value||"";return `${g("day")}-${g("month")}-${g("year")} هـ`;}catch(e){return "";}};
+const gType=t=>{t=nb(t);return /سجل/.test(t)?"السجل التجاري":/بلدي/.test(t)?"رخصة البلدية":/دفاع/.test(t)?"الدفاع المدني":/تأمين/.test(t)?"التأمين":/زكا|ضريب/.test(t)?"الزكاة والضريبة":/غرف/.test(t)?"الغرفة التجارية":/عقد/.test(t)?"العقود":/شهاد/.test(t)?"الشهادات":/رخص|تصريح/.test(t)?"تراخيص وتصاريح":"أخرى";};
+const dLeft=s=>s.days==null?"—":s.days<0?`منتهي منذ ${arN(-s.days,"يوم")}`:s.days===0?"ينتهي اليوم":`يتبقى ${arN(s.days,"يوم")}`;
+const dCell=s=>s.d?`${fmtDate(s.d)}<div class="z-sub">${hij(s.d)}</div>`:"—";
+function docsDash(kind){
+  const isV=kind==="veh";const list=isV?vF():gF();
+  const items=isV?list.flatMap(v=>Object.keys(DOCN).map(k=>({type:DOCN[k],who:`${v.plate} — ${v.brand} ${v.model}`.trim(),grp:nb(v.dept)||"غير محدد",owner:v.driver,s:v.docs[k]}))):
+    list.map(g=>({type:gType(g.title),title:g.title,who:nb(g.branch),grp:nb(g.branch),owner:g.owner,s:g.st}));
+  const cnt=a=>({v:a.filter(x=>x.s.s==="valid").length,n:a.filter(x=>x.s.s==="near").length,e:a.filter(x=>x.s.s==="expired").length});
+  const rate=c=>{const t=c.v+c.n+c.e;return t?c.v/t:0;};const C=cnt(items);const T=C.v+C.n+C.e;
+  const red=v=>v?`<span class="z-neg">${num(v)}</span>`:"0";
+  const stRows=(groups)=>groups.map(([k,a])=>{const c=cnt(a);return tr([`<b>${esc(k)}</b>`,num(c.v),num(c.n),red(c.e),num(c.v+c.n+c.e),`<b>${pct(rate(c))}</b>`]);});
+  let h=`<div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — الحالة محسوبة لتاريخ اليوم ${fmtDate(today())}، و«يقارب» = خلال ${NEAR_DAYS} يوماً.</div>`;
+  const cards=[];
+  // 01 الامتثال
+  {const byT=[...groupBy(items,x=>x.type)].sort((a,b)=>rate(cnt(a[1]))-rate(cnt(b[1])));
+   let body=`<div class="z-comp"><div class="z-comp-v">${pct(rate(C))}</div><div><b>نسبة الامتثال</b><span>${num(C.v)} من ${num(T)} ${isV?"مستند مركبات":"مستند"} ساري • ${num(C.n)} يقارب • ${num(C.e)} منتهي${isV?` • ${arN(list.length,"مركبة")}`:""}</span></div></div>`;
+   body+=table(["نوع المستند","ساري","يقارب","منتهي","الإجمالي","نسبة الامتثال"],stRows(byT),tr(["الإجمالي",num(C.v),num(C.n),red(C.e),num(T),pct(rate(C))],"total"));
+   if((RS.br===undefined?"زحل":RS.br)===""){const byG=[...groupBy(items,x=>x.grp)].sort((a,b)=>rate(cnt(a[1]))-rate(cnt(b[1])));body+=`<div class="z-subt">حسب ${isV?"القسم":"الفرع"}</div>`+table([isV?"القسم":"الفرع","ساري","يقارب","منتهي","الإجمالي","نسبة الامتثال"],stRows(byG));}
+   cards.push(card("حالة الامتثال",body,true));}
+  // 02 الإجراءات المطلوبة
+  {const ex=items.filter(x=>x.s.s==="expired").sort((a,b)=>(a.s.days??0)-(b.s.days??0));const n7=items.filter(x=>x.s.s==="near"&&x.s.days<=7).sort((a,b)=>a.s.days-b.s.days);const n30=items.filter(x=>x.s.s==="near"&&x.s.days>7).sort((a,b)=>a.s.days-b.s.days);
+   const g=(t,a,c)=>a.length?[`<tr class="z-grp z-grp-${c}"><td colspan="5">${t} (${num(a.length)})</td></tr>`,...a.map(x=>tr([`<b>${esc(x.title||x.type)}</b>`+(x.title?`<div class="z-sub">${esc(x.type)}</div>`:""),esc(x.who),esc(x.owner||"—"),dCell(x.s),`<span class="${x.s.s==="expired"?"z-neg":""}">${dLeft(x.s)}</span>`],x.s.s==="expired"?"z-exp":""))]:[];
+   const rows=[...g("منتهي — يحتاج تجديد فوري",ex,"e"),...g("ينتهي خلال 7 أيام",n7,"n"),...g("ينتهي خلال 30 يوماً",n30,"m")];
+   cards.push(card("إجراءات مطلوبة",rows.length?table(["المستند",isV?"المركبة":"الفرع","المسؤول / السائق","تاريخ الانتهاء","الوضع"],rows):`<div class="z-ok">✓ لا توجد مستندات منتهية أو قريبة الانتهاء</div>`,true));}
+  // 03 التجديدات القادمة 90 يوم
+  {const up=items.filter(x=>x.s.days!=null&&x.s.days>=0&&x.s.days<=90).sort((a,b)=>a.s.days-b.s.days);
+   const byM=[...groupBy(up,x=>mKey(x.s.d))];
+   if(byM.length)cards.push(card("التجديدات القادمة (90 يوماً)",table(["الشهر","العدد","المستندات"],byM.map(([m,a])=>tr([`<b>${mLabel(m)}</b>`,num(a.length),`<span class="z-desc">${a.map(x=>`${esc(x.title||x.type)} — ${esc(isV?x.who.split(" — ")[0]:x.who)} (${fmtDate(x.s.d)})`).join("، ")}</span>`]))),true));}
+  // 04 المسؤولية
+  {const bad=items.filter(x=>x.s.s==="expired"||x.s.s==="near");const byO=[...groupBy(bad,x=>nb(x.owner)||"غير محدد")].sort((a,b)=>cnt(b[1]).e-cnt(a[1]).e||b[1].length-a[1].length);
+   if(byO.length)cards.push(card(isV?"المسؤولية حسب السائق":"المسؤولية حسب المسؤول",table([isV?"السائق":"المسؤول","منتهي","يقارب","الإجمالي"],byO.map(([o,a])=>{const c=cnt(a);return tr([`<b>${esc(o)}</b>`,red(c.e),num(c.n),num(a.length)]);})),true));}
+  // 05 التفاصيل
+  if(isV){const RK={expired:0,near:1,unknown:2,valid:3,na:4,ondemand:4};const worst=v=>Math.min(...Object.values(v.docs).map(d=>RK[d.s]??2));
+    const V=list.filter(v=>!RS.status||Object.values(v.docs).some(d=>d.s===RS.status)).sort((a,b)=>worst(a)-worst(b)||a.plate.localeCompare(b.plate,"ar"));
+    const cell=s=>`${chip(s.s)}<div class="z-sub">${s.d?fmtDate(s.d)+" • "+hij(s.d):""}</div>`;
+    const rows=V.map((v,i)=>{const allOk=Object.values(v.docs).every(d=>d.s==="valid"||d.s==="na");const base=[i+1,`<b>${esc(v.plate)}</b>`,esc(v.brand+" "+v.model)+(v.year?` <span class="z-sub">${esc(v.year)}</span>`:""),esc(nb(v.dept)),esc(v.driver)];
+      return allOk?`<tr class="z-allok">${base.map(c=>`<td>${c}</td>`).join("")}<td colspan="4" class="z-okcell">✓ جميع المستندات سارية</td></tr>`:tr([...base,cell(v.docs.card),cell(v.docs.insp),cell(v.docs.lic),cell(v.docs.ins)]);});
+    cards.push(card(`المركبات (${num(V.length)})`,table(["#","اللوحة","المركبة","القسم","السائق","كارت التشغيل","الفحص","الرخصة","التأمين"],rows),true));}
+  else{const RK={expired:0,near:1,unknown:2,ondemand:3,valid:4,na:5};const G=list.filter(g=>!RS.status||g.st.s===RS.status).sort((a,b)=>(RK[a.st.s]??2)-(RK[b.st.s]??2)||(a.exp||new Date(9e15))-(b.exp||new Date(9e15)));
+    cards.push(card(`المستندات (${num(G.length)})`,table(["الفرع","البيان","النوع","الرقم","الانتهاء","الوضع","الحالة","المسؤول","ملاحظات"],G.map(g=>tr([esc(nb(g.branch)),`<b>${esc(g.title)}</b>`,esc(gType(g.title)),esc(g.no),dCell(g.st),dLeft(g.st),chip(g.st.s),esc(g.owner||"—"),esc(g.notes)],g.st.s==="expired"?"z-exp":""))),true));}
+  return h+`<div class="report-grid">${cards.join("")}</div><!--NOSUM-->`;
+}
 function followItems(){
   const H=handledMap();const al=docAlerts();
   return al.list.filter(a=>a.kind==="veh"?brOk(a.v.dept):brOk(a.g.branch)).map(a=>{const isV=a.kind==="veh";const key=isV?`v|${a.v.plate}|${a.k}|${a.s.d?dKey(a.s.d):""}`:`g|${a.g.branch}|${a.g.title}|${a.g.exp?dKey(a.g.exp):""}`;
