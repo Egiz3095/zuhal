@@ -532,7 +532,7 @@ bdi{unicode-bidi:isolate}
 
 .z-flag{font-weight:800;color:var(--amber)}
 /* ================= الطباعة / PDF ================= */
-@page{size:A4 portrait;margin:3mm;
+@page{size:A4 portrait;margin:3mm 3mm 9mm 3mm;
   @bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif;font-size:6pt;color:#66728a}
 }
 @media print{
@@ -1229,6 +1229,10 @@ bdi{unicode-bidi:isolate}
 .z-dpage.z-nofill .report-table{table-layout:auto!important}
 @media print{.z-dpage.z-nofill .report-table{table-layout:auto!important;width:100%!important}
   .z-dpage.z-nofill .report-table td,.z-dpage.z-nofill .report-table th{overflow:visible!important;text-overflow:clip!important}}
+
+/* التذييل صار في هامش الصفحة السفلي (يظهر أسفل كل صفحة ما عدا الغلاف) */
+@media print{.z-ptbl>tfoot{display:none!important}.z-print-foot{display:none!important}}
+@media print{.z-cover.z-cv2{height:284mm!important;max-height:284mm!important}}
 </style>
 </head>
 <body>
@@ -2575,7 +2579,12 @@ function initSidebarPro(){
 function showHelp(){modal("اختصارات لوحة المفاتيح",`<table class="z-keys"><tr><td><kbd>Ctrl</kbd>+<kbd>K</kbd> أو <kbd>/</kbd></td><td>لوحة الأوامر والبحث الذكي</td></tr><tr><td><kbd>1</kbd> … <kbd>9</kbd></td><td>فتح التقرير حسب ترتيبه في العمود</td></tr><tr><td><kbd>Alt</kbd>+<kbd>↓</kbd> / <kbd>↑</kbd></td><td>التقرير التالي / السابق</td></tr><tr><td><kbd>Esc</kbd></td><td>إغلاق التقرير أو النافذة</td></tr><tr><td><kbd>?</kbd></td><td>عرض هذه القائمة</td></tr></table>`,[{t:"تم",p:1}]);}
 
 document.querySelectorAll(".report-list > *").forEach((el,i)=>el.style.setProperty("order",String(i),"important"));
-function fillFoot(){const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";document.querySelectorAll(".z-pf-rep").forEach(r=>r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t);document.querySelectorAll(".z-pf-meta").forEach(m=>{const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;});}
+function footCSS(){const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";const nw=new Date();
+  const q=x=>String(x).replace(/\\/g,"").replace(/"/g,"'");const st="font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;font-size:7.2pt;color:#13296a;border-top:0.45mm solid #d6a84b;padding-top:1.4mm;vertical-align:top;";
+  let el=document.getElementById("zFootCSS");if(!el){el=document.createElement("style");el.id="zFootCSS";document.head.appendChild(el);}
+  el.textContent=`@page{@bottom-right{content:"شركة زحل للخرسانة الجاهزة";${st}font-weight:700;text-align:right}@bottom-center{content:"${q(t)}${pr?" — "+q(pr).replace(/(\d[\d\-:\/ ]*\d)/g,"\u2066$1\u2069"):""}";${st}font-weight:700;text-align:center}@bottom-left{content:"صفحة " counter(page) " من " counter(pages) "   •   تاريخ الطباعة: \u2066${fmtDate(nw)}\u2069  \u2066${pad(nw.getHours())}:${pad(nw.getMinutes())}\u2069";${st}text-align:left}}
+  @page:first{@bottom-right{content:none;border:0}@bottom-center{content:none;border:0}@bottom-left{content:none;border:0}}`;}
+function fillFoot(){footCSS();const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";document.querySelectorAll(".z-pf-rep").forEach(r=>r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t);document.querySelectorAll(".z-pf-meta").forEach(m=>{const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;});}
 let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=(CUR==="daily")?`التقرير اليومي لشركة زحل - ${(RS.day||dKey(DB.maxD)).replace(/-/g,"")}`:(CUR==="weekly")?(()=>{const w=weekRange(RS.day||dKey(DB.maxD));return `التقرير الأسبوعي لشركة زحل - الأسبوع ${weekNo(w.s)} - ${dKey(w.s).replace(/-/g,"")}-${dKey(w.e).replace(/-/g,"")}`;})():rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
 
