@@ -1233,6 +1233,12 @@ bdi{unicode-bidi:isolate}
 /* التذييل صار في هامش الصفحة السفلي (يظهر أسفل كل صفحة ما عدا الغلاف) */
 @media print{.z-ptbl>tfoot{display:none!important}.z-print-foot{display:none!important}}
 @media print{.z-cover.z-cv2{height:284mm!important;max-height:284mm!important}}
+/* مؤشرات التشغيل */
+.z-trend{display:inline-block;min-width:92px;font-weight:800;font-size:12.5px}
+.z-tg{color:#0e8a66}.z-tb{color:#c4314b}.z-tn{color:#5d6980}
+.z-spark{vertical-align:middle;margin-inline-start:8px}
+@media print{.z-trend{font-size:8pt!important;min-width:22mm}.z-tg{color:#0e8a66!important}.z-tb{color:#c4314b!important}.z-spark{width:17mm;height:4.6mm}}
+@media print{.z-spark{width:15mm!important;height:3.6mm!important}.z-trend{min-width:18mm!important}}
 </style>
 </head>
 <body>
@@ -2143,6 +2149,23 @@ function dailyReport(){
   if(WK){const W6=[];for(let i=5;i>=0;i--){const s0=new Date(ws);s0.setDate(ws.getDate()-7*i);const e0=new Date(s0);e0.setDate(s0.getDate()+6);W6.push({s0,e0,m:dailyMetrics(dKey(s0),dKey(e0))});}
     const mq=Math.max(0,...W6.map(x=>x.m.qty));
     const rows6=W6.map((x,i)=>tr([`<b>الأسبوع ${weekNo(x.s0)}</b>${i===5?' <span class="z-best-tag">الحالي</span>':""}`,`${fmtDate(x.s0)} — ${fmtDate(x.e0)}`,num(x.m.trips),`<span class="z-bar" style="--w:${(x.m.qty/(mq||1)*100).toFixed(0)}%">${num(x.m.qty,1)}</span>`,num(x.m.crec,1),x.m.fuel?money(x.m.fuel):"—",x.m.fuel&&x.m.qty?money(x.m.fuel/x.m.qty):"—",num(x.m.wtrips)],i===5?"z-bestday":""));
+    {const allC=DB.C.filter(r=>r.tons>0&&(r.rval||r.price));const cp=allC.length?allC.reduce((a,r)=>a+(r.rval||r.tons*r.price),0)/sum(allC,"tons"):0;
+     const dg=x=>(String(x).match(/\d{3,}/)||[""])[0];
+     const K=W6.map(({s0,e0,m})=>{const md=new Set(m.d.P.map(r=>r.mixer+"|"+dKey(r.date))).size;const f30=new Date(e0);f30.setDate(e0.getDate()-30);
+       const fleet=new Set(filt({from:dKey(f30),to:dKey(e0)}).P.map(r=>dg(r.mixer)).filter(Boolean)).size;const act=new Set(m.d.P.map(r=>dg(r.mixer)).filter(Boolean)).size;
+       const pq=sum(m.d.P.filter(r=>!/ماسور/.test(r.pump)),"qty");
+       return {a:m.days?m.qty/m.days:0,b:md?m.qty/md:0,c:md?m.trips/md:0,d:m.trips?m.qty/m.trips:0,e:fleet?act/fleet:0,f:m.qty?pq/m.qty:0,g:m.qty?m.fuel/m.qty:0,h:m.qty?m.ccon*1000/m.qty:0,i:m.qty?(m.ccon*cp+m.matT)/m.qty:0};});
+     const DEF=[["a","م³ لكل يوم تشغيل","الإنتاجية",1,1],["b","م³ لكل خلاطة في اليوم","الإنتاجية",1,1],["c","نقلات لكل خلاطة في اليوم","الإنتاجية",1,2],["d","متوسط حمولة النقلة م³","الإنتاجية",1,2],
+       ["e","نسبة الخلاطات العاملة","استغلال الأسطول",1,"%"],["f","نسبة الصب بالمضخة","استغلال الأسطول",0,"%"],
+       ["g","محروقات ر.س لكل م³","الكفاءة والتكلفة",-1,2],["h","كجم أسمنت لكل م³","الكفاءة والتكلفة",0,0],["i","تكلفة المواد المباشرة لكل م³ (تقديري)","الكفاءة والتكلفة",-1,2]];
+     const fmt=(v,d)=>d==="%"?pct(v):num(v,d);
+     const spark=(arr,dir)=>{const mx=Math.max(...arr,0)||1;return `<svg class="z-spark" viewBox="0 0 66 18" width="66" height="18">${arr.map((v,i)=>`<rect x="${i*11+1}" y="${(18-Math.max(1.5,v/mx*16)).toFixed(1)}" width="8" height="${Math.max(1.5,v/mx*16).toFixed(1)}" rx="1.5" fill="${i===arr.length-1?"#d6a84b":"#9fb0cc"}"/>`).join("")}</svg>`;};
+     let grp="";const rowsK=[];DEF.forEach(([k,lbl,g,dir,dec])=>{if(g!==grp){grp=g;rowsK.push(`<tr class="z-grp"><td colspan="5">${g}</td></tr>`);}
+       const arr=K.map(x=>x[k]);const cur=arr[5],prev=arr[4],avg6=arr.reduce((a,b)=>a+b,0)/6;const diff=cur-prev;
+       const ch=dec==="%"?`${diff>=0?"+":"−"}${num(Math.abs(diff)*100,1)} نقطة`:(prev?`${diff>=0?"+":"−"}${num(Math.abs(diff/prev)*100,0)}%`:"—");
+       const flat=dec==="%"?Math.abs(diff)<0.0005:(!prev||Math.abs(diff/prev)<0.005);const good=dir===0||flat?"z-tn":(diff*dir>0?"z-tg":"z-tb");const ar=flat?"■":diff>0?"▲":"▼";
+       rowsK.push(tr([`<b>${lbl}</b>`,`<b>${fmt(cur,dec)}</b>`,fmt(prev,dec),fmt(avg6,dec),`<span class="z-trend ${good}">${ar} <bdi dir="ltr">${ch}</bdi></span> ${spark(arr,dir)}`]));});
+     add(1,"مؤشرات التشغيل",["المؤشر",`الأسبوع ${weekNo(ws)}`,`السابق (${weekNo(X.pws)})`,"متوسط 6 أسابيع","الاتجاه (آخر 6 أسابيع)"],rowsK,"");}
     add(1,"اتجاه آخر 6 أسابيع",["الأسبوع","الفترة","النقلات","الإنتاج م³","الأسمنت المستلم ط","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows6,"");}
   if(WK){const dr=[...groupBy(d.P,r=>r.driver)].map(([n,rs])=>{const tt=rs.filter(r=>r.trip);return {n,t:rs.length,q:sum(rs,"qty"),dd:new Set(rs.map(r=>dKey(r.date))).size,tr:tt.length?sum(tt,"trip")/tt.length:null,mx:[...new Set(rs.map(r=>r.mixer))].join("، ")};}).sort((a,b)=>b.q-a.q);
     const mx=Math.max(0,...dr.map(x=>x.q));
