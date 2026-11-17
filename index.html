@@ -1214,31 +1214,64 @@ bdi{unicode-bidi:isolate}
 }
 @media print{.z-p1 .report-table{table-layout:auto!important;width:100%!important}.z-p1 .z-best-tag{font-size:6pt!important;padding:0 1.2mm!important}}
 .z-p1 .report-table{table-layout:auto}
-/* الأسبوعي: صفحات التفاصيل بارتفاعها الطبيعي بدون تمديد الصفوف */
-@media print{
-  .report-grid.z-daily-grid.z-dpage.z-nofill{height:auto!important;min-height:0!important;display:block!important}
-  .z-dpage.z-nofill>.report-card{display:block!important;flex:none!important;margin-bottom:4mm!important}
-  .z-dpage.z-nofill>.report-card>.report-table-wrap{display:block!important;flex:none!important}
-  .z-dpage.z-nofill>.report-card .report-table{height:auto!important}
-}
-@media print{.z-dpage.z-nofill .report-table td{white-space:nowrap!important}}
+@media print{.z-dpage.z-wk .report-table td{white-space:nowrap!important}}
 /* ارتفاع صفوف الحركة اليومية في الأسبوعي +30% */
 .report-table.z-wkdays tbody td{height:49px}
 @media print{.report-table.z-wkdays tbody td{height:31px!important;padding-top:0!important;padding-bottom:0!important}}
 /* الأسبوعي: الأعمدة تتسع للمحتوى فلا يتداخل النص مع العمود التالي */
-.z-dpage.z-nofill .report-table{table-layout:auto!important}
-@media print{.z-dpage.z-nofill .report-table{table-layout:auto!important;width:100%!important}
-  .z-dpage.z-nofill .report-table td,.z-dpage.z-nofill .report-table th{overflow:visible!important;text-overflow:clip!important}}
+.z-dpage.z-wk .report-table{table-layout:auto!important}
+@media print{.z-dpage.z-wk .report-table{table-layout:auto!important;width:100%!important}
+  .z-dpage.z-wk .report-table td,.z-dpage.z-wk .report-table th{overflow:visible!important;text-overflow:clip!important}}
 
 /* التذييل صار في هامش الصفحة السفلي (يظهر أسفل كل صفحة ما عدا الغلاف) */
 @media print{.z-ptbl>tfoot{display:none!important}.z-print-foot{display:none!important}}
 @media print{.z-cover.z-cv2{height:284mm!important;max-height:284mm!important}}
 /* مؤشرات التشغيل */
-.z-trend{display:inline-block;min-width:92px;font-weight:800;font-size:12.5px}
+.z-kt{display:inline-block;min-width:92px;font-weight:800;font-size:12.5px}
 .z-tg{color:#0e8a66}.z-tb{color:#c4314b}.z-tn{color:#5d6980}
 .z-spark{vertical-align:middle;margin-inline-start:8px}
-@media print{.z-trend{font-size:8pt!important;min-width:22mm}.z-tg{color:#0e8a66!important}.z-tb{color:#c4314b!important}.z-spark{width:17mm;height:4.6mm}}
-@media print{.z-spark{width:15mm!important;height:3.6mm!important}.z-trend{min-width:18mm!important}}
+@media print{.z-kt{font-size:8pt!important;min-width:22mm}.z-tg{color:#0e8a66!important}.z-tb{color:#c4314b!important}.z-spark{width:17mm;height:4.6mm}}
+@media print{.z-spark{width:15mm!important;height:3.6mm!important}.z-kt{min-width:18mm!important}}
+
+/* ===== الأسبوعي: صفحات ممتلئة متناسقة ===== */
+@media print{
+  .z-pg1w{display:flex!important;flex-direction:column!important;height:250mm!important}
+  .z-pg1w>.z-sum-grid{flex:0 0 auto!important;margin-bottom:3mm!important}
+  .z-pg1w>.z-p1{flex:1 1 0!important;display:flex!important;flex-direction:column!important;min-height:0!important;margin:0!important;gap:3mm}
+  .z-pg1w>.z-p1>.report-card{flex:var(--fg,1) 1 0!important;display:flex!important;flex-direction:column!important;min-height:0!important;margin:0!important}
+  .z-pg1w>.z-p1>.report-card>.report-table-wrap{flex:1 1 0!important;display:block!important;min-height:0!important}
+  .z-pg1w>.z-p1 .report-table{height:100%!important;table-layout:auto!important}
+  .z-pg1w .report-table:not(.z-simple) td{white-space:nowrap!important}
+  .report-grid.z-daily-grid.z-dpage.z-wk{height:250mm!important}
+  .z-dpage.z-wk>.report-card{margin-bottom:3mm!important}
+  /* ارتفاع موحد للصفوف وخط موحد في كل جداول الأسبوعي */
+  .z-pg1w .report-table:not(.z-simple) td,.z-dpage.z-wk .report-table td{font-size:8pt!important;padding:0 1.6mm!important;vertical-align:middle!important}
+  .z-pg1w .report-table:not(.z-simple) thead th,.z-dpage.z-wk .report-table thead th{height:7.5mm!important;font-size:7.4pt!important;padding:0 1.2mm!important}
+  .z-pg1w .report-table tr.z-grp td,.z-dpage.z-wk .report-table tr.z-grp td{font-size:7.8pt!important;height:5.5mm!important}
+  .report-table.z-wkdays tbody td{height:auto!important}
+}
+@media print{
+  .z-dpage.z-wk>.report-card,.z-pg1w>.z-p1>.report-card{flex:var(--fg,1) 0 auto!important;min-height:auto!important;overflow:visible!important}
+  .z-dpage.z-wk>.report-card>.report-table-wrap,.z-pg1w>.z-p1>.report-card>.report-table-wrap{flex:1 0 auto!important;min-height:auto!important;display:flex!important}
+  .z-dpage.z-wk>.report-card .report-table,.z-pg1w>.z-p1 .report-table{height:auto!important;flex:1 0 auto!important}
+}
+/* الأسبوعي: ارتفاع صف موحّد في كل الجداول بدل التمديد */
+@media print{
+  .z-pg1w{display:block!important;height:auto!important}
+  .z-pg1w>.z-p1{display:block!important}
+  .report-grid.z-daily-grid.z-dpage.z-wk{display:block!important;height:auto!important;min-height:0!important}
+  .z-dpage.z-wk>.report-card,.z-pg1w>.z-p1>.report-card{display:block!important;margin:0 0 3.5mm!important}
+  .z-dpage.z-wk>.report-card>.report-table-wrap,.z-pg1w>.z-p1>.report-card>.report-table-wrap{display:block!important}
+  .z-dpage.z-wk .report-table,.z-pg1w>.z-p1 .report-table{height:auto!important}
+  .z-pg1w>.z-p1 .report-table tbody td,.z-dpage.z-wk .report-table tbody td{height:5.8mm!important;padding-top:0!important;padding-bottom:0!important;line-height:1.15!important}
+  .z-pg1w>.z-p1 .report-table tr.z-grp td,.z-dpage.z-wk .report-table tr.z-grp td{height:5.2mm!important}
+  .z-pg1w>.z-p1 .report-table thead th,.z-dpage.z-wk .report-table thead th{height:7mm!important}
+  .z-pg1w .z-sum-grid{margin-bottom:3.5mm!important}
+}
+.z-kt{white-space:nowrap;line-height:1.1;vertical-align:middle}@media print{.z-kt{white-space:nowrap!important;line-height:1.1!important}.z-spark{display:inline-block;vertical-align:middle}}
+
+.z-kt{display:inline-block;white-space:nowrap;margin:0;padding:0;border:0}
+@media print{.z-pg1w>.z-p1 .report-table tbody td,.z-dpage.z-wk .report-table tbody td{height:6.8mm!important}.z-pg1w>.z-p1 .report-table tr.z-grp td,.z-dpage.z-wk .report-table tr.z-grp td{height:6mm!important}.z-pg1w>.z-p1 .report-table thead th,.z-dpage.z-wk .report-table thead th{height:7.8mm!important}}
 </style>
 </head>
 <body>
@@ -2115,7 +2148,7 @@ function dailyReport(){
     row("mat","المواد الخام",cell(num(T.matLoads),arW(T.matLoads,"حمولة"),`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),arW(M.matLoads,"حمولة"),`تكلفة ${money(M.matT)} ر.س`))+
     row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} ${arW(T.liters,"لتر")} • ${arN(T.fuelN,"تعبئة")}`),cell(money(M.fuel),"ر.س",`${num(M.liters)} ${arW(M.liters,"لتر")} • ${arN(M.fuelN,"تعبئة")}`))+
     row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),arW(T.wtrips,"رد"),wPl(T)),cell(num(M.wtrips),arW(M.wtrips,"رد"),wPl(M)));
-  h+=`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>${L.sumT}</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${WK?`الأسبوع <bdi dir="ltr">${fmtDate(ws)}</bdi> – <bdi dir="ltr">${fmtDate(t)}</bdi>`:`${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi>`}</th><th>${L.mon}</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
+  h+=`${WK?'<div class="z-pg1w">':""}<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>${L.sumT}</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:36%"><col style="width:42%"></colgroup><thead><tr><th class="z-sl">البند</th><th>${WK?`الأسبوع <bdi dir="ltr">${fmtDate(ws)}</bdi> – <bdi dir="ltr">${fmtDate(t)}</bdi>`:`${DOW[t.getDay()]} <bdi dir="ltr">${fmtDate(t)}</bdi>`}</th><th>${L.mon}</th></tr></thead><tbody>${rows}</tbody></table></div></div></div><!--NOSUM-->`;
   if(WK)h+="<!--WKHL-->";
   /* ===== التفاصيل ===== */
   const d=T.d;const q=T.qty||1;const pages=[[],[]];const empty=[];
@@ -2164,9 +2197,9 @@ function dailyReport(){
        const arr=K.map(x=>x[k]);const cur=arr[5],prev=arr[4],avg6=arr.reduce((a,b)=>a+b,0)/6;const diff=cur-prev;
        const ch=dec==="%"?`${diff>=0?"+":"−"}${num(Math.abs(diff)*100,1)} نقطة`:(prev?`${diff>=0?"+":"−"}${num(Math.abs(diff/prev)*100,0)}%`:"—");
        const flat=dec==="%"?Math.abs(diff)<0.0005:(!prev||Math.abs(diff/prev)<0.005);const good=dir===0||flat?"z-tn":(diff*dir>0?"z-tg":"z-tb");const ar=flat?"■":diff>0?"▲":"▼";
-       rowsK.push(tr([`<b>${lbl}</b>`,`<b>${fmt(cur,dec)}</b>`,fmt(prev,dec),fmt(avg6,dec),`<span class="z-trend ${good}">${ar} <bdi dir="ltr">${ch}</bdi></span> ${spark(arr,dir)}`]));});
+       rowsK.push(tr([`<b>${lbl}</b>`,`<b>${fmt(cur,dec)}</b>`,fmt(prev,dec),fmt(avg6,dec),`<span class="z-kt ${good}">${ar} <bdi dir="ltr">${ch}</bdi></span> ${spark(arr,dir)}`]));});
      add(1,"مؤشرات التشغيل",["المؤشر",`الأسبوع ${weekNo(ws)}`,`السابق (${weekNo(X.pws)})`,"متوسط 6 أسابيع","الاتجاه (آخر 6 أسابيع)"],rowsK,"");}
-    add(1,"اتجاه آخر 6 أسابيع",["الأسبوع","الفترة","النقلات","الإنتاج م³","الأسمنت المستلم ط","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows6,"");}
+    p1.push(card("اتجاه آخر 6 أسابيع",table(["الأسبوع","الفترة","النقلات","الإنتاج م³","الأسمنت المستلم ط","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows6),true));}
   if(WK){const dr=[...groupBy(d.P,r=>r.driver)].map(([n,rs])=>{const tt=rs.filter(r=>r.trip);return {n,t:rs.length,q:sum(rs,"qty"),dd:new Set(rs.map(r=>dKey(r.date))).size,tr:tt.length?sum(tt,"trip")/tt.length:null,mx:[...new Set(rs.map(r=>r.mixer))].join("، ")};}).sort((a,b)=>b.q-a.q);
     const mx=Math.max(0,...dr.map(x=>x.q));
     add(1,"أداء السائقين خلال الأسبوع",["السائق","الخلاطة","أيام العمل","النقلات","الكمية م³"],dr.map(x=>tr([`<b>${esc(x.n)}</b>`,esc(x.mx),num(x.dd),num(x.t),`<span class="z-bar" style="--w:${(x.q/(mx||1)*100).toFixed(0)}%">${num(x.q,1)}</span>`])),"");}
@@ -2175,14 +2208,15 @@ function dailyReport(){
    const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...new Set([...gM.keys(),...(WK?gT.keys():[])])].sort((a,b)=>((gT.has(b)?1:0)-(gT.has(a)?1:0))||(sum(gT.get(b)||[],"value")-sum(gT.get(a)||[],"value"))||(sum(gM.get(b)||[],"value")-sum(gM.get(a)||[],"value")));
    const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",m_.length?num(lit(m_)):"—",m_.length?money(exV(sum(m_,"value"))):"—"],t_.length?"z-fueled":"");});
    add(WK?1:0,"محروقات المعدات (قبل الضريبة)",["المعدة",`تعبئات ${L.per}`,`لترات ${L.per}`,`قيمة ${L.per} ر.س`,...(WK?[`لترات الأسبوع السابق`,`قيمة الأسبوع السابق ر.س`]:["تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"])],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
-  if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
+  if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.map(c=>WK?c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`):c).join("")}</div>`;
+  if(WK)h+=`</div>`;
   {const dg=x=>(String(x).match(/\d{3,}/)||[""])[0];const on=new Set(T.d.P.map(r=>dg(r.mixer)));const f30=new Date(t.getFullYear(),t.getMonth(),t.getDate()-30);
    const fleet=new Set([...filt({from:dKey(f30),to:k}).P.map(r=>dg(r.mixer)),...M.d.F.filter(r=>/خلاطة/.test(r.center)).map(r=>dg(r.center))].filter(Boolean));
    const idle=[...fleet].filter(m=>!on.has(m)).sort();
    if(idle.length)h+=`<div class="z-idle"><b>خلاطات لم تعمل ${L.inP}:</b> ${idle.map(m=>`<span>${esc(m)}</span>`).join("")}</div>`;}
   h=h.replace("<!--WKHL-->","");
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة ${WK?"خلال هذا الأسبوع":"في هذا اليوم"} في: <b>${empty.map(esc).join("، ")}</b></div>`;
-  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage${WK?" z-nofill":""}">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
+  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage${WK?" z-wk":""}">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
   return h;
 }
 function periodLabel(id){
