@@ -1222,6 +1222,9 @@ bdi{unicode-bidi:isolate}
   .z-dpage.z-nofill>.report-card .report-table{height:auto!important}
 }
 @media print{.z-dpage.z-nofill .report-table td{white-space:nowrap!important}}
+/* ارتفاع صفوف الحركة اليومية في الأسبوعي +30% */
+.report-table.z-wkdays tbody td{height:49px}
+@media print{.report-table.z-wkdays tbody td{height:31px!important;padding-top:0!important;padding-bottom:0!important}}
 </style>
 </head>
 <body>
@@ -2112,7 +2115,7 @@ function dailyReport(){
       if(fut)return `<tr class="z-noday"><td>${day}</td><td>${fmtDate(dd)}</td><td colspan="8" class="z-noprod">لم يأتِ بعد</td></tr>`;
       if(!m.trips)return `<tr class="z-noday"><td>${day}</td><td>${fmtDate(dd)}</td><td colspan="3" class="z-noprod">لا يوجد إنتاج</td><td class="num">${z(m.crec&&num(m.crec,1))}</td><td class="num">${z(m.matLoads&&num(m.matLoads))}</td><td class="num">${z(m.fuel&&money(m.fuel))}</td><td>—</td><td class="num">${z(m.wtrips&&num(m.wtrips))}</td></tr>`;
       return tr([day,fmtDate(dd),num(m.trips),`<span class="z-bar" style="--w:${(m.qty/(mq||1)*100).toFixed(0)}%">${num(m.qty,1)}</span>`,z(m.ccon&&num(m.ccon,1)),z(m.crec&&num(m.crec,1)),z(m.matLoads&&num(m.matLoads)),z(m.fuel&&money(m.fuel)),m.fuel&&m.qty?money(m.fuel/m.qty):"—",z(m.wtrips&&num(m.wtrips))],best?"z-bestday":"");});
-    p1.push(card("الحركة اليومية خلال الأسبوع",table(["اليوم","التاريخ","النقلات","الإنتاج م³","أسمنت مستهلك ط","أسمنت مستلم ط","حمولات المواد","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows_,tr(["الإجمالي","",num(tot.n),num(tot.q,1),num(tot.cc,1),num(tot.cr,1),num(tot.ml),money(tot.f),tot.q?money(tot.f/tot.q):"—",num(tot.w)],"total")),true));
+    p1.push(card("الحركة اليومية خلال الأسبوع",(table(["اليوم","التاريخ","النقلات","الإنتاج م³","أسمنت مستهلك ط","أسمنت مستلم ط","حمولات المواد","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows_,tr(["الإجمالي","",num(tot.n),num(tot.q,1),num(tot.cc,1),num(tot.cr,1),num(tot.ml),money(tot.f),tot.q?money(tot.f/tot.q):"—",num(tot.w)],"total"))).replace('<table class="report-table','<table class="report-table z-wkdays'),true));
     WKD=days;}
   // الصفحة 2: التشغيل
   const fuelOf=m=>{const k=dig(m);return k?exV(sum(d.F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")):0;};
