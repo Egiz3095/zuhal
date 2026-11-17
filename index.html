@@ -1214,6 +1214,13 @@ bdi{unicode-bidi:isolate}
 }
 @media print{.z-p1 .report-table{table-layout:auto!important;width:100%!important}.z-p1 .z-best-tag{font-size:6pt!important;padding:0 1.2mm!important}}
 .z-p1 .report-table{table-layout:auto}
+/* الأسبوعي: صفحات التفاصيل بارتفاعها الطبيعي بدون تمديد الصفوف */
+@media print{
+  .report-grid.z-daily-grid.z-dpage.z-nofill{height:auto!important;min-height:0!important;display:block!important}
+  .z-dpage.z-nofill>.report-card{display:block!important;flex:none!important;margin-bottom:4mm!important}
+  .z-dpage.z-nofill>.report-card>.report-table-wrap{display:block!important;flex:none!important}
+  .z-dpage.z-nofill>.report-card .report-table{height:auto!important}
+}
 </style>
 </head>
 <body>
@@ -2136,7 +2143,7 @@ function dailyReport(){
    if(idle.length)h+=`<div class="z-idle"><b>خلاطات لم تعمل ${L.inP}:</b> ${idle.map(m=>`<span>${esc(m)}</span>`).join("")}</div>`;}
   h=h.replace("<!--WKHL-->","");
   if(empty.length)h+=`<div class="z-emptyline">لا توجد حركة مسجّلة ${WK?"خلال هذا الأسبوع":"في هذا اليوم"} في: <b>${empty.map(esc).join("، ")}</b></div>`;
-  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
+  const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage${WK?" z-nofill":""}">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}</div>`;}});
   return h;
 }
 function periodLabel(id){
