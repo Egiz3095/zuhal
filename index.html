@@ -1225,6 +1225,10 @@ bdi{unicode-bidi:isolate}
 /* ارتفاع صفوف الحركة اليومية في الأسبوعي +30% */
 .report-table.z-wkdays tbody td{height:49px}
 @media print{.report-table.z-wkdays tbody td{height:31px!important;padding-top:0!important;padding-bottom:0!important}}
+/* الأسبوعي: الأعمدة تتسع للمحتوى فلا يتداخل النص مع العمود التالي */
+.z-dpage.z-nofill .report-table{table-layout:auto!important}
+@media print{.z-dpage.z-nofill .report-table{table-layout:auto!important;width:100%!important}
+  .z-dpage.z-nofill .report-table td,.z-dpage.z-nofill .report-table th{overflow:visible!important;text-overflow:clip!important}}
 </style>
 </head>
 <body>
