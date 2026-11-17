@@ -1221,6 +1221,7 @@ bdi{unicode-bidi:isolate}
   .z-dpage.z-nofill>.report-card>.report-table-wrap{display:block!important;flex:none!important}
   .z-dpage.z-nofill>.report-card .report-table{height:auto!important}
 }
+@media print{.z-dpage.z-nofill .report-table td{white-space:nowrap!important}}
 </style>
 </head>
 <body>
@@ -2065,7 +2066,7 @@ function weekNo(d){const y=d.getFullYear();const j1=new Date(y,0,1);const s0=new
 function weeklyCtx(){const k0=RS.day||dKey(DB.maxD);const {s:ws,e:we}=weekRange(k0);const k=dKey(we);const t=we;
   const td=today();const cut=td<we?new Date(td.getFullYear(),td.getMonth(),td.getDate()):we;const elapsed=Math.max(0,Math.min(7,Math.round((new Date(cut.getFullYear(),cut.getMonth(),cut.getDate())-ws)/864e5)+1));
   const ps=new Date(ws);ps.setDate(ws.getDate()-7);const pe=new Date(ps);pe.setDate(ps.getDate()+(elapsed<7?elapsed-1:6));
-  return {k,t,ws,elapsed,cut,PW:dailyMetrics(dKey(ps),dKey(pe)),pws:ps,T:dailyMetrics(dKey(ws),k),M:dailyMetrics(k.slice(0,8)+"01",k)};}
+  const pfe=new Date(ps);pfe.setDate(ps.getDate()+6);return {k,t,ws,elapsed,cut,PW:dailyMetrics(dKey(ps),dKey(pe)),pws:ps,pwe:pfe,T:dailyMetrics(dKey(ws),k),M:dailyMetrics(dKey(ps),dKey(pfe))};}
 function dailyCtx(){const k=RS.day||dKey(DB.maxD);const t=toDate(k);const pd=sameDayPrevMonth(t);
   return {k,t,pd,T:dailyMetrics(k,k),PD:dailyMetrics(dKey(pd),dKey(pd)),M:dailyMetrics(k.slice(0,8)+"01",k),PM:dailyMetrics(dKey(new Date(pd.getFullYear(),pd.getMonth(),1)),dKey(pd))};}
 function chgTxt(a,b){if(!b)return a?"جديد":"—";const c=(a-b)/b;return (c>=0?"+":"−")+Math.abs(c*100).toFixed(1)+"%";}
@@ -2076,11 +2077,11 @@ const DOW=["الأحد","الإثنين","الثلاثاء","الأربعاء","
 const ZIC={"prod": "<path d=\"M3 21h18M5 21V10l7-5 7 5v11\"/><path d=\"M9 21v-6h6v6\"/>", "cem": "<path d=\"M4 7h16l-2 13H6z\"/><path d=\"M8 7V4h8v3\"/>", "mat": "<path d=\"M3 17l5-9 4 6 3-4 6 7z\"/>", "fuel": "<path d=\"M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16\"/><path d=\"M5 11h10M15 8h2a2 2 0 0 1 2 2v6a2 2 0 0 0 2 2\"/>", "cal": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/>", "cost": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15 9.5a3 3 0 0 0-3-1.5c-1.7 0-3 .9-3 2s1.3 1.7 3 2 3 .9 3 2-1.3 2-3 2a3 3 0 0 1-3-1.5M12 6v2M12 16v2\"/>", "bal": "<path d=\"M12 3v18M5 7h14M7 7l-3 7a3 3 0 0 0 6 0zM17 7l-3 7a3 3 0 0 0 6 0z\"/>", "exp": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6\"/>"};
 function dailyReport(){
   const WK=CUR==="weekly";const X=WK?weeklyCtx():dailyCtx();const {t,T,M,k}=X;const ws=X.ws;let WKD=null;
-  const L=WK?{per:"الأسبوع",inP:"خلال الأسبوع",sumT:"ملخص الأسبوع والشهر حتى نهاية الأسبوع",mon:"الشهر حتى نهاية الأسبوع"}:{per:"اليوم",inP:"اليوم",sumT:"ملخص اليوم والشهر حتى اليوم",mon:"الشهر حتى اليوم"};
+  const L=WK?{per:"الأسبوع",inP:"خلال الأسبوع",sumT:"ملخص الأسبوع مقارنة بالأسبوع السابق",mon:`الأسبوع السابق (${weekNo(X.pws)})`}:{per:"اليوم",inP:"اليوم",sumT:"ملخص اليوم والشهر حتى اليوم",mon:"الشهر حتى اليوم"};
   const lastOf=a=>a.length?fmtDate(new Date(Math.max(...a.map(r=>+r.date)))):"—";
   const dig=x=>(String(x).match(/\d{3,}/)||[""])[0];
   const m1=fmtDate(new Date(t.getFullYear(),t.getMonth(),1));
-  let h=WK?`<div class="report-note"><b>الأسبوع ${weekNo(ws)}</b>${X.elapsed<7?` <span class="z-wip">أسبوع جارٍ — حتى ${DOW[X.cut.getDay()]} ${fmtDate(X.cut)} (${num(X.elapsed)} من 7 أيام)</span>`:""} — من <b>${DOW[ws.getDay()]} ${fmtDate(ws)}</b> إلى <b>${DOW[t.getDay()]} ${fmtDate(t)}</b> — والشهر من <b>${m1}</b> إلى <b>${fmtDate(t)}</b>.</div>`:`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — والشهر حتى اليوم من <b>${m1}</b> إلى <b>${fmtDate(t)}</b>.</div>`;
+  let h=WK?`<div class="report-note"><b>الأسبوع ${weekNo(ws)}</b>${X.elapsed<7?` <span class="z-wip">أسبوع جارٍ — حتى ${DOW[X.cut.getDay()]} ${fmtDate(X.cut)} (${num(X.elapsed)} من 7 أيام)</span>`:""} — من <b>${DOW[ws.getDay()]} ${fmtDate(ws)}</b> إلى <b>${DOW[t.getDay()]} ${fmtDate(t)}</b> — والأسبوع السابق من <b>${fmtDate(X.pws)}</b> إلى <b>${fmtDate(X.pwe)}</b>.</div>`:`<div class="report-note">اليوم: <b>${fmtDate(t)}</b> (${DOW[t.getDay()]}) — والشهر حتى اليوم من <b>${m1}</b> إلى <b>${fmtDate(t)}</b>.</div>`;
   /* ===== الصفحة 1: مربعات + تنبيهات + جدول ملخص ===== */
   const box=(k,ic,label,val,unit,sub,extra)=>`<div class="z-db z-db-${k}${extra?" "+extra:""}"><div class="z-db-h"><span class="z-db-ic"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic]}</svg></span><span class="z-db-l">${label}</span></div><div class="z-db-v">${val}${unit?` <small>${unit}</small>`:""}</div><div class="z-db-s">${sub}</div></div>`;
   const bal=M.cdiff;
@@ -2128,14 +2129,18 @@ function dailyReport(){
    const mr=[...groupBy(MZ,r=>r.type)].sort((a,b)=>b[1].length-a[1].length).map(([k,rs])=>tr([esc(k),num(rs.length),esc([...new Set(rs.map(r=>r.source))].slice(0,3).join("، ")),money(sum(rs,"total"))]));
    const rows_=[...(cr.length?[gtr("الأسمنت (حسب المورد)",4),...cr]:[]),...(mr.length?[gtr("المواد الخام الواردة لزحل (حسب النوع)",4),...mr]:[])];
    add(0,`الأسمنت والمواد الواردة ${L.inP}`,["البيان","الحمولات","الكمية / المصدر","التكلفة ر.س"],rows_,rows_.length?tr(["الإجمالي",num(d.C.filter(r=>r.tons>0).length+MZ.length),"",money(T.matT+d.C.reduce((a,r)=>a+(r.rval||(r.tons||0)*(r.price||0)),0))],"total"):"");}
+  if(WK){const W6=[];for(let i=5;i>=0;i--){const s0=new Date(ws);s0.setDate(ws.getDate()-7*i);const e0=new Date(s0);e0.setDate(s0.getDate()+6);W6.push({s0,e0,m:dailyMetrics(dKey(s0),dKey(e0))});}
+    const mq=Math.max(0,...W6.map(x=>x.m.qty));
+    const rows6=W6.map((x,i)=>tr([`<b>الأسبوع ${weekNo(x.s0)}</b>${i===5?' <span class="z-best-tag">الحالي</span>':""}`,`${fmtDate(x.s0)} — ${fmtDate(x.e0)}`,num(x.m.trips),`<span class="z-bar" style="--w:${(x.m.qty/(mq||1)*100).toFixed(0)}%">${num(x.m.qty,1)}</span>`,num(x.m.crec,1),x.m.fuel?money(x.m.fuel):"—",x.m.fuel&&x.m.qty?money(x.m.fuel/x.m.qty):"—",num(x.m.wtrips)],i===5?"z-bestday":""));
+    add(1,"اتجاه آخر 6 أسابيع",["الأسبوع","الفترة","النقلات","الإنتاج م³","الأسمنت المستلم ط","المحروقات ر.س","محروقات/م³","ردود الوايت"],rows6,"");}
   if(WK){const dr=[...groupBy(d.P,r=>r.driver)].map(([n,rs])=>{const tt=rs.filter(r=>r.trip);return {n,t:rs.length,q:sum(rs,"qty"),dd:new Set(rs.map(r=>dKey(r.date))).size,tr:tt.length?sum(tt,"trip")/tt.length:null,mx:[...new Set(rs.map(r=>r.mixer))].join("، ")};}).sort((a,b)=>b.q-a.q);
     const mx=Math.max(0,...dr.map(x=>x.q));
     add(1,"أداء السائقين خلال الأسبوع",["السائق","الخلاطة","أيام العمل","النقلات","الكمية م³"],dr.map(x=>tr([`<b>${esc(x.n)}</b>`,esc(x.mx),num(x.dd),num(x.t),`<span class="z-bar" style="--w:${(x.q/(mx||1)*100).toFixed(0)}%">${num(x.q,1)}</span>`])),"");}
   // الصفحة 3: المحروقات
   {const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();const lit=rs=>sum(rs.filter(r=>r.liters),"liters");
-   const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...gM.keys()].sort((a,b)=>((gT.has(b)?1:0)-(gT.has(a)?1:0))||(sum(gT.get(b)||[],"value")-sum(gT.get(a)||[],"value"))||(sum(gM.get(b),"value")-sum(gM.get(a),"value")));
-   const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",num(lit(m_)),money(exV(sum(m_,"value")))],t_.length?"z-fueled":"");});
-   add(WK?1:0,"محروقات المعدات (قبل الضريبة)",["المعدة",`تعبئات ${L.per}`,`لترات ${L.per}`,`قيمة ${L.per} ر.س`,"تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
+   const gT=groupBy(d.F,r=>cc(r.center)),gM=groupBy(M.d.F,r=>cc(r.center));const keys=[...new Set([...gM.keys(),...(WK?gT.keys():[])])].sort((a,b)=>((gT.has(b)?1:0)-(gT.has(a)?1:0))||(sum(gT.get(b)||[],"value")-sum(gT.get(a)||[],"value"))||(sum(gM.get(b)||[],"value")-sum(gM.get(a)||[],"value")));
+   const rows_=keys.map(k=>{const t_=gT.get(k)||[],m_=gM.get(k)||[];return tr([esc(k),t_.length?num(t_.length):"—",t_.length?num(lit(t_)):"—",t_.length?money(exV(sum(t_,"value"))):"—",m_.length?num(lit(m_)):"—",m_.length?money(exV(sum(m_,"value"))):"—"],t_.length?"z-fueled":"");});
+   add(WK?1:0,"محروقات المعدات (قبل الضريبة)",["المعدة",`تعبئات ${L.per}`,`لترات ${L.per}`,`قيمة ${L.per} ر.س`,...(WK?[`لترات الأسبوع السابق`,`قيمة الأسبوع السابق ر.س`]:["تراكمي اللترات (الشهر)","تراكمي القيمة ر.س (الشهر)"])],rows_,tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(exV(sum(d.F,"value"))),num(lit(M.d.F)),money(exV(sum(M.d.F,"value")))],"total"));}
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.join("")}</div>`;
   {const dg=x=>(String(x).match(/\d{3,}/)||[""])[0];const on=new Set(T.d.P.map(r=>dg(r.mixer)));const f30=new Date(t.getFullYear(),t.getMonth(),t.getDate()-30);
    const fleet=new Set([...filt({from:dKey(f30),to:k}).P.map(r=>dg(r.mixer)),...M.d.F.filter(r=>/خلاطة/.test(r.center)).map(r=>dg(r.center))].filter(Boolean));
