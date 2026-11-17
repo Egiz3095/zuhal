@@ -1183,6 +1183,11 @@ bdi{unicode-bidi:isolate}
   .z-subt{padding:1.5mm 3mm!important;background:#f6ecd6!important;font-size:9pt}
   .report-table tr.z-grp-e td{background:#fdecef!important}.report-table tr.z-grp-n td{background:#fbf3e2!important}.report-table tr.z-grp-m td{background:#eef2f7!important}
 }
+/* الغلاف يغطي الصفحة كاملة دائماً فيختفي التذييل منه مهما كانت هوامش الطباعة */
+@media print{
+  .z-cover.z-cv2{height:calc(100vh - 0.6mm)!important;min-height:0!important;max-height:calc(100vh - 0.6mm)!important;background:#fff!important;position:relative!important;z-index:999!important;box-sizing:border-box!important;overflow:hidden!important}
+  .z-print-foot{z-index:1!important}
+}
 </style>
 </head>
 <body>
