@@ -1901,7 +1901,7 @@ function renderToday(){
 
 /* ---------- التقارير ---------- */
 const REPORTS={
-  exec:{t:"التقرير التنفيذي الشامل",d:"الإنتاج والأسمنت والمحروقات والمستندات للفترة المحددة"},
+  exec:{t:"التقرير التنفيذي الشامل",d:"صورة عامة للفترة: الإنتاج والتشغيل والتكاليف والوايت مقارنة بالفترة المماثلة"},
   monthly:{t:"التقرير الشهري",d:"أداء شهر كامل ومقارنته بالشهر السابق"},
   daily:{t:"التقرير اليومي",d:"حركة يوم محدد وتراكم الشهر حتى تاريخه"},weekly:{t:"التقرير الأسبوعي",d:"حركة أسبوع (السبت–الجمعة) وتراكم الشهر"},
   prod:{t:"تقرير الإنتاج",d:"الإنتاج حسب اليوم ودرجة الضغط ومعدة الصب"},
@@ -1925,7 +1925,7 @@ function openReport(id,keep){
   document.querySelectorAll(".report-item").forEach(b=>b.classList.toggle("active",b.dataset.r===id));
   $("reportTitle").textContent=r.t;$("reportDescription").textContent=r.d;
   $("reportWorkspace").hidden=false;document.querySelector(".page-shell").classList.add("z-report-open");
-  if(!RS.from&&!RS.to){const f=getFilters();RS.from=f.from;RS.to=f.to;}
+  if(!RS.from&&!RS.to){const f=getFilters();if(id==="exec"&&!f.from&&!f.to){RS.from=`${DB.maxD.getFullYear()}-01-01`;RS.to=dKey(DB.maxD);}else{RS.from=f.from;RS.to=f.to;}}
   if(!RS.month)RS.month=mKey(DB.maxD);if(!RS.day)RS.day=dKey(DB.maxD);
   drawReport();window.scrollTo({top:0,behavior:"smooth"});pushRecent(id);revealActive();
 }
@@ -1989,7 +1989,8 @@ function drawReport(){
   const id=CUR;let h="";const _tb=toolbar;if(KEEP_TB){toolbar=()=>{};}
   if(["exec","prod","fleet","cement","fuel","water","revenue","expenses","pnl","equip"].includes(id))toolbar("range");
   else if(id==="monthly")toolbar("month");else if(id==="daily"||id==="weekly")toolbar("day");else if(id==="veh")toolbar("docs");else if(id==="gov")toolbar("gov");else if(id==="follow")toolbar("follow");else toolbar("none");
-  if(id==="exec"){const d=rangeData();const al=docAlerts();
+  if(id==="exec")h=execReport();
+  if(id==="exec_old"){const d=rangeData();const al=docAlerts();
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b></div>`+prodKpis(d)+`<div class="report-grid">`+card("الأداء الشهري",monthlyTableHtml(d),true)+
     card("أفضل الخلاطات إنتاجاً",table(["الخلاطة","النقلات","الإنتاج م³","السائقون"],mixerRows(d.P).slice(0,8).map(x=>tr([`<b>${esc(x.m)}</b>`,num(x.n),num(x.q,1),esc(x.drs)]))))+
     card("الإنتاج حسب درجة الضغط",table(["الدرجة","النقلات","الإنتاج م³","النسبة"],[...groupBy(d.P,r=>r.grade)].sort((a,b)=>(toNum(a[0])||0)-(toNum(b[0])||0)).map(([g,rs])=>tr([esc(g),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/(sum(d.P,"qty")||1))]))))+
@@ -2091,7 +2092,7 @@ function refCode(code,id){let d;if(id==="weekly")d=dKey(weekRange(RS.day||dKey(D
   else if(["veh","gov","follow","dq"].includes(id))d=dKey(today()).replace(/-/g,"");else d=(RS.to||(DB?dKey(DB.maxD):dKey(new Date()))).replace(/-/g,"");return `ZRM-${code}-${d}`;}
 function printStamp(){const nw=new Date();return `تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}
 function fillCover(title,period,items){const c=document.querySelector(".z-cover");if(!c)return;
-  {const dy=c.querySelector(".z-cv-day");if(CUR==="daily"||CUR==="weekly"||CUR==="monthly"){const W=CUR==="weekly"?weekRange(RS.day||dKey(DB.maxD)):CUR==="monthly"?(()=>{const [y,m]=(RS.month||mKey(DB.maxD)).split("-").map(Number);return {s:new Date(y,m-1,1),e:new Date(y,m,0),mo:1};})():null;const t=W?W.e:toDate(RS.day||dKey(DB.maxD));const F=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const Fm=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{month:"long",year:"numeric"});const g=W&&W.mo?`${Fm.format(W.s)}\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W?`الأسبوع ${weekNo(W.s)}\nمن ${F.format(W.s)}\nإلى ${F.format(W.e)}`:F.format(t);let hj="";try{const H=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"});hj=W&&W.mo?`${H.format(W.s)} — ${H.format(W.e)}`:H.format(t);}catch(e){}
+  {const dy=c.querySelector(".z-cv-day");if(CUR==="daily"||CUR==="weekly"||CUR==="monthly"||CUR==="exec"){const W=CUR==="exec"?{s:RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e:RS.to?toDate(RS.to):new Date(+DB.maxD),ex:1}:CUR==="weekly"?weekRange(RS.day||dKey(DB.maxD)):CUR==="monthly"?(()=>{const [y,m]=(RS.month||mKey(DB.maxD)).split("-").map(Number);return {s:new Date(y,m-1,1),e:new Date(y,m,0),mo:1};})():null;const t=W?W.e:toDate(RS.day||dKey(DB.maxD));const F=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const Fm=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{month:"long",year:"numeric"});const g=W&&W.ex?`الفترة\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W&&W.mo?`${Fm.format(W.s)}\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W?`الأسبوع ${weekNo(W.s)}\nمن ${F.format(W.s)}\nإلى ${F.format(W.e)}`:F.format(t);let hj="";try{const H=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"});hj=W&&(W.mo||W.ex)?`${H.format(W.s)} — ${H.format(W.e)}`:H.format(t);}catch(e){}
      c.querySelector(".z-cv-dayg").textContent=g;c.querySelector(".z-cv-dayh").textContent=hj;dy.style.display="";}else dy.style.display="none";
    const n=document.querySelectorAll("#reportBody .report-card > h3").length;c.querySelector(".z-cv-doc").textContent=`النسخة 1.0${n?` • ${arN(n,"قسم")}`:""}`;
    c.querySelector(".z-cv-by2").textContent=PREPARED_BY;
@@ -2241,6 +2242,103 @@ function dailyReport(){
   let EL="";if(empty.length)EL=`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة ${MO?"خلال هذا الشهر":WK?"خلال هذا الأسبوع":"في هذا اليوم"} في: <b>${empty.map(esc).join("، ")}</b></div>`;if(!WK){h+=EL;EL="";}const lastP=pages.map(x=>x.length>0).lastIndexOf(true);
   const PT=["القسم 2: التشغيل والمحروقات","القسم 3"];let pn=0;pages.forEach((pg,i)=>{if(pg.length){pn++;h+=`<div class="report-grid z-daily-grid z-dpage${WK?" z-wk":""}">${pg.map(c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`)).join("")}${i===lastP?EL:""}</div>`;}});if(EL&&lastP<0)h+=EL;
   return h;
+}
+function execReport(){
+  const s=RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e=RS.to?toDate(RS.to):new Date(+DB.maxD);
+  const nD=Math.round((e-s)/864e5)+1;
+  const ly=x=>new Date(x.getFullYear()-1,x.getMonth(),x.getDate());
+  let ps,pe,cmpL;
+  if(DB.minD&&DB.minD<=ly(s)){ps=ly(s);pe=ly(e);cmpL="نفس الفترة من العام السابق";}
+  else{pe=new Date(s);pe.setDate(s.getDate()-1);ps=new Date(pe);ps.setDate(pe.getDate()-nD+1);cmpL="الفترة السابقة بنفس الطول";}
+  const T=dailyMetrics(dKey(s),dKey(e)),M=dailyMetrics(dKey(ps),dKey(pe));const d=T.d;const q=T.qty||1;
+  const prd=(a,b)=>`<span class="z-thd" dir="rtl">من <bdi dir="ltr">${fmtDate(a)}</bdi> إلى <bdi dir="ltr">${fmtDate(b)}</bdi></span>`;
+  const dig=x=>(String(x).match(/\d{3,}/)||[""])[0];
+  const nm=x=>String(x||"غير محدد").replace(/ـ/g,"").replace(/\s+/g," ").trim();
+  const ICO=ic=>`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic]}</svg>`;
+  const cell=(big,unit,sub)=>`<td class="z-sc"><div class="z-sv">${big}${unit?` <small>${unit}</small>`:""}</div>${sub?`<div class="z-ss">${sub}</div>`:""}</td>`;
+  const row=(ic,label,a,c)=>`<tr><td class="z-sl"><span class="z-db-ic z-db-${ic}">${ICO(ic)}</span>${label}</td>${a}${c}</tr>`;
+  const chg=(a,b)=>b?` • <b class="${a>=b?"z-pos":"z-neg"}"><bdi dir="ltr">${a>=b?"+":"−"}${num(Math.abs(a-b)/b*100,0)}%</bdi></b>`:"";
+  const wPl=o=>{const m={};(o.W||[]).forEach(r=>{const k=nm(r.center);m[k]=(m[k]||0)+r.trips;});const en=Object.entries(m).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]);if(!en.length)return "لا توجد ردود";const top=en.slice(0,2).map(([k,v])=>`${esc(k)} ${num(v)}`);const rest=en.slice(2).reduce((a,x)=>a+x[1],0);if(rest)top.push(`أخرى ${num(rest)}`);return top.join(" • ");};
+  const rows=
+    row("prod","الإنتاج",cell(num(T.qty,1),"م³",`${arN(T.trips,"نقلة")} • ${arN(T.days,"يوم")} تشغيل • ${num(T.days?T.qty/T.days:0,1)} م³/يوم${chg(T.qty,M.qty)}`),cell(num(M.qty,1),"م³",`${arN(M.trips,"نقلة")} • ${num(M.days?M.qty/M.days:0,1)} م³/يوم`))+
+    row("cem","الأسمنت",cell(`<small>مستلم</small> ${num(T.crec,1)}`,"طن",`مستهلك ${num(T.ccon,1)} طن • ${num(T.qty?T.ccon*1000/T.qty:0,0)} كجم/م³`),cell(`<small>مستلم</small> ${num(M.crec,1)}`,"طن",`مستهلك ${num(M.ccon,1)} طن`))+
+    row("mat","المواد الخام",cell(num(T.matLoads),arW(T.matLoads,"حمولة"),`تكلفة ${money(T.matT)} ر.س`),cell(num(M.matLoads),arW(M.matLoads,"حمولة"),`تكلفة ${money(M.matT)} ر.س`))+
+    row("fuel","المحروقات",cell(money(T.fuel),"ر.س",`${num(T.liters)} ${arW(T.liters,"لتر")} • ${num(T.fuelM3,2)} ر.س/م³${chg(T.fuel,M.fuel)}`),cell(money(M.fuel),"ر.س",`${num(M.liters)} ${arW(M.liters,"لتر")} • ${num(M.fuelM3,2)} ر.س/م³`))+
+    row("fuel","المصروفات",cell(money(T.exp),"ر.س",`${arN(T.expN,"قيد")} • ${num(T.qty?T.exp/T.qty:0,2)} ر.س/م³${chg(T.exp,M.exp)}`),cell(money(M.exp),"ر.س",`${arN(M.expN,"قيد")}`))+
+    row("prod",`الوايت ${WATER_TRUCK}`,cell(num(T.wtrips),arW(T.wtrips,"رد"),wPl(T)),cell(num(M.wtrips),arW(M.wtrips,"رد"),wPl(M)));
+  let h=`<div class="report-note">الفترة من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e)}</b> (${num(nD)} يوماً) — والمقارنة مع ${cmpL} من <b>${fmtDate(ps)}</b> إلى <b>${fmtDate(pe)}</b>.</div>`;
+  h+=`<div class="z-pg1w"><div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>ملخص الفترة مقارنة بـ${cmpL}</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:39%"><col style="width:39%"></colgroup><thead><tr><th class="z-sl">البند</th><th>الفترة${prd(s,e)}</th><th>${cmpL}${prd(ps,pe)}</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  const p1=[],pages=[[],[],[]],empty=[];
+  const add=(pg,title,head,rs,total)=>{if(!rs.length){empty.push(title);return;}(pg<0?p1:pages[pg]).push(card(title,table(head,rs,total),true));};
+  const gtr=(x,n)=>`<tr class="z-grp"><td colspan="${n}">${x}</td></tr>`;
+  const bar=(v,mx,txt)=>`<span class="z-bar" style="--w:${(v/(mx||1)*100).toFixed(0)}%">${txt}</span>`;
+  const z=v=>v?v:"—";
+  /* 02 الأداء الشهري */
+  const MS=[];{let m0=new Date(s.getFullYear(),s.getMonth(),1);while(m0<=e){const a=m0<s?s:m0,b0=new Date(m0.getFullYear(),m0.getMonth()+1,0),b=b0>e?e:b0;MS.push({k:mKey(m0),a,b,full:+a===+m0&&+b===+b0,m:dailyMetrics(dKey(a),dKey(b))});m0=new Date(m0.getFullYear(),m0.getMonth()+1,1);}}
+  {const mq=Math.max(0,...MS.map(x=>x.m.qty));const tt={n:0,q:0,cr:0,f:0,x:0,w:0};MS.forEach(({m})=>{tt.n+=m.trips;tt.q+=m.qty;tt.cr+=m.crec;tt.f+=m.fuel;tt.x+=m.exp;tt.w+=m.wtrips;});
+   const rs=MS.map(({k,a,b,full,m})=>{const best=mq&&m.qty===mq;return tr([`<b>${mLabel(k)}</b>${best?' <span class="z-best-tag">الأعلى</span>':""}${full?"":' <span class="z-thd">(جزئي)</span>'}`,num(m.trips),bar(m.qty,mq,num(m.qty,1)),z(m.crec&&num(m.crec,1)),z(m.fuel&&money(m.fuel)),m.fuel&&m.qty?money(m.fuel/m.qty):"—",z(m.exp&&money(m.exp)),m.exp&&m.qty?money(m.exp/m.qty):"—",z(m.wtrips&&num(m.wtrips))],best?"z-bestday":"");});
+   p1.push(card("الأداء الشهري خلال الفترة",table(["الشهر","النقلات","الإنتاج م³","أسمنت مستلم ط","المحروقات ر.س","محروقات/م³","المصروفات ر.س","مصروف/م³","ردود الوايت"],rs,tr(["الإجمالي",num(tt.n),num(tt.q,1),num(tt.cr,1),money(tt.f),tt.q?money(tt.f/tt.q):"—",money(tt.x),tt.q?money(tt.x/tt.q):"—",num(tt.w)],"total")).replace('<table class="report-table','<table class="report-table z-wkdays'),true));}
+  /* 03 المؤشرات الرئيسية */
+  {const kp=(m,e0)=>{const md=new Set(m.d.P.map(r=>r.mixer+"|"+dKey(r.date))).size;
+      const fleet=new Set(m.d.P.map(r=>dig(r.mixer)).filter(Boolean));const mdays=fleet.size&&m.days?md/(fleet.size*m.days):0;
+      return {a:m.days?m.qty/m.days:0,b:md?m.qty/md:0,c:md?m.trips/md:0,d:m.trips?m.qty/m.trips:0,e:mdays,g:m.qty?m.fuel/m.qty:0,h:m.qty?m.ccon*1000/m.qty:0,j:m.qty?m.exp/m.qty:0};};
+   const KT=kp(T,e),KM=kp(M,pe),KS=MS.slice(-12).map(x=>kp(x.m,x.b));
+   const DEF=[["a","م³ لكل يوم تشغيل","الإنتاجية",1,1],["b","م³ لكل خلاطة في اليوم","الإنتاجية",1,1],["c","نقلات لكل خلاطة في اليوم","الإنتاجية",1,2],["d","متوسط حمولة النقلة م³","الإنتاجية",1,2],
+     ["e","نسبة تشغيل الخلاطات (أيام العمل ÷ أيام التشغيل)","استغلال الأسطول",1,"%"],
+     ["g","محروقات ر.س لكل م³","الكفاءة والتكلفة",-1,2],["h","كجم أسمنت لكل م³","الكفاءة والتكلفة",0,0],["j","مصروفات ر.س لكل م³","الكفاءة والتكلفة",-1,2]];
+   const fmt=(v,dc)=>dc==="%"?pct(v):num(v,dc);
+   const spark=arr=>{const n=arr.length,w=Math.max(66,n*8);const mx=Math.max(...arr,0)||1;const bw=w/n;return `<svg class="z-spark" viewBox="0 0 ${w} 18" width="${w}" height="18">${arr.map((v,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(18-Math.max(1.5,v/mx*16)).toFixed(1)}" width="${(bw-2).toFixed(1)}" height="${Math.max(1.5,v/mx*16).toFixed(1)}" rx="1.2" fill="${i===n-1?"#d6a84b":"#9fb0cc"}"/>`).join("")}</svg>`;};
+   let grp="";const rk=[];DEF.forEach(([k,lbl,g,dir,dc])=>{if(g!==grp){grp=g;rk.push(gtr(g,4));}
+     const cur=KT[k],prev=KM[k],diff=cur-prev;const ch=dc==="%"?`${diff>=0?"+":"−"}${num(Math.abs(diff)*100,1)} نقطة`:(prev?`${diff>=0?"+":"−"}${num(Math.abs(diff/prev)*100,0)}%`:"—");
+     const flat=dc==="%"?Math.abs(diff)<0.0005:(!prev||Math.abs(diff/prev)<0.005);const good=dir===0||flat?"z-tn":(diff*dir>0?"z-tg":"z-tb");const ar=flat?"■":diff>0?"▲":"▼";
+     rk.push(tr([`<b>${lbl}</b>`,`<b>${fmt(cur,dc)}</b>`,fmt(prev,dc),`<span class="z-kt ${good}">${ar} <bdi dir="ltr">${ch}</bdi></span> ${KS.length>1?spark(KS.map(x=>x[k])):""}`]));});
+   pages[0].push(card("المؤشرات الرئيسية",table(["المؤشر","الفترة",cmpL,`التغير والاتجاه الشهري`],rk),true));}
+  /* 04 الخلاطات */
+  {const fuelOf=m=>{const k=dig(m);return k?exV(sum(d.F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k),"value")):0;};
+   const mr=mixerRows(d.P);const mxq=Math.max(0,...mr.map(x=>x.q));let tf=0,tl=0;
+   const lit=m=>{const k=dig(m);return k?sum(d.F.filter(r=>/خلاطة/.test(r.center)&&dig(r.center)===k&&r.liters),"liters"):0;};
+   const rs=mr.map((x,i)=>{const r_=d.P.filter(r=>r.mixer===x.m);const wd=new Set(r_.map(r=>dKey(r.date))).size;const f=fuelOf(x.m),l=lit(x.m);tf+=f;tl+=l;
+     return tr([`<b>${esc(x.m)}</b>`,`${num(wd)} من ${num(T.days)}`,num(wd?x.n/wd:0,1),num(x.n),bar(x.q,mxq,num(x.q,1)),pct(x.q/q),f?money(f):"—",l&&x.q?num(l/x.q,2):"—"]);});
+   add(0,"الخلاطات حسب الإنتاج",["الخلاطة","أيام العمل","نقلات/يوم","النقلات","الإنتاج م³","النسبة","المحروقات ر.س","لتر/م³"],rs,tr(["الإجمالي","","",num(d.P.length),num(T.qty,1),"100%",money(tf),tl&&T.qty?num(tl/T.qty,2):"—"],"total"));}
+  /* 05 توزيع الإنتاج */
+  {const gl=g=>/ضغط/.test(g)?g:"ضغط "+g;const gn=g=>toNum(String(g).replace(/\D/g,""))||0;
+   const g1=[...groupBy(d.P,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const g2=[...groupBy(d.P,r=>r.pump)].sort((a,b)=>sum(b[1],"qty")-sum(a[1],"qty"));
+   const rr=([k,rs])=>tr([esc(k),num(rs.length),num(sum(rs,"qty"),1),pct(sum(rs,"qty")/q)]);
+   add(0,"توزيع الإنتاج",["البيان","النقلات","الإنتاج م³","النسبة"],d.P.length?[gtr("حسب درجة الضغط",4),...g1.map(rr),gtr("حسب معدة الصب",4),...g2.map(([k,rs])=>rr([/^\d+$/.test(k)?"مضخة "+k:k,rs]))]:[],"");}
+  /* 06 أعلى 10 سائقين */
+  {const dr=[...groupBy(d.P,r=>r.driver)].map(([n,rs])=>({n,t:rs.length,q:sum(rs,"qty"),dd:new Set(rs.map(r=>dKey(r.date))).size,mx:[...new Set(rs.map(r=>r.mixer))].slice(0,3).join("، ")})).sort((a,b)=>b.q-a.q).slice(0,10);
+   const mx=Math.max(0,...dr.map(x=>x.q));
+   add(1,"أعلى 10 سائقين إنتاجاً",["السائق","الخلاطة","أيام العمل","النقلات","الكمية م³","النسبة"],dr.map(x=>tr([`<b>${esc(x.n)}</b>`,esc(x.mx),num(x.dd),num(x.t),bar(x.q,mx,num(x.q,1)),pct(x.q/q)])),"");}
+  /* 07 المصروفات حسب التصنيف */
+  {const gT=groupBy(d.E,r=>r.cat||"غير مصنف"),gM=groupBy(M.d.E,r=>r.cat||"غير مصنف");const tT=sum(d.E,"amount"),tM=sum(M.d.E,"amount");
+   let ks=[...gT.keys()].sort((a,b)=>sum(gT.get(b),"amount")-sum(gT.get(a),"amount"));const mx=Math.max(0,...ks.map(k=>sum(gT.get(k),"amount")));
+   if(ks.length>13){const rest=ks.slice(12);const oth=`أخرى (${num(rest.length)} تصنيفات)`;gT.set(oth,rest.flatMap(k=>gT.get(k)));gM.set(oth,rest.flatMap(k=>gM.get(k)||[]));ks=[...ks.slice(0,12),oth];}
+   add(1,"المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س","النسبة","ر.س/م³",cmpL],ks.map(k=>{const a=sum(gT.get(k),"amount"),b=sum(gM.get(k)||[],"amount");return tr([/^أخرى \(/.test(k)?esc(k):`<b>${esc(k)}</b>`,num(gT.get(k).length),bar(a,mx,money(a)),tT?pct(a/tT):"—",T.qty?money(a/T.qty):"—",b?money(b):"—"]);}),tr(["الإجمالي",num(d.E.length),money(tT),"100%",T.qty?money(tT/T.qty):"—",money(tM)],"total"));}
+  /* 08 أعلى 10 معدات تكلفة */
+  {const eq=new Map();const key=x=>dig(x)||nm(x);
+   equipRows(d).forEach(r=>{const k=key(r.eq);const o=eq.get(k)||{n:r.eq,x:0,f:0,q:null};o.x+=r.tot;if(r.q!=null)o.q=r.q;eq.set(k,o);});
+   const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();
+   d.F.forEach(r=>{const k=key(cc(r.center));const o=eq.get(k)||{n:cc(r.center),x:0,f:0,q:null};o.f+=exV(r.value||0);eq.set(k,o);});
+   const mixQ=new Map();d.P.forEach(r=>{const k=dig(r.mixer);if(k)mixQ.set(k,(mixQ.get(k)||0)+r.qty);});
+   const L=[...eq.entries()].map(([k,o])=>({...o,q:o.q!=null?o.q:(mixQ.get(k)||null),t:o.x+o.f})).filter(o=>o.t>0&&!/غير مرتبط/.test(o.n)).sort((a,b)=>b.t-a.t).slice(0,10);
+   const mx=Math.max(0,...L.map(o=>o.t));
+   add(2,"أعلى 10 معدات تكلفةً (مصروفات + محروقات)",["المعدة","المصروفات ر.س","المحروقات ر.س","الإجمالي ر.س","الإنتاج م³","تكلفة/م³"],L.map(o=>tr([`<b>${esc(o.n)}</b>`,o.x?money(o.x):"—",o.f?money(o.f):"—",bar(o.t,mx,money(o.t)),o.q?num(o.q,1):"—",o.q?money(o.t/o.q):"—"])),"");}
+  /* 09 المحروقات حسب المجموعة */
+  {const lit=rs=>sum(rs.filter(r=>r.liters),"liters");const gT=groupBy(d.F,r=>r.group||"أخرى"),gM=groupBy(M.d.F,r=>r.group||"أخرى");const tT=exV(sum(d.F,"value"));
+   const ks=[...new Set([...gT.keys(),...gM.keys()])].sort((a,b)=>sum(gT.get(b)||[],"value")-sum(gT.get(a)||[],"value"));const mx=Math.max(0,...ks.map(k=>sum(gT.get(k)||[],"value")));
+   add(2,"المحروقات حسب المجموعة (قبل الضريبة)",["المجموعة","التعبئات","اللترات","القيمة ر.س","النسبة",`قيمة ${cmpL}`],ks.map(k=>{const a=gT.get(k)||[],b=gM.get(k)||[];const v=exV(sum(a,"value"));return tr([`<b>${esc(k)}</b>`,z(a.length&&num(a.length)),z(a.length&&num(lit(a))),bar(sum(a,"value"),mx,v?money(v):"—"),tT?pct(v/tT):"—",b.length?money(exV(sum(b,"value"))):"—"]);}),tr(["الإجمالي",num(d.F.length),num(lit(d.F)),money(tT),"100%",money(exV(sum(M.d.F,"value")))],"total"));}
+  /* 10 الوايت */
+  {const by=o=>{const m={};(o.W||[]).forEach(r=>{const k=nm(r.center);m[k]=(m[k]||0)+r.trips;});return m;};const a=by(T),b=by(M);
+   const ks=[...new Set([...Object.keys(a),...Object.keys(b)])].sort((x,y)=>(/زحل/.test(y)-/زحل/.test(x))||((a[y]||0)-(a[x]||0)));const ta=Object.values(a).reduce((p,c)=>p+c,0),tb=Object.values(b).reduce((p,c)=>p+c,0);const mx=Math.max(0,...Object.values(a));
+   add(2,`الوايت ${WATER_TRUCK} — الردود حسب المكان`,["المكان","الفترة","النسبة",cmpL],ks.map(k=>tr([/زحل/.test(k)?`<b>${esc(k)}</b>`:esc(k),bar(a[k]||0,mx,num(a[k]||0)),ta?pct((a[k]||0)/ta):"—",num(b[k]||0)],/زحل/.test(k)?"z-bestday":"")),tr(["الإجمالي",num(ta),"100%",num(tb)],"total"));}
+  const fg=c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`);
+  if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.map(fg).join("")}</div>`;
+  h+=`</div>`;
+  const EL=empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة خلال الفترة في: <b>${empty.map(esc).join("، ")}</b></div>`:"";
+  const lastP=pages.map(x=>x.length>0).lastIndexOf(true);
+  pages.forEach((pg,i)=>{if(pg.length)h+=`<div class="report-grid z-daily-grid z-dpage z-wk">${pg.map(fg).join("")}${i===lastP?EL:""}</div>`;});
+  if(EL&&lastP<0)h+=EL;
+  return h+"<!--NOSUM-->";
 }
 function periodLabel(id){
   if(id==="monthly")return mLabel(RS.month);if(id==="daily")return fmtDate(toDate(RS.day));if(id==="weekly"){const w=weekRange(RS.day||dKey(DB.maxD));return `الأسبوع ${weekNo(w.s)} — ${fmtDate(w.s)} — ${fmtDate(w.e)}`;}
@@ -2664,7 +2762,7 @@ function footCSS(){const t=document.querySelector(".z-ph-title")?.textContent||"
   let el=document.getElementById("zFootCSS");if(!el){el=document.createElement("style");el.id="zFootCSS";document.head.appendChild(el);}
   el.textContent=`@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-family:Tahoma,sans-serif;font-size:7pt;color:#5d6980;vertical-align:middle}} @page:first{@bottom-left{content:none}}`;}
 function fillFoot(){footCSS();const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";document.querySelectorAll(".z-pf-rep").forEach(r=>r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t);document.querySelectorAll(".z-pf-meta").forEach(m=>{const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;});}
-let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=(CUR==="monthly")?`التقرير الشهري لشركة زحل - ${mLabel(RS.month||mKey(DB.maxD))}`:(CUR==="daily")?`التقرير اليومي لشركة زحل - ${(RS.day||dKey(DB.maxD)).replace(/-/g,"")}`:(CUR==="weekly")?(()=>{const w=weekRange(RS.day||dKey(DB.maxD));return `التقرير الأسبوعي لشركة زحل - الأسبوع ${weekNo(w.s)} - ${dKey(w.s).replace(/-/g,"")}-${dKey(w.e).replace(/-/g,"")}`;})():rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
+let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=(CUR==="exec")?`التقرير التنفيذي لشركة زحل - من ${fmtDate(RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1))} إلى ${fmtDate(RS.to?toDate(RS.to):DB.maxD)}`:(CUR==="monthly")?`التقرير الشهري لشركة زحل - ${mLabel(RS.month||mKey(DB.maxD))}`:(CUR==="daily")?`التقرير اليومي لشركة زحل - ${(RS.day||dKey(DB.maxD)).replace(/-/g,"")}`:(CUR==="weekly")?(()=>{const w=weekRange(RS.day||dKey(DB.maxD));return `التقرير الأسبوعي لشركة زحل - الأسبوع ${weekNo(w.s)} - ${dKey(w.s).replace(/-/g,"")}-${dKey(w.e).replace(/-/g,"")}`;})():rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
 
 addEventListener("afterprint",()=>{if(_docTitle)document.title=_docTitle;});
