@@ -2316,13 +2316,13 @@ function execReport(){
    add(1,"المصروفات حسب التصنيف",["التصنيف","القيود","المبلغ ر.س","النسبة","ر.س/م³",cmpL],ks.map(k=>{const a=sum(gT.get(k),"amount"),b=sum(gM.get(k)||[],"amount");return tr([/^أخرى \(/.test(k)?esc(k):`<b>${esc(k)}</b>`,num(gT.get(k).length),bar(a,mx,money(a)),tT?pct(a/tT):"—",T.qty?money(a/T.qty):"—",b?money(b):"—"]);}),tr(["الإجمالي",num(d.E.length),money(tT),"100%",T.qty?money(tT/T.qty):"—",money(tM)],"total"));}
   /* 08 أعلى 10 معدات تكلفة */
   {const eq=new Map();const key=x=>dig(x)||nm(x);
-   equipRows(d).forEach(r=>{const k=key(r.eq);const o=eq.get(k)||{n:r.eq,x:0,f:0,q:null};o.x+=r.tot;if(r.q!=null)o.q=r.q;eq.set(k,o);});
+   equipRows({...d,E:d.E.filter(r=>r.cat!=="وقود")}).forEach(r=>{const k=key(r.eq);const o=eq.get(k)||{n:r.eq,x:0,f:0,q:null};o.x+=r.tot;if(r.q!=null)o.q=r.q;eq.set(k,o);});
    const cc=c=>String(c).replace(/\s*[-–]\s*/g," ").replace(/\s+/g," ").trim();
    d.F.forEach(r=>{const k=key(cc(r.center));const o=eq.get(k)||{n:cc(r.center),x:0,f:0,q:null};o.f+=exV(r.value||0);eq.set(k,o);});
    const mixQ=new Map();d.P.forEach(r=>{const k=dig(r.mixer);if(k)mixQ.set(k,(mixQ.get(k)||0)+r.qty);});
    const L=[...eq.entries()].map(([k,o])=>({...o,q:o.q!=null?o.q:(mixQ.get(k)||null),t:o.x+o.f})).filter(o=>o.t>0&&!/غير مرتبط/.test(o.n)).sort((a,b)=>b.t-a.t).slice(0,10);
    const mx=Math.max(0,...L.map(o=>o.t));
-   add(2,"أعلى 10 معدات تكلفةً (مصروفات + محروقات)",["المعدة","المصروفات ر.س","المحروقات ر.س","الإجمالي ر.س","الإنتاج م³","تكلفة/م³"],L.map(o=>tr([`<b>${esc(o.n)}</b>`,o.x?money(o.x):"—",o.f?money(o.f):"—",bar(o.t,mx,money(o.t)),o.q?num(o.q,1):"—",o.q?money(o.t/o.q):"—"])),"");}
+   add(2,"أعلى 10 معدات تكلفةً (مصروفات بدون الوقود + المحروقات)",["المعدة","المصروفات ر.س","المحروقات ر.س","الإجمالي ر.س","الإنتاج م³","تكلفة/م³"],L.map(o=>tr([`<b>${esc(o.n)}</b>`,o.x?money(o.x):"—",o.f?money(o.f):"—",bar(o.t,mx,money(o.t)),o.q?num(o.q,1):"—",o.q?money(o.t/o.q):"—"])),"");}
   /* 09 المحروقات حسب المجموعة */
   {const lit=rs=>sum(rs.filter(r=>r.liters),"liters");const gT=groupBy(d.F,r=>r.group||"أخرى"),gM=groupBy(M.d.F,r=>r.group||"أخرى");const tT=exV(sum(d.F,"value"));
    const ks=[...new Set([...gT.keys(),...gM.keys()])].sort((a,b)=>sum(gT.get(b)||[],"value")-sum(gT.get(a)||[],"value"));const mx=Math.max(0,...ks.map(k=>sum(gT.get(k)||[],"value")));
