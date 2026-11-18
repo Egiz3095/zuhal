@@ -1279,6 +1279,11 @@ bdi{unicode-bidi:isolate}
 @media print{.z-pg1w>.z-p1 .report-table tbody td,.z-dpage.z-wk .report-table tbody td{height:6.3mm!important}}
 .z-thd{display:block;font-size:.78em;font-weight:600;opacity:.85;margin-top:3px;color:#f0cf86}
 @media print{.z-thd{font-size:7.5pt!important;margin-top:0.6mm;color:#f0cf86!important}}
+
+/* التقارير المالية */
+.z-catrow td{background:#eef2f9;font-weight:800}
+.z-sub{color:#33415c;padding-inline-start:10px;display:inline-block}
+.z-desc{display:inline-block;max-width:62mm;white-space:normal;font-weight:600;font-size:.92em;line-height:1.3}
 </style>
 </head>
 <body>
@@ -1700,7 +1705,7 @@ function model(raw){
     return {date:toDate(pick(r,"التاريخ")),entry:clean(pick(r,"رقم القيد")),name:clean(pick(r,"إسم الحركة","اسم الحركة"))||"غير محدد",dr,cr,
       amount:kind==="rev"?cr-dr:dr-cr,branch:clean(pick(r,"الفرع"))||"غير محدد",desc:clean(pick(r,"البيان")),center:clean(pick(r,"مركز التكلفة"))||"غير محدد",
       cat:clean(r[normKey("التصنيف")]??"")||"غير مصنف",sub:clean(pick(r,"التصنيف الفرعي"))||"غير محدد",equip:clean(pick(r,"المعدة"))||"غير مرتبط بمعدة",
-      etype:clean(pick(r,"نوع المعدة"))||"عام",ctype:clean(pick(r,"نوع التكلفة"))||"غير محدد"};}).filter(r=>r.date);
+      etype:clean(pick(r,"نوع المعدة"))||"عام",ctype:clean(pick(r,"نوع التكلفة"))||"غير محدد",qty:toNum(pick(r,"الكمية"))||0,grade:clean(pick(r,"الضغط"))||"غير محدد",site:clean(pick(r,"الموقع"))||"غير محدد"};}).filter(r=>r.date);
   const S=fin(raw.sales,"rev"),E=fin(raw.expenses,"exp");
   // المواد: كل صف = حمولة واحدة
   const Mt=(raw.materials||[]).map(r=>({date:toDate(pick(r,"التاريخ")),driver:clean(pick(r,"السائق"))||"—",equip:clean(pick(r,"المعدة"))||"—",type:clean(pick(r,"نوع المادة"))||"غير محدد",
@@ -1925,7 +1930,7 @@ function openReport(id,keep){
   document.querySelectorAll(".report-item").forEach(b=>b.classList.toggle("active",b.dataset.r===id));
   $("reportTitle").textContent=r.t;$("reportDescription").textContent=r.d;
   $("reportWorkspace").hidden=false;document.querySelector(".page-shell").classList.add("z-report-open");
-  if(!RS.from&&!RS.to){const f=getFilters();if(id==="exec"&&!f.from&&!f.to){RS.from=`${DB.maxD.getFullYear()}-01-01`;RS.to=dKey(DB.maxD);}else{RS.from=f.from;RS.to=f.to;}}
+  if(!RS.from&&!RS.to){const f=getFilters();if(["exec","revenue","expenses","pnl"].includes(id)&&!f.from&&!f.to){RS.from=`${DB.maxD.getFullYear()}-01-01`;RS.to=dKey(DB.maxD);}else{RS.from=f.from;RS.to=f.to;}}
   if(!RS.month)RS.month=mKey(DB.maxD);if(!RS.day)RS.day=dKey(DB.maxD);
   drawReport();window.scrollTo({top:0,behavior:"smooth"});pushRecent(id);revealActive();
 }
@@ -2042,7 +2047,8 @@ function drawReport(){
   if(id==="dq")h=dqReport();
   if(id==="follow")h=followReport();
   if(id==="equip")h=equipReport();
-  if(id==="revenue"||id==="expenses"){const d=rangeData();const A=id==="revenue"?d.S:d.E.filter(r=>!RS.cat||r.cat===RS.cat);const tot=sum(A,"amount");const q=spanQty(d,A);const lbl=id==="revenue"?"الإيرادات":"المصروفات";
+  if(id==="revenue"||id==="expenses"||id==="pnl")h=finReport(id);
+  if(id==="revenue_old"||id==="expenses_old"){const d=rangeData();const A=id==="revenue"?d.S:d.E.filter(r=>!RS.cat||r.cat===RS.cat);const tot=sum(A,"amount");const q=spanQty(d,A);const lbl=id==="revenue"?"الإيرادات":"المصروفات";
     const grp=(fn,head)=>table([head,"القيود","المبلغ ر.س","النسبة"],[...groupBy(A,fn)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount")).map(([k,rs])=>tr([`<b>${esc(k)}</b>`,num(rs.length),money(sum(rs,"amount")),pct(sum(rs,"amount")/(tot||1))])),A.length?tr(["الإجمالي",num(A.length),money(tot),"100%"],"total"):"");
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b> — ${id==="revenue"?"الإيراد = دائن − مدين":"المصروف = مدين − دائن"} من تبويب «${id==="revenue"?SHEETS.tabs.sales:SHEETS.tabs.expenses}»</div>`+
     (!(id==="revenue"?DB.S:DB.E).length?finEmptyMsg():"")+
@@ -2053,7 +2059,7 @@ function drawReport(){
       card("حسب المعدة",grp(r=>r.equip,"المعدة"))+card("حسب مركز التكلفة",grp(r=>r.center,"مركز التكلفة")):card("حسب إسم الحركة",grp(r=>r.name,"الحركة")))+
     card("حسب الفرع",grp(r=>r.branch,"الفرع"))+
     card(`القيود${A.length>300?" — آخر 300 قيد":""}`,table(["التاريخ","رقم القيد",...(id==="expenses"?["التصنيف","الفرعي","المعدة"]:["الحركة","الفرع"]),"المبلغ","البيان"],A.slice().sort((a,b)=>b.date-a.date).slice(0,300).map(r=>tr([fmtDate(r.date),esc(r.entry),...(id==="expenses"?[esc(r.cat),esc(r.sub),esc(r.equip)]:[esc(r.name),esc(r.branch)]),money(r.amount),esc(r.desc)]))),true)+`</div>`;}
-  if(id==="pnl"){const d=rangeData();const rev=sum(d.S,"amount"),exp=sum(d.E,"amount"),net=rev-exp,q=sum(d.P,"qty");let cum=0;
+  if(id==="pnl_old"){const d=rangeData();const rev=sum(d.S,"amount"),exp=sum(d.E,"amount"),net=rev-exp,q=sum(d.P,"qty");let cum=0;
     h=`<div class="report-note">الفترة: <b>${rangeLabel()}</b></div>`+(!(DB.S.length+DB.E.length)?finEmptyMsg():"")+
     `<div class="report-kpis">${kpi("الإيرادات",money(rev)+" ر.س","blue")}${kpi("المصروفات",money(exp)+" ر.س","red")}${kpi("صافي التشغيل",money(net)+" ر.س",net>=0?"green":"red")}${kpi("هامش التشغيل",pct(rev?net/rev:0))}
     ${kpi("الإنتاج",num(q,1)+" م³")}${kpi("متوسط سعر المتر",num(q?rev/q:0,2)+" ر.س")}${kpi("تكلفة المتر",num(q?exp/q:0,2)+" ر.س")}${kpi("ربح المتر",num(q?net/q:0,2)+" ر.س",net>=0?"green":"red")}</div><div class="report-grid">`+
@@ -2092,7 +2098,7 @@ function refCode(code,id){let d;if(id==="weekly")d=dKey(weekRange(RS.day||dKey(D
   else if(["veh","gov","follow","dq"].includes(id))d=dKey(today()).replace(/-/g,"");else d=(RS.to||(DB?dKey(DB.maxD):dKey(new Date()))).replace(/-/g,"");return `ZRM-${code}-${d}`;}
 function printStamp(){const nw=new Date();return `تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}
 function fillCover(title,period,items){const c=document.querySelector(".z-cover");if(!c)return;
-  {const dy=c.querySelector(".z-cv-day");if(CUR==="daily"||CUR==="weekly"||CUR==="monthly"||CUR==="exec"){const W=CUR==="exec"?{s:RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e:RS.to?toDate(RS.to):new Date(+DB.maxD),ex:1}:CUR==="weekly"?weekRange(RS.day||dKey(DB.maxD)):CUR==="monthly"?(()=>{const [y,m]=(RS.month||mKey(DB.maxD)).split("-").map(Number);return {s:new Date(y,m-1,1),e:new Date(y,m,0),mo:1};})():null;const t=W?W.e:toDate(RS.day||dKey(DB.maxD));const F=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const Fm=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{month:"long",year:"numeric"});const g=W&&W.ex?`الفترة\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W&&W.mo?`${Fm.format(W.s)}\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W?`الأسبوع ${weekNo(W.s)}\nمن ${F.format(W.s)}\nإلى ${F.format(W.e)}`:F.format(t);let hj="";try{const H=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"});hj=W&&(W.mo||W.ex)?`${H.format(W.s)} — ${H.format(W.e)}`:H.format(t);}catch(e){}
+  {const dy=c.querySelector(".z-cv-day");if(["daily","weekly","monthly","exec","revenue","expenses","pnl"].includes(CUR)){const W=["exec","revenue","expenses","pnl"].includes(CUR)?{s:RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e:RS.to?toDate(RS.to):new Date(+DB.maxD),ex:1}:CUR==="weekly"?weekRange(RS.day||dKey(DB.maxD)):CUR==="monthly"?(()=>{const [y,m]=(RS.month||mKey(DB.maxD)).split("-").map(Number);return {s:new Date(y,m-1,1),e:new Date(y,m,0),mo:1};})():null;const t=W?W.e:toDate(RS.day||dKey(DB.maxD));const F=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"});const Fm=new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{month:"long",year:"numeric"});const g=W&&W.ex?`الفترة\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W&&W.mo?`${Fm.format(W.s)}\nمن \u2066${fmtDate(W.s)}\u2069 إلى \u2066${fmtDate(W.e)}\u2069`:W?`الأسبوع ${weekNo(W.s)}\nمن ${F.format(W.s)}\nإلى ${F.format(W.e)}`:F.format(t);let hj="";try{const H=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"});hj=W&&(W.mo||W.ex)?`${H.format(W.s)} — ${H.format(W.e)}`:H.format(t);}catch(e){}
      c.querySelector(".z-cv-dayg").textContent=g;c.querySelector(".z-cv-dayh").textContent=hj;dy.style.display="";}else dy.style.display="none";
    const n=document.querySelectorAll("#reportBody .report-card > h3").length;c.querySelector(".z-cv-doc").textContent=`النسخة 1.0${n?` • ${arN(n,"قسم")}`:""}`;
    c.querySelector(".z-cv-by2").textContent=PREPARED_BY;
@@ -2335,6 +2341,132 @@ function execReport(){
   if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.map(fg).join("")}</div>`;
   h+=`</div>`;
   const EL=empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد حركة مسجّلة خلال الفترة في: <b>${empty.map(esc).join("، ")}</b></div>`:"";
+  const lastP=pages.map(x=>x.length>0).lastIndexOf(true);
+  pages.forEach((pg,i)=>{if(pg.length)h+=`<div class="report-grid z-daily-grid z-dpage z-wk">${pg.map(fg).join("")}${i===lastP?EL:""}</div>`;});
+  if(EL&&lastP<0)h+=EL;
+  return h+"<!--NOSUM-->";
+}
+function rngCtx(){
+  const s=RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e=RS.to?toDate(RS.to):new Date(+DB.maxD);
+  const nD=Math.round((e-s)/864e5)+1;const ly=x=>new Date(x.getFullYear()-1,x.getMonth(),x.getDate());let ps,pe,cmpL;
+  if(DB.minD&&DB.minD<=ly(s)){ps=ly(s);pe=ly(e);cmpL="نفس الفترة من العام السابق";}
+  else{pe=new Date(s);pe.setDate(s.getDate()-1);ps=new Date(pe);ps.setDate(pe.getDate()-nD+1);cmpL="الفترة السابقة بنفس الطول";}
+  return {s,e,nD,ps,pe,cmpL};}
+/* تصنيف قيود المصروفات لبنود قائمة الدخل */
+const NONOP=["رأسمالية","تحصيل"];
+function expBucket(r){if(r.ctype==="رأسمالية")return "cap";if(r.ctype==="تحصيل")return "col";if(r.cat==="وقود")return "fuel";
+  if(/مواد خام/.test(r.ctype)||r.cat==="مواد خام")return "mat";if(r.ctype==="تشغيل وصيانة معدات")return "eqp";if(r.ctype==="إدارية وعمومية")return "adm";return "gen";}
+function finReport(id){
+  const C=rngCtx();const {s,e,ps,pe,cmpL}=C;
+  const fd=(a,b)=>filt({from:dKey(a),to:dKey(b)});
+  const ctxEnd=(A,a,b)=>{const ds=A.filter(r=>r.date>=a&&r.date<=b);return ds.length?new Date(Math.max(...ds.map(r=>+r.date))):b;};
+  const prd=(a,b)=>`<span class="z-thd" dir="rtl">من <bdi dir="ltr">${fmtDate(a)}</bdi> إلى <bdi dir="ltr">${fmtDate(b)}</bdi></span>`;
+  const nm=x=>String(x||"غير محدد").replace(/ـ/g,"").replace(/\s+/g," ").trim();
+  const bar=(v,mx,txt)=>`<span class="z-bar" style="--w:${(Math.max(0,v)/(mx||1)*100).toFixed(0)}%">${txt}</span>`;
+  const gtr=(x,n)=>`<tr class="z-grp"><td colspan="${n}">${x}</td></tr>`;
+  const ch=(a,b)=>b?`<span class="z-kt ${a>=b?"z-tg":"z-tb"}"><bdi dir="ltr">${a>=b?"▲ +":"▼ −"}${num(Math.abs(a-b)/Math.abs(b)*100,0)}%</bdi></span>`:"—";
+  const chC=(a,b)=>b?`<span class="z-kt ${a<=b?"z-tg":"z-tb"}"><bdi dir="ltr">${a>=b?"▲ +":"▼ −"}${num(Math.abs(a-b)/Math.abs(b)*100,0)}%</bdi></span>`:"—";
+  const mz=v=>v?money(v):"—";
+  const p1=[],pages=[[],[],[]],empty=[];
+  const add=(pg,title,head,rs,total)=>{if(!rs.length){empty.push(title);return;}(pg<0?p1:pages[pg]).push(card(title,table(head,rs,total),true));};
+  const months=(a,b)=>{const o=[];let m0=new Date(a.getFullYear(),a.getMonth(),1);while(m0<=b){const x=m0<a?a:m0,y0=new Date(m0.getFullYear(),m0.getMonth()+1,0),y=y0>b?b:y0;o.push({k:mKey(m0),a:x,b:y,full:+x===+m0&&+y===+y0});m0=new Date(m0.getFullYear(),m0.getMonth()+1,1);}return o;};
+  const mlab=m=>`<b>${mLabel(m.k)}</b>${m.full?"":' <span class="z-thd">(جزئي)</span>'}`;
+  const ICO=ic=>`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ZIC[ic]||ZIC.prod}</svg>`;
+  const cell=(big,unit,sub)=>`<td class="z-sc"><div class="z-sv">${big}${unit?` <small>${unit}</small>`:""}</div>${sub?`<div class="z-ss">${sub}</div>`:""}</td>`;
+  const srow=(ic,label,a,c)=>`<tr><td class="z-sl"><span class="z-db-ic z-db-${ic}">${ICO(ic)}</span>${label}</td>${a}${c}</tr>`;
+  const simple=(title,rows,ta,tb)=>`<div class="report-grid z-daily-grid z-sum-grid"><div class="report-card z-dsum z-dsum2"><h3>${title}</h3><div class="report-table-wrap"><table class="report-table z-simple"><colgroup><col style="width:22%"><col style="width:39%"><col style="width:39%"></colgroup><thead><tr><th class="z-sl">البند</th><th>الفترة${ta}</th><th>${cmpL}${tb}</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  let h="";
+  const LBL={revenue:"تقرير الإيرادات",expenses:"تقرير المصروفات",pnl:"قائمة الأرباح والخسائر"};
+  /* ================= المصروفات ================= */
+  if(id==="expenses"){
+    const lastE=DB.E.length?new Date(Math.max(...DB.E.map(r=>+r.date))):e;const e2=e>lastE?lastE:e;
+    const pe2=new Date(Math.min(+pe,+new Date(ps.getTime()+(e2-s))));
+    const fc=r=>!RS.cat||r.cat===RS.cat;
+    const T=fd(s,e2),M=fd(ps,pe2);const AT=T.E.filter(fc),AM=M.E.filter(fc);const op=A=>A.filter(r=>!NONOP.includes(r.ctype));
+    const OT=op(AT),OM=op(AM);const X=OM.length>0;const cm=(...a)=>X?a:[];const tT=sum(OT,"amount"),tM=sum(OM,"amount");const qT=sum(T.P,"qty"),qM=sum(M.P,"qty");
+    h+=`<div class="report-note">الفترة من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e2)}</b>${e2<e?` (آخر قيد مصروفات مسجّل ${fmtDate(lastE)})`:""} — ${X?`والمقارنة مع ${cmpL} من <b>${fmtDate(ps)}</b> إلى <b>${fmtDate(pe2)}</b>.`:`لا توجد قيود مصروفات في ${cmpL} للمقارنة.`}${RS.cat?` — التصنيف: <b>${esc(RS.cat)}</b>`:""} تكلفة المتر = المصروفات ÷ إنتاج نفس الفترة.</div>`;
+    h+='<div class="z-pg1w">';
+    {const TY=["مواد خام (متغيرة)","تشغيل وصيانة معدات","تشغيلية عامة","إدارية وعمومية"];const ks=[...new Set([...TY,...OT.map(r=>r.ctype),...OM.map(r=>r.ctype)])].filter(k=>!NONOP.includes(k));
+     const gT=groupBy(OT,r=>r.ctype),gM=groupBy(OM,r=>r.ctype);const mx=Math.max(0,...ks.map(k=>sum(gT.get(k)||[],"amount")));
+     const rs=ks.filter(k=>gT.has(k)||gM.has(k)).map(k=>{const a=sum(gT.get(k)||[],"amount"),b=sum(gM.get(k)||[],"amount");return tr([`<b>${esc(k)}</b>`,num((gT.get(k)||[]).length),bar(a,mx,money(a)),tT?pct(a/tT):"—",qT?money(a/qT):"—",...cm(mz(b),chC(a,b))]);});
+     const nn=AT.filter(r=>NONOP.includes(r.ctype)),nm_=AM.filter(r=>NONOP.includes(r.ctype));
+     if(nn.length||nm_.length){rs.push(tr(["إجمالي مصروفات التشغيل",num(OT.length),money(tT),"100%",qT?money(tT/qT):"—",...cm(mz(tM),chC(tT,tM))],"total"));rs.push(gtr("خارج تكلفة التشغيل",X?7:5));
+       NONOP.forEach(k=>{const a=nn.filter(r=>r.ctype===k),b=nm_.filter(r=>r.ctype===k);if(a.length||b.length)rs.push(tr([esc(k),num(a.length),mz(sum(a,"amount")),"","",...cm(mz(sum(b,"amount")),"")]));});}
+     p1.push(card("ملخص المصروفات حسب نوع التكلفة",table(["نوع التكلفة","القيود","المبلغ ر.س","النسبة","ر.س/م³",...cm(cmpL,"التغير")],rs,nn.length||nm_.length?"":tr(["الإجمالي",num(OT.length),money(tT),"100%",qT?money(tT/qT):"—",...cm(mz(tM),chC(tT,tM))],"total")),true));}
+    {const MS=months(s,e2);const TY=["مواد خام (متغيرة)","تشغيل وصيانة معدات","تشغيلية عامة","إدارية وعمومية"];
+     const D=MS.map(m=>{const x=fd(m.a,m.b);const A=op(x.E.filter(fc));return {m,A,t:sum(A,"amount"),q:sum(x.P,"qty")};});const mx=Math.max(0,...D.map(x=>x.t));
+     const rs=D.map(({m,A,t,q})=>{const top=[...groupBy(A,r=>r.cat)].map(([k,v])=>[k,sum(v,"amount")]).sort((a,b)=>b[1]-a[1])[0];
+       return tr([mlab(m),num(A.length),...TY.map(k=>mz(sum(A.filter(r=>r.ctype===k),"amount"))),bar(t,mx,money(t)),q?num(q,1):"—",q&&t?money(t/q):"—",top?esc(top[0]):"—"],t===mx&&mx?"z-bestday":"");});
+     p1.push(card("المصروفات الشهرية حسب نوع التكلفة",table(["الشهر","القيود","مواد خام","تشغيل وصيانة معدات","تشغيلية عامة","إدارية وعمومية","الإجمالي ر.س","الإنتاج م³","ر.س/م³","أكبر تصنيف"],rs,tr(["الإجمالي",num(OT.length),...TY.map(k=>mz(sum(OT.filter(r=>r.ctype===k),"amount"))),money(tT),num(qT,1),qT?money(tT/qT):"—",""],"total")).replace('<table class="report-table','<table class="report-table z-wkdays'),true));}
+    {const gT=[...groupBy(OT,r=>r.cat)].map(([k,v])=>({k,v,a:sum(v,"amount")})).sort((a,b)=>b.a-a.a);const gM=groupBy(OM,r=>r.cat);const rs=[];const W=X?7:5;
+     const crow=(lbl,n,a,b)=>`<tr class="z-catrow">${[lbl,num(n),"<b>"+money(a)+"</b>",tT?pct(a/tT):"—",qT?money(a/qT):"—",...cm(mz(b),chC(a,b))].map((c,i)=>`<td${i?' class="num"':""}>${c}</td>`).join("")}</tr>`;
+     gT.slice(0,4).forEach(({k,v,a})=>{rs.push(crow("<b>"+esc(k)+"</b>",v.length,a,sum(gM.get(k)||[],"amount")));
+       const sb=[...groupBy(v,r=>r.sub)].map(([x,w])=>[x,w,sum(w,"amount")]).sort((p,q)=>q[2]-p[2]);const sbM=groupBy((gM.get(k)||[]),r=>r.sub);
+       sb.slice(0,3).forEach(([x,w,sa])=>rs.push(tr([`<span class="z-sub">— ${esc(x)}</span>`,num(w.length),money(sa),tT?pct(sa/tT):"—",qT?money(sa/qT):"—",...cm(mz(sum(sbM.get(x)||[],"amount")),"")])));
+       if(sb.length>3){const r2=sb.slice(3),sa=r2.reduce((p,x)=>p+x[2],0);rs.push(tr([`<span class="z-sub">— باقي التصنيفات الفرعية (${num(r2.length)})</span>`,num(r2.reduce((p,x)=>p+x[1].length,0)),money(sa),tT?pct(sa/tT):"—",qT?money(sa/qT):"—",...cm("","")]));}});
+     gT.slice(4,12).forEach(({k,v,a})=>rs.push(crow("<b>"+esc(k)+"</b>",v.length,a,sum(gM.get(k)||[],"amount"))));
+     if(gT.length>12){const r2=gT.slice(12),v=r2.flatMap(x=>x.v);rs.push(crow(`باقي التصنيفات (${num(r2.length)})`,v.length,sum(v,"amount"),sum(r2.flatMap(x=>gM.get(x.k)||[]),"amount")));}
+     add(0,"المصروفات حسب التصنيف والتصنيف الفرعي",["التصنيف / الفرعي","القيود","المبلغ ر.س","النسبة","ر.س/م³",...cm(cmpL,"التغير")],rs,tr(["الإجمالي",num(OT.length),money(tT),"100%",qT?money(tT/qT):"—",...cm(mz(tM),chC(tT,tM))],"total"));}
+    {const R=equipRows({...T,E:OT}).slice(0,10);const mx=Math.max(0,...R.map(r=>r.tot));
+     add(1,"أعلى 10 معدات تكلفةً",["المعدة","قطع غيار","صيانة وإصلاح","إطارات","زيوت","وقود","أخرى","الإجمالي ر.س","الإنتاج م³","تكلفة/م³"],R.map(r=>tr([`<b>${esc(r.eq)}</b>`,mz(r.c["قطع غيار"]),mz(r.c["صيانة وإصلاح"]),mz(r.c["إطارات"]),mz(r.c["زيوت وتشحيم"]),mz(r.c["وقود"]),mz(r.other),bar(r.tot,mx,money(r.tot)),r.q?num(r.q,1):"—",r.q?money(r.tot/r.q):"—"])),"");}
+    {const gT=groupBy(OT,r=>r.branch),gM=groupBy(OM,r=>r.branch);const ks=[...new Set([...gT.keys(),...gM.keys()])].sort((a,b)=>sum(gT.get(b)||[],"amount")-sum(gT.get(a)||[],"amount"));const mx=Math.max(0,...ks.map(k=>sum(gT.get(k)||[],"amount")));
+     add(1,"المصروفات حسب الفرع",["الفرع","القيود","المبلغ ر.س","النسبة",...cm(cmpL,"التغير")],ks.filter(k=>gT.has(k)||X).map(k=>{const a=sum(gT.get(k)||[],"amount"),b=sum(gM.get(k)||[],"amount");return tr([`<b>${esc(k)}</b>`,num((gT.get(k)||[]).length),bar(a,mx,mz(a)),tT?pct(a/tT):"—",...cm(mz(b),chC(a,b))]);}),tr(["الإجمالي",num(OT.length),money(tT),"100%",...cm(mz(tM),chC(tT,tM))],"total"));}
+    {const L=OT.slice().sort((a,b)=>b.amount-a.amount).slice(0,15);const cut=x=>{x=String(x||"");return x.length>55?x.slice(0,55)+"…":x;};
+     add(2,"أكبر 15 قيد مصروفات في الفترة",["التاريخ","القيد","الحركة","التصنيف","المعدة","البيان","المبلغ ر.س"],L.map(r=>tr([fmtDate(r.date),esc(r.entry),esc(r.name),esc(r.cat),r.equip==="غير مرتبط بمعدة"?"—":esc(r.equip),`<span class="z-desc">${esc(cut(r.desc))}</span>`,`<b>${money(r.amount)}</b>`])),"");}
+  }
+  /* ================= الإيرادات ================= */
+  if(id==="revenue"){
+    const has=DB.S.length>0;const lastS=has?new Date(Math.max(...DB.S.map(r=>+r.date))):e;const e2=e>lastS?lastS:e;const pe2=new Date(Math.min(+pe,+new Date(ps.getTime()+(e2-s))));
+    const T=fd(s,e2),M=fd(ps,pe2);const rT=sum(T.S,"amount"),rM=sum(M.S,"amount");const sq=A=>sum(A.filter(r=>r.amount>0),"qty");const qT=sq(T.S),qM=sq(M.S);const pT=sum(T.P,"qty"),pM=sum(M.P,"qty");
+    h+=`<div class="report-note">الفترة من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e2)}</b>${has&&e2<e?` (آخر قيد مبيعات مسجّل ${fmtDate(lastS)})`:""} — والمقارنة مع ${cmpL} من <b>${fmtDate(ps)}</b> إلى <b>${fmtDate(pe2)}</b>. الإيراد = دائن − مدين من تبويب «المبيعات».</div>`;
+    if(!has)return h+finEmptyMsg()+"<!--NOSUM-->";
+    const rows=srow("prod","الإيرادات",cell(money(rT),"ر.س",`${arN(T.S.length,"قيد")}`+(rM?` • ${ch(rT,rM)}`:"")),cell(money(rM),"ر.س",arN(M.S.length,"قيد")))+
+      srow("mat","الكمية المباعة",cell(num(qT,1),"م³",`الإنتاج المسجّل ${num(pT,1)} م³`),cell(num(qM,1),"م³",`الإنتاج المسجّل ${num(pM,1)} م³`))+
+      srow("cem","متوسط سعر المتر",cell(qT?money(rT/qT):"—","ر.س/م³",""),cell(qM?money(rM/qM):"—","ر.س/م³",""))+
+      srow("fuel","الفرق (مباع − منتج)",cell(`<bdi dir="ltr">${qT-pT>=0?"+":"−"}${num(Math.abs(qT-pT),1)}</bdi>`,"م³",pT?pct((qT-pT)/pT):""),cell(`<bdi dir="ltr">${qM-pM>=0?"+":"−"}${num(Math.abs(qM-pM),1)}</bdi>`,"م³",""));
+    h+='<div class="z-pg1w">'+simple("ملخص الإيرادات مقارنة بـ"+cmpL,rows,prd(s,e2),prd(ps,pe2));
+    {const D=months(s,e2).map(m=>{const x=fd(m.a,m.b);return {m,n:x.S.length,r:sum(x.S,"amount"),q:sq(x.S),p:sum(x.P,"qty")};});const mx=Math.max(0,...D.map(x=>x.r));
+     p1.push(card("الإيرادات الشهرية",table(["الشهر","القيود","الكمية المباعة م³","الإيراد ر.س","متوسط السعر","الإنتاج المسجّل م³","الفرق م³"],D.map(({m,n,r,q,p})=>tr([mlab(m)+(r===mx&&mx?' <span class="z-best-tag">الأعلى</span>':""),num(n),num(q,1),bar(r,mx,money(r)),q?money(r/q):"—",num(p,1),`<bdi dir="ltr">${q-p>=0?"+":"−"}${num(Math.abs(q-p),1)}</bdi>`],r===mx&&mx?"z-bestday":"")),tr(["الإجمالي",num(T.S.length),num(qT,1),money(rT),qT?money(rT/qT):"—",num(pT,1),`<bdi dir="ltr">${qT-pT>=0?"+":"−"}${num(Math.abs(qT-pT),1)}</bdi>`],"total")).replace('<table class="report-table','<table class="report-table z-wkdays'),true));}
+    {const gn=g=>toNum(String(g).replace(/\D/g,""))||0;const gl=g=>!g||g==="غير محدد"?"غير محدد":(/ضغط/.test(g)?g:"ضغط "+g);const g=[...groupBy(T.S,r=>gl(r.grade))].sort((a,b)=>gn(a[0])-gn(b[0]));const gM=groupBy(M.S,r=>gl(r.grade));const mx=Math.max(0,...g.map(([,v])=>sum(v,"amount")));
+     add(0,"الإيرادات حسب درجة الضغط",["الضغط","الكمية م³","الإيراد ر.س","متوسط السعر","النسبة",cmpL],g.map(([k,v])=>{const a=sum(v,"amount"),q=sq(v);return tr([`<b>${esc(k)}</b>`,num(q,1),bar(a,mx,money(a)),q?money(a/q):"—",rT?pct(a/rT):"—",mz(sum(gM.get(k)||[],"amount"))]);}),"");}
+    {const g=[...groupBy(T.S,r=>nm(r.site))].map(([k,v])=>({k,v,a:sum(v,"amount")})).sort((a,b)=>b.a-a.a);const mx=Math.max(0,...g.map(x=>x.a));const top=g.slice(0,15),rest=g.slice(15);
+     const rs=top.map(({k,v,a})=>{const q=sq(v);return tr([`<b>${esc(k)}</b>`,num(v.length),num(q,1),bar(a,mx,money(a)),q?money(a/q):"—",rT?pct(a/rT):"—"]);});
+     if(rest.length){const v=rest.flatMap(x=>x.v),a=sum(v,"amount"),q=sq(v);rs.push(tr([`باقي المواقع (${num(rest.length)})`,num(v.length),num(q,1),money(a),q?money(a/q):"—",rT?pct(a/rT):"—"]));}
+     add(0,"أعلى 15 موقع إيراداً",["الموقع","القيود","الكمية م³","الإيراد ر.س","متوسط السعر","النسبة"],rs,"");}
+    {const g=[...groupBy(T.S,r=>r.name)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount"));const gM=groupBy(M.S,r=>r.name);
+     add(0,"الإيرادات حسب نوع الحركة",["الحركة","القيود","المبلغ ر.س","النسبة",cmpL],g.map(([k,v])=>{const a=sum(v,"amount");return tr([`<b>${esc(k)}</b>`,num(v.length),`<span class="${a<0?"z-neg":""}">${money(a)}</span>`,rT?pct(a/rT):"—",mz(sum(gM.get(k)||[],"amount"))]);}),"");}
+    {const g=[...groupBy(T.S,r=>r.branch)].sort((a,b)=>sum(b[1],"amount")-sum(a[1],"amount"));const gM=groupBy(M.S,r=>r.branch);const mx=Math.max(0,...g.map(([,v])=>sum(v,"amount")));
+     add(0,"الإيرادات حسب الفرع",["الفرع","القيود","الكمية م³","الإيراد ر.س","النسبة",cmpL,"التغير"],g.map(([k,v])=>{const a=sum(v,"amount"),b=sum(gM.get(k)||[],"amount");return tr([`<b>${esc(k)}</b>`,num(v.length),num(sq(v),1),bar(a,mx,money(a)),rT?pct(a/rT):"—",mz(b),ch(a,b)]);}),"");}
+  }
+  /* ================= الأرباح والخسائر ================= */
+  if(id==="pnl"){
+    const hasS=DB.S.length>0;const last=A=>A.length?new Date(Math.max(...A.map(r=>+r.date))):null;const lE=last(DB.E),lS=last(DB.S);
+    let e2=e;[lE,hasS?lS:null].forEach(x=>{if(x&&x<e2)e2=x;});const pe2=new Date(Math.min(+pe,+new Date(ps.getTime()+(e2-s))));
+    const calc=(a,b)=>{const x=fd(a,b);const o={rev:sum(x.S,"amount"),q:sum(x.P,"qty"),mat:0,fuel:0,eqp:0,gen:0,adm:0,cap:0,col:0};x.E.forEach(r=>{o[expBucket(r)]+=r.amount;});
+      o.cogs=o.mat+o.fuel+o.eqp;o.gp=o.rev-o.cogs;o.opx=o.gen+o.adm;o.np=o.gp-o.opx;o.tot=o.cogs+o.opx;return o;};
+    const T=calc(s,e2),M=calc(ps,pe2);const X=M.tot+M.cap+M.col!==0;const cm=(...a)=>X?a:[];
+    h+=`<div class="report-note">الفترة من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e2)}</b>${e2<e?` (حتى آخر تاريخ تتوفر فيه القيود)`:""} — ${X?`والمقارنة مع ${cmpL} من <b>${fmtDate(ps)}</b> إلى <b>${fmtDate(pe2)}</b>.`:`لا توجد قيود في ${cmpL} للمقارنة.`} الوقود من تصنيف «وقود» في المصروفات، والمتر المكعب = الإنتاج المسجّل.${hasS?"":" <b>المبيعات لم تُسجّل بعد</b> — القائمة تعرض التكاليف وتكلفة المتر فقط."}</div>`;
+    const L_=[["rev","الإيرادات",1,"b"],["G","تكلفة الإنتاج المباشرة"],["mat","المواد الخام والأسمنت",-1],["fuel","الوقود",-1],["eqp","تشغيل وصيانة المعدات",-1],["cogs","إجمالي تكلفة الإنتاج",-1,"t"],["gp","مجمل الربح",1,"b"],
+      ["G","المصروفات التشغيلية"],["gen","تشغيلية عامة",-1],["adm","إدارية وعمومية",-1],["opx","إجمالي المصروفات التشغيلية",-1,"t"],["np","صافي ربح التشغيل",1,"b"],["G","خارج القائمة"],["cap","مصروفات رأسمالية",0],["col","تحصيل",0]];
+    const rs=[];L_.forEach(([k,lbl,dir,st])=>{if(k==="G"){rs.push(gtr(lbl,X?6:4));return;}if(!hasS&&["rev","gp","np"].includes(k))return;if(["cap","col"].includes(k)&&!T[k]&&!M[k])return;
+      const a=T[k],b=M[k];const neg=v=>`<span class="${v<0?"z-neg":""}">${money(v)}</span>`;
+      const c=[st==="b"||st==="t"?`<b>${lbl}</b>`:`<span class="z-sub">${lbl}</span>`,st==="b"?`<b>${neg(a)}</b>`:mz(a),T.q?money(a/T.q):"—",hasS&&T.rev?pct(a/T.rev):"—",...cm(b?neg(b):"—",dir===1?ch(a,b):dir===-1?chC(a,b):"")];
+      rs.push(tr(c,st==="b"?"z-bestday":st==="t"?"total":""));});
+    if(!hasS)rs.push(tr(["<b>إجمالي تكلفة التشغيل</b>",`<b>${money(T.tot)}</b>`,T.q?`<b>${money(T.tot/T.q)}</b>`:"—","—",...cm(mz(M.tot),chC(T.tot,M.tot))],"z-bestday"));
+    h+='<div class="z-pg1w">';
+    p1.push(card(hasS?"قائمة الدخل":"قائمة تكاليف التشغيل",table(["البند",`الفترة${prd(s,e2)}`,"ر.س/م³","% من الإيراد",...cm(`${cmpL}${prd(ps,pe2)}`,"التغير")],rs),true));
+    p1.push(`<div class="z-emptyline" style="grid-column:1/-1">الإنتاج المسجّل في الفترة <b>${num(T.q,1)} م³</b>${X?` مقابل ${num(M.q,1)} م³ في ${cmpL}`:""}.</div>`);
+    const MS=months(s,e2).map(m=>({m,o:calc(m.a,m.b)}));
+    {let cum=0;const rs2=MS.map(({m,o})=>{cum+=o.np;return tr([mlab(m),num(o.q,1),...(hasS?[money(o.rev)]:[]),money(o.cogs),...(hasS?[`<span class="${o.gp<0?"z-neg":""}">${money(o.gp)}</span>`]:[]),money(o.opx),...(hasS?[`<b class="${o.np<0?"z-neg":"z-pos"}">${money(o.np)}</b>`,o.rev?pct(o.np/o.rev):"—",`<span class="${cum<0?"z-neg":""}">${money(cum)}</span>`]:[money(o.tot)])]);});
+     add(0,hasS?"قائمة الدخل الشهرية":"تكاليف التشغيل الشهرية",["الشهر","الإنتاج م³",...(hasS?["الإيرادات"]:[]),"تكلفة الإنتاج",...(hasS?["مجمل الربح"]:[]),"المصروفات التشغيلية",...(hasS?["صافي الربح","الهامش","التراكمي"]:["الإجمالي"])],rs2,tr(["الإجمالي",num(T.q,1),...(hasS?[money(T.rev)]:[]),money(T.cogs),...(hasS?[money(T.gp)]:[]),money(T.opx),...(hasS?[money(T.np),T.rev?pct(T.np/T.rev):"—",""]:[money(T.tot)])],"total"));}
+    {const pm=(o,k)=>o.q&&o[k]?num(o[k]/o.q,2):"—";const ks=["mat","fuel","eqp","gen","adm","tot"];
+     const rs3=MS.map(({m,o})=>tr([mlab(m),num(o.q,1),...ks.map(k=>k==="tot"?`<b>${pm(o,k)}</b>`:pm(o,k)),...(hasS?[pm(o,"rev"),pm(o,"np")]:[])]));
+     add(0,"تكلفة المتر المكعب شهرياً (ر.س/م³)",["الشهر","الإنتاج م³","مواد خام","وقود","معدات","تشغيلية عامة","إدارية","الإجمالي",...(hasS?["سعر البيع","ربح المتر"]:[])],rs3,tr(["الفترة",num(T.q,1),...ks.map(k=>pm(T,k)),...(hasS?[pm(T,"rev"),pm(T,"np")]:[])],"total"));}
+  }
+  const fg=c=>c.replace(/class="report-card/,`style="--fg:${((c.match(/<tr/g)||[]).length)+2}" class="report-card`);
+  if(p1.length)h+=`<div class="report-grid z-daily-grid z-p1">${p1.map(fg).join("")}</div>`;
+  h+=`</div>`;
+  const EL=empty.length?`<div class="z-emptyline" style="grid-column:1/-1">لا توجد قيود خلال الفترة في: <b>${empty.map(esc).join("، ")}</b></div>`:"";
   const lastP=pages.map(x=>x.length>0).lastIndexOf(true);
   pages.forEach((pg,i)=>{if(pg.length)h+=`<div class="report-grid z-daily-grid z-dpage z-wk">${pg.map(fg).join("")}${i===lastP?EL:""}</div>`;});
   if(EL&&lastP<0)h+=EL;
@@ -2762,7 +2894,7 @@ function footCSS(){const t=document.querySelector(".z-ph-title")?.textContent||"
   let el=document.getElementById("zFootCSS");if(!el){el=document.createElement("style");el.id="zFootCSS";document.head.appendChild(el);}
   el.textContent=`@page{@bottom-left{content:"صفحة " counter(page) " من " counter(pages);font-family:Tahoma,sans-serif;font-size:7pt;color:#5d6980;vertical-align:middle}} @page:first{@bottom-left{content:none}}`;}
 function fillFoot(){footCSS();const t=document.querySelector(".z-ph-title")?.textContent||"",pr=document.querySelector(".z-ph-period")?.textContent||"";document.querySelectorAll(".z-pf-rep").forEach(r=>r.innerHTML=pr?`${t} — <bdi dir="ltr">${pr}</bdi>`:t);document.querySelectorAll(".z-pf-meta").forEach(m=>{const nw=new Date();m.innerHTML=`تاريخ الطباعة: <bdi dir="ltr">${fmtDate(nw)}</bdi> — <bdi dir="ltr">${pad(nw.getHours())}:${pad(nw.getMinutes())}</bdi> · إعداد: ${PREPARED_BY}`;});}
-let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=(CUR==="exec")?`التقرير التنفيذي لشركة زحل - من ${fmtDate(RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1))} إلى ${fmtDate(RS.to?toDate(RS.to):DB.maxD)}`:(CUR==="monthly")?`التقرير الشهري لشركة زحل - ${mLabel(RS.month||mKey(DB.maxD))}`:(CUR==="daily")?`التقرير اليومي لشركة زحل - ${(RS.day||dKey(DB.maxD)).replace(/-/g,"")}`:(CUR==="weekly")?(()=>{const w=weekRange(RS.day||dKey(DB.maxD));return `التقرير الأسبوعي لشركة زحل - الأسبوع ${weekNo(w.s)} - ${dKey(w.s).replace(/-/g,"")}-${dKey(w.e).replace(/-/g,"")}`;})():rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
+let _docTitle=document.title;addEventListener("beforeprint",()=>{fillFoot();{const rf=document.querySelector(".z-cv-ref")?.textContent?.trim();if(rf&&document.body.classList.contains("report-mode")||rf&&document.querySelector("#reportBody")?.children.length){_docTitle=document.title;document.title=(["revenue","expenses","pnl"].includes(CUR))?`${{revenue:"تقرير الإيرادات",expenses:"تقرير المصروفات",pnl:"قائمة الأرباح والخسائر"}[CUR]} لشركة زحل - من ${fmtDate(RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1))} إلى ${fmtDate(RS.to?toDate(RS.to):DB.maxD)}`:(CUR==="exec")?`التقرير التنفيذي لشركة زحل - من ${fmtDate(RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1))} إلى ${fmtDate(RS.to?toDate(RS.to):DB.maxD)}`:(CUR==="monthly")?`التقرير الشهري لشركة زحل - ${mLabel(RS.month||mKey(DB.maxD))}`:(CUR==="daily")?`التقرير اليومي لشركة زحل - ${(RS.day||dKey(DB.maxD)).replace(/-/g,"")}`:(CUR==="weekly")?(()=>{const w=weekRange(RS.day||dKey(DB.maxD));return `التقرير الأسبوعي لشركة زحل - الأسبوع ${weekNo(w.s)} - ${dKey(w.s).replace(/-/g,"")}-${dKey(w.e).replace(/-/g,"")}`;})():rf;}}const cd=document.querySelector(".z-cv-date");if(cd)cd.textContent=printStamp();const pd=document.querySelector(".z-cv-pdate");if(pd)pd.textContent=fmtDate(new Date());const e=document.querySelector(".z-ph-date");if(e&&!/حزمة/.test(document.querySelector(".z-ph-title")?.textContent||"")){const nw=new Date();e.textContent=`تاريخ الطباعة: ${fmtDate(nw)} — ${pad(nw.getHours())}:${pad(nw.getMinutes())}`;}});
 bindUI();initSidebarPro();refresh(false);
 
 addEventListener("afterprint",()=>{if(_docTitle)document.title=_docTitle;});
