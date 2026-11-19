@@ -1336,7 +1336,17 @@ bdi{unicode-bidi:isolate}
 #reportToolbar:has(.z-cx-bar)>.report-filter{display:inline-flex;width:auto;margin-top:10px}
 #reportToolbar:has(.z-cx-bar)>.report-filter button{width:auto;padding-inline:18px}
 
-@media print{.z-noprint{display:none!important}}
+@media print{#reportBody .z-noprint,#reportBody .report-grid>.z-noprint.report-card,.z-dpage .z-noprint{display:none!important}}
+
+.z-small{display:inline-block;background:#fff3d6;color:#8a6200;border-radius:8px;padding:0 6px;font-size:10.5px;font-weight:800;vertical-align:middle}
+.z-cx-pre{display:inline-flex;gap:6px}.z-cx-pre button{border:1px dashed #b9c4d6;background:#f7f9fc;color:#1f3a6d;border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;width:auto}
+.z-cx-pre button:hover{border-color:#d6a84b;background:#fffaf0}
+.z-cx-one span{display:inline-flex;align-items:center;gap:6px;font-weight:800;white-space:nowrap}
+.z-ev-lg{color:#d9534f}.z-ev-lg::before{display:none!important}.z-evm{color:#d9534f;font-size:10px}
+table.z-sort th{cursor:pointer;user-select:none}table.z-sort th:hover{text-decoration:underline}
+table.z-sort th[data-sd="d"]::after{content:" ▼";font-size:9px}table.z-sort th[data-sd="a"]::after{content:" ▲";font-size:9px}
+.z-cx-hist td,.z-cx-hist th{font-size:11.5px}
+.z-radar circle,.z-lines circle{cursor:help}
 </style>
 </head>
 <body>
@@ -1724,6 +1734,7 @@ async function loadAll(){
   const errs=[];
   res.forEach((r,i)=>{if(r.status==="fulfilled")out[entries[i][0]]=r.value;else{out[entries[i][0]]=[];errs.push(r.reason.message);}});
   if(errs.length===entries.length)throw new Error(errs[0]);
+  try{const q=await gviz("المعدات");out.equipment=q.length&&Object.keys(q[0]).some(k=>/رقم المعدة/.test(k))?q:[];}catch(e){out.equipment=[];}
   out._errors=errs;return out;
 }
 
@@ -1771,7 +1782,8 @@ function model(raw){
   const allDates=P.map(r=>r.date).concat(C.map(r=>r.date),F.map(r=>r.date));
   const minD=new Date(Math.min(...allDates)),endD=new Date(Math.max(...allDates));
   const maxD=P.length?new Date(Math.max(...P.map(r=>r.date))):endD; // آخر يوم إنتاج مسجّل
-  return {P,C,F,W,V,G,S,E,M:Mt,minD,maxD,endD,errors:raw._errors||[]};
+  const Q=(raw.equipment||[]).map(r=>({id:clean(pick(r,"رقم المعدة")),type:clean(pick(r,"النوع")),plate:clean(pick(r,"رقم اللوحة")),expName:clean(pick(r,"الاسم في المصروفات")),fuelName:clean(pick(r,"الاسم في المحروقات")),prodCode:clean(pick(r,"الرقم في الإنتاج")),model:clean(pick(r,"الموديل")),year:clean(pick(r,"سنة الصنع")),driver:clean(pick(r,"السائق الأساسي")),status:clean(pick(r,"الحالة"))})).filter(q=>q.id);
+  return {P,C,F,W,V,G,S,E,M:Mt,Q,minD,maxD,endD,errors:raw._errors||[]};
 }
 
 /* ---------- الفلاتر ---------- */
@@ -1987,6 +1999,7 @@ const REPORTS={
 let CUR=null;
 const RS={from:"",to:"",month:"",day:"",status:"",branch:"",mixer:"",cat:"",etype:"",equip:""};let HASHDONE=false;
 function openReport(id,keep){
+  if(id==="cmpx"&&!RS.cxT){const L=LS.get("zahal_cx_last",null);if(L)Object.assign(RS,Object.fromEntries(Object.entries(L).filter(([,v])=>v!=null)));}
   CUR=id;const r=REPORTS[id];
   document.querySelectorAll(".report-item").forEach(b=>b.classList.toggle("active",b.dataset.r===id));
   $("reportTitle").textContent=r.t;$("reportDescription").textContent=r.d;
@@ -2836,6 +2849,13 @@ function benchReport(){DRILL=[];const C=rngCtx();const {s,e,ps,pe,cmpL}=C;const 
 /* ===================== أداة المقارنة الشاملة ===================== */
 const CXC=["#1f3a6d","#d6a84b","#2e9e6a","#c0504d"];
 const cxDig=x=>(String(x).match(/\d{3,}/)||[""])[0];
+let _EQM=null;const eqNorm=x=>String(x||"").replace(/[ـ\s\-–_()]/g,"").toLowerCase();
+function eqMap(){const n=DB.E.length+DB.F.length+(DB.Q||[]).length;if(_EQM&&_EQM.n===n)return _EQM;const m=new Map();
+  (DB.Q||[]).forEach(q=>{[q.id,q.plate,q.expName,q.fuelName].filter(Boolean).forEach(a=>{m.set(eqNorm(a),q.id);const d=cxDig(a);if(d)m.set("#"+d,q.id);});if(q.prodCode)m.set("#p"+String(q.prodCode).trim(),q.id);});
+  DB.E.forEach(r=>{const mm=String(r.equip).match(/(\d{3,})[^\d]*\((\d{1,3})\)/);if(mm&&!m.has("#p"+mm[2]))m.set("#p"+mm[2],m.get("#"+mm[1])||mm[1]);});
+  _EQM={n,m};return _EQM;}
+function eqKey(x,prod){const {m}=eqMap();const s=String(x||"").trim();if(!s)return "";if(prod&&!cxDig(s)){const mm=s.match(/(\d{1,3})/);if(mm)return m.get("#p"+mm[1])||"p"+mm[1];}const nn=eqNorm(s);if(m.has(nn))return m.get(nn);const d=cxDig(s);if(d)return m.get("#"+d)||d;return nn;}
+function eqInfo(k){const q=(DB.Q||[]).find(x=>x.id===k);return q?[q.model,q.year&&("موديل "+q.year),q.status].filter(Boolean).join(" • "):"";}
 const cxDays=v=>new Set(v.map(r=>dKey(r.date))).size;
 const cxOp=E=>E.filter(r=>!NONOP.includes(r.ctype));
 const cxSup=x=>String(x||"").split("-")[0].trim()||"غير محدد";
@@ -2847,73 +2867,73 @@ function cxEqCost(E,F){const o={};EQB.forEach(k=>o[k]=0);o["وقود"]=0;o["أخ
 const CXT={
   mixer:{l:"الخلاطات",u:"خلاطة",
     list:d=>[...sumBy(d.P,r=>r.mixer,r=>r.qty)].filter(x=>x[0]!=="غير محدد").sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
-    sub:(d,k)=>{const g=cxDig(k);return {P:d.P.filter(r=>r.mixer===k),F:d.F.filter(r=>/خلاطة/.test(r.center)&&g&&cxDig(r.center)===g),E:cxOp(d.E).filter(r=>g&&cxDig(r.equip)===g&&r.cat!=="وقود")};},
-    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P),lit=sum(s.F.filter(r=>r.liters),"liters"),fv=exV(sum(s.F,"value")),mt=sum(s.E,"amount");
-      return {wd,util:c.od?wd/c.od:0,q,trips:s.P.length,ppd:wd?q/wd:0,tpd:wd?s.P.length/wd:0,load:s.P.length?q/s.P.length:0,lit,lpm:q&&lit?lit/q:0,fv,fpm:q?fv/q:0,mt,mpm:q?mt/q:0,tc:fv+mt,tcpm:q?(fv+mt)/q:0,
-        info:[...sumBy(s.P,r=>r.driver,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، ")};},
-    rows:[["التشغيل"],["wd","أيام العمل",1,0],["util","نسبة التشغيل",1,"%"],["trips","النقلات",1,0],["tpd","نقلات/يوم",1,2],["الإنتاج"],["q","الإنتاج م³",1,1],["ppd","م³/يوم عمل",1,1],["load","متوسط الحمولة م³",1,2],
-      ["التكلفة"],["fv","المحروقات ر.س",-1,2],["mt","الصيانة والإصلاح ر.س",-1,2],["tc","التكلفة الإجمالية ر.س",-1,2],["الكفاءة"],["lpm","لتر/م³",-1,2],["fpm","وقود ر.س/م³",-1,2],["mpm","صيانة ر.س/م³",-1,2],["tcpm","التكلفة الإجمالية ر.س/م³",-1,2]],
-    radar:[["ppd","الإنتاجية",1],["util","التشغيل",1],["tpd","النقلات",1],["lpm","كفاءة الوقود",-1],["mpm","تكلفة الصيانة",-1],["load","الحمولة",1]],
-    trend:["q","الإنتاج م³",1],head:["q","fpm","mpm","util"],
+    sub:(d,k)=>{const g=eqKey(k);return {P:d.P.filter(r=>r.mixer===k),F:d.F.filter(r=>eqKey(r.center)===g),E:cxOp(d.E).filter(r=>r.equip!=="غير مرتبط بمعدة"&&eqKey(r.equip)===g&&r.cat!=="وقود"),k};},
+    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P),lit=sum(s.F.filter(r=>r.liters),"liters"),fv=exV(sum(s.F,"value")),mt=sum(s.E,"amount");const ev=s.E.filter(r=>r.amount>=c.thr);const evA=sum(ev,"amount");const km0=cxKm(s.F),km=km0>=500?km0:0;
+      return {wd,util:c.od?wd/c.od:0,q,trips:s.P.length,ppd:wd?q/wd:0,tpd:wd?s.P.length/wd:0,load:s.P.length?q/s.P.length:0,adj:cxAdj(s.P,c,r=>r.mixer),lit,lpm:q&&lit?lit/q:0,fv,fpm:q?fv/q:0,mt,mpm:q?mt/q:0,mpm_x:q?(mt-evA)/q:0,evN:ev.length,evA,tc:fv+mt,tcpm:q?(fv+mt)/q:0,km,l100:km&&lit?lit/km*100:0,cpk:km?fv/km:0,small:wd<10,
+        info:[[...sumBy(s.P,r=>r.driver,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، "),eqInfo(eqKey(s.k))].filter(Boolean).join(" • ")};},
+    rows:[["التشغيل"],["wd","أيام العمل",1,0],["util","نسبة التشغيل",1,"%"],["trips","النقلات",1,0],["tpd","نقلات/يوم",1,2],["الإنتاج"],["q","الإنتاج م³",1,1],["ppd","م³/يوم عمل",1,1],["load","متوسط الحمولة م³",1,2],["adj","الإنتاجية المعدّلة حسب نوع الصب (100 = المتوقع)",1,0],
+      ["التكلفة"],["fv","المحروقات ر.س",-1,2],["mt","الصيانة والإصلاح ر.س",-1,2],["evA","منها أحداث استثنائية ر.س",0,2],["tc","التكلفة الإجمالية ر.س",-1,2],["الكفاءة"],["lpm","لتر/م³",-1,2],["l100","لتر/100 كم",-1,1],["cpk","وقود ر.س/كم",-1,2],["fpm","وقود ر.س/م³",-1,2],["mpm","صيانة ر.س/م³",-1,2],["mpm_x","صيانة ر.س/م³ بدون الاستثنائي",-1,2],["tcpm","التكلفة الإجمالية ر.س/م³",-1,2]],
+    radar:[["adj","الإنتاجية المعدّلة",1],["util","التشغيل",1],["tpd","النقلات",1],["fpm","كفاءة الوقود",-1],["mpm_x","تكلفة الصيانة",-1],["load","الحمولة",1]],
+    trend:["q","الإنتاج م³",1],head:["adj","fpm","mpm_x","util"],save:[["fpm","q","الوقود"],["mpm_x","q","الصيانة (بدون الاستثنائي)"]],cum:1,ev:1,
     cost:(s)=>{const o={};EQB.forEach(k=>o[k]=sum(s.E.filter(r=>r.cat===k),"amount"));o["أخرى"]=sum(s.E.filter(r=>!EQB.includes(r.cat)),"amount");o["وقود"]=exV(sum(s.F,"value"));return o;},
     recs:s=>[["النقلات",s.P,"P"],["المحروقات",s.F,"F"],["المصروفات",s.E,"E"]]},
   pump:{l:"المضخات ومعدات الصب",u:"معدة صب",
     list:d=>[...sumBy(d.P,r=>r.pump,r=>r.qty)].filter(x=>x[0]!=="غير محدد").sort((a,b)=>b[1]-a[1]).map(x=>x[0]),lab:cxPump,
-    sub:(d,k)=>{const g=/^\d+$/.test(k)?k:cxDig(k);const m=c=>g&&(cxDig(c)===g||new RegExp("(^|\\D)"+g+"(\\D|$)").test(c)&&/مضخ/.test(c));return {P:d.P.filter(r=>r.pump===k),F:d.F.filter(r=>m(r.center)),E:cxOp(d.E).filter(r=>m(r.equip)&&r.cat!=="وقود")};},
-    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P),fv=exV(sum(s.F,"value")),mt=sum(s.E,"amount");return {wd,util:c.od?wd/c.od:0,q,share:c.q?q/c.q:0,trips:s.P.length,ppd:wd?q/wd:0,fv,mt,tc:fv+mt,tcpm:q?(fv+mt)/q:0,tcpd:wd?(fv+mt)/wd:0,info:[...new Set(s.P.map(r=>cxGl(r.grade)))].slice(0,3).join("، ")};},
-    rows:[["التشغيل"],["wd","أيام العمل",1,0],["util","نسبة التشغيل",1,"%"],["trips","النقلات المصبوبة",1,0],["الإنتاج"],["q","الكمية المصبوبة م³",1,1],["share","النصيب من الإنتاج",1,"%"],["ppd","م³/يوم عمل",1,1],["التكلفة"],["fv","المحروقات ر.س",-1,2],["mt","الصيانة ر.س",-1,2],["tc","الإجمالي ر.س",-1,2],["tcpm","التكلفة ر.س/م³",-1,2],["tcpd","التكلفة ر.س/يوم",-1,2]],
-    radar:[["ppd","الإنتاجية",1],["util","التشغيل",1],["share","النصيب",1],["tcpm","التكلفة/م³",-1],["tcpd","التكلفة/يوم",-1]],trend:["q","الكمية م³",1],head:["q","ppd","tcpm"],
+    sub:(d,k)=>{const g=eqKey(k,1);return {P:d.P.filter(r=>r.pump===k),F:d.F.filter(r=>eqKey(r.center)===g),E:cxOp(d.E).filter(r=>r.equip!=="غير مرتبط بمعدة"&&eqKey(r.equip)===g&&r.cat!=="وقود"),k:g};},
+    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P),fv=exV(sum(s.F,"value")),mt=sum(s.E,"amount");const ev=s.E.filter(r=>r.amount>=c.thr),evA=sum(ev,"amount");return {wd,util:c.od?wd/c.od:0,q,share:c.q?q/c.q:0,trips:s.P.length,ppd:wd?q/wd:0,fv,mt,evA,evN:ev.length,tc:fv+mt,tcpm:q?(fv+mt)/q:0,tcpm_x:q?(fv+mt-evA)/q:0,tcpd:wd?(fv+mt)/wd:0,small:wd<10,info:[/^p/.test(s.k)?"":"المعدة "+s.k,[...new Set(s.P.map(r=>cxGl(r.grade)))].slice(0,3).join("، "),eqInfo(s.k)].filter(Boolean).join(" • ")};},
+    rows:[["التشغيل"],["wd","أيام العمل",1,0],["util","نسبة التشغيل",1,"%"],["trips","النقلات المصبوبة",1,0],["الإنتاج"],["q","الكمية المصبوبة م³",1,1],["share","النصيب من الإنتاج",1,"%"],["ppd","م³/يوم عمل",1,1],["التكلفة"],["fv","المحروقات ر.س",-1,2],["mt","الصيانة ر.س",-1,2],["evA","منها أحداث استثنائية ر.س",0,2],["tc","الإجمالي ر.س",-1,2],["tcpm","التكلفة ر.س/م³",-1,2],["tcpm_x","التكلفة ر.س/م³ بدون الاستثنائي",-1,2],["tcpd","التكلفة ر.س/يوم",-1,2]],
+    radar:[["ppd","الإنتاجية",1],["util","التشغيل",1],["share","النصيب",1],["tcpm_x","التكلفة/م³",-1],["tcpd","التكلفة/يوم",-1]],trend:["q","الكمية م³",1],head:["q","ppd","tcpm_x"],save:[["tcpm_x","q","التكلفة (بدون الاستثنائي)"]],cum:1,ev:1,
     cost:s=>{const o={};EQB.forEach(k=>o[k]=sum(s.E.filter(r=>r.cat===k),"amount"));o["أخرى"]=sum(s.E.filter(r=>!EQB.includes(r.cat)),"amount");o["وقود"]=exV(sum(s.F,"value"));return o;},
     recs:s=>[["النقلات",s.P,"P"],["المحروقات",s.F,"F"],["المصروفات",s.E,"E"]]},
   equip:{l:"المعدات (من المصروفات)",u:"معدة",
     list:d=>[...sumBy(cxOp(d.E).filter(r=>r.equip!=="غير مرتبط بمعدة"),r=>r.equip,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
-    sub:(d,k)=>{const g=cxDig(k);return {E:cxOp(d.E).filter(r=>r.equip===k),F:d.F.filter(r=>g&&cxDig(r.center)===g),P:d.P.filter(r=>g&&cxDig(r.mixer)===g)};},
+    sub:(d,k)=>{const g=eqKey(k);const pm=new Set(d.P.map(r=>r.pump).filter(p=>eqKey(p,1)===g));return {E:cxOp(d.E).filter(r=>r.equip===k),F:d.F.filter(r=>eqKey(r.center)===g),P:d.P.filter(r=>eqKey(r.mixer)===g||pm.has(r.pump)),k:g};},
     m:(s,c)=>{const ex=sum(s.E.filter(r=>r.cat!=="وقود"),"amount"),fe=sum(s.E.filter(r=>r.cat==="وقود"),"amount"),fv=exV(sum(s.F,"value")),q=sum(s.P,"qty");const ed=cxDays(s.E);const top=[...sumBy(s.E,r=>r.cat,r=>r.amount)].sort((a,b)=>b[1]-a[1])[0];
-      return {n:s.E.length,ex,fe,fv,tc:ex+Math.max(fe,fv),q,tcpm:q?(ex+Math.max(fe,fv))/q:0,avg:s.E.length?(ex+fe)/s.E.length:0,ed,share:c.ex?(ex+fe)/c.ex:0,info:(s.E[0]&&s.E[0].etype||"")+(top?` • أكبر بند: ${top[0]}`:"")};},
-    rows:[["المصروفات"],["n","عدد القيود",-1,0],["ex","المصروفات بدون وقود ر.س",-1,2],["fe","الوقود في المصروفات ر.س",-1,2],["fv","المحروقات (تبويب المحروقات) ر.س",-1,2],["avg","متوسط القيد ر.س",-1,2],["share","النصيب من مصروفات المعدات",-1,"%"],["التشغيل"],["q","الإنتاج المرتبط م³",1,1],["tcpm","التكلفة ر.س/م³",-1,2]],
-    radar:[["ex","الصيانة",-1],["fv","الوقود",-1],["n","عدد القيود",-1],["avg","متوسط القيد",-1],["tcpm","التكلفة/م³",-1]],trend:["ex","المصروفات بدون وقود ر.س",-1],head:["ex","fv","tcpm"],
+      const ev=s.E.filter(r=>r.cat!=="وقود"&&r.amount>=c.thr),evA=sum(ev,"amount");const tc=ex+Math.max(fe,fv);return {n:s.E.length,ex,ex_x:ex-evA,evA,evN:ev.length,fe,fv,tc,q,tcpm:q?tc/q:0,tcpm_x:q?(tc-evA)/q:0,avg:s.E.length?(ex+fe)/s.E.length:0,ed,share:c.ex?(ex+fe)/c.ex:0,small:s.E.length<5,etype:s.E[0]&&s.E[0].etype,info:[(s.E[0]&&s.E[0].etype||""),top&&`أكبر بند: ${top[0]}`,eqInfo(s.k)].filter(Boolean).join(" • ")};},
+    rows:[["المصروفات"],["n","عدد القيود",-1,0],["ex","المصروفات بدون وقود ر.س",-1,2],["fe","الوقود في المصروفات ر.س",-1,2],["fv","المحروقات (تبويب المحروقات) ر.س",-1,2],["evA","منها أحداث استثنائية ر.س",0,2],["ex_x","المصروفات بدون وقود وبدون الاستثنائي",-1,2],["avg","متوسط القيد ر.س",-1,2],["share","النصيب من مصروفات التشغيل",-1,"%"],["التشغيل"],["q","الإنتاج المرتبط م³",1,1],["tcpm","التكلفة ر.س/م³",-1,2],["tcpm_x","التكلفة ر.س/م³ بدون الاستثنائي",-1,2]],
+    radar:[["ex_x","الصيانة",-1],["fv","الوقود",-1],["n","عدد القيود",-1],["avg","متوسط القيد",-1],["tcpm_x","التكلفة/م³",-1]],trend:["ex","المصروفات بدون وقود ر.س",-1],head:["ex_x","fv","tcpm_x"],save:[["tcpm_x","q","التكلفة للمتر (بدون الاستثنائي)"]],cum:1,ev:1,peer:"etype",
     cost:s=>{const o={};EQB.forEach(k=>o[k]=sum(s.E.filter(r=>r.cat===k),"amount"));o["وقود"]=sum(s.E.filter(r=>r.cat==="وقود"),"amount");o["أخرى"]=sum(s.E.filter(r=>!EQB.includes(r.cat)&&r.cat!=="وقود"),"amount");return o;},
     recs:s=>[["المصروفات",s.E,"E"],["المحروقات",s.F,"F"]]},
   driver:{l:"السائقين",u:"سائق",
     list:d=>[...sumBy(d.P,r=>r.driver,r=>r.qty)].filter(x=>x[0]!=="غير محدد").sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
     sub:(d,k)=>({P:d.P.filter(r=>r.driver===k)}),
-    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P);const hi=sum(s.P.filter(r=>+(String(r.grade).match(/\d{3}/)||[0])[0]>=400),"qty");return {wd,util:c.od?wd/c.od:0,q,trips:s.P.length,ppd:wd?q/wd:0,tpd:wd?s.P.length/wd:0,load:s.P.length?q/s.P.length:0,share:c.q?q/c.q:0,hi:q?hi/q:0,info:"خلاطة "+[...sumBy(s.P,r=>r.mixer,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، ")};},
-    rows:[["الحضور"],["wd","أيام العمل",1,0],["util","نسبة الحضور من أيام التشغيل",1,"%"],["الإنتاج"],["trips","النقلات",1,0],["tpd","نقلات/يوم",1,2],["q","الكمية م³",1,1],["ppd","م³/يوم",1,1],["load","متوسط الحمولة م³",1,2],["share","النصيب من الإنتاج",1,"%"],["hi","نسبة ضغط 400 فأعلى",0,"%"]],
-    radar:[["ppd","الإنتاجية",1],["util","الحضور",1],["tpd","النقلات",1],["load","الحمولة",1],["share","النصيب",1]],trend:["q","الكمية م³",1],head:["ppd","util","tpd"],recs:s=>[["النقلات",s.P,"P"]]},
+    m:(s,c)=>{const q=sum(s.P,"qty"),wd=cxDays(s.P);const hi=sum(s.P.filter(r=>+(String(r.grade).match(/\d{3}/)||[0])[0]>=400),"qty");return {wd,util:c.od?wd/c.od:0,q,trips:s.P.length,ppd:wd?q/wd:0,tpd:wd?s.P.length/wd:0,load:s.P.length?q/s.P.length:0,adj:cxAdj(s.P,c,r=>r.driver),share:c.q?q/c.q:0,hi:q?hi/q:0,small:wd<10,info:"خلاطة "+[...sumBy(s.P,r=>r.mixer,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، ")};},
+    rows:[["الحضور"],["wd","أيام العمل",1,0],["util","نسبة الحضور من أيام التشغيل",1,"%"],["الإنتاج"],["trips","النقلات",1,0],["tpd","نقلات/يوم",1,2],["q","الكمية م³",1,1],["ppd","م³/يوم",1,1],["load","متوسط الحمولة م³",1,2],["adj","الإنتاجية المعدّلة حسب نوع الصب (100 = المتوقع)",1,0],["share","النصيب من الإنتاج",1,"%"],["hi","نسبة ضغط 400 فأعلى",0,"%"]],
+    radar:[["adj","الإنتاجية المعدّلة",1],["util","الحضور",1],["tpd","النقلات",1],["load","الحمولة",1],["share","النصيب",1]],trend:["q","الكمية م³",1],head:["adj","util","tpd"],recs:s=>[["النقلات",s.P,"P"]]},
   grade:{l:"درجات الضغط",u:"درجة",
     list:d=>[...sumBy(d.P,r=>cxGl(r.grade),r=>r.qty)].filter(x=>x[0]!=="غير محدد").sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
     sub:(d,k)=>({P:d.P.filter(r=>cxGl(r.grade)===k),S:d.S.filter(r=>cxGl(r.grade)===k)}),
     m:(s,c)=>{const q=sum(s.P,"qty");const kg=+(String(s.P[0]&&s.P[0].grade||"").match(/\d{3}/)||[0])[0];const th=q*kg/1000;const rev=sum(s.S,"amount"),sq=sum(s.S.filter(r=>r.amount>0),"qty");const pr=sq?rev/sq:0;const ccm=kg/1000*c.cpt;
-      return {q,share:c.q?q/c.q:0,trips:s.P.length,load:s.P.length?q/s.P.length:0,wd:cxDays(s.P),kg,th,ccm,cc:th*c.cpt,rev,price:pr,mg:pr?pr-ccm:0,info:`${num(kg)} كجم أسمنت/م³`};},
+      return {small:s.P.length<10,q,share:c.q?q/c.q:0,trips:s.P.length,load:s.P.length?q/s.P.length:0,wd:cxDays(s.P),kg,th,ccm,cc:th*c.cpt,rev,price:pr,mg:pr?pr-ccm:0,info:`${num(kg)} كجم أسمنت/م³`};},
     rows:[["الإنتاج"],["q","الكمية م³",1,1],["share","النصيب",1,"%"],["trips","النقلات",1,0],["load","متوسط الحمولة م³",1,2],["wd","أيام الإنتاج",1,0],["الأسمنت"],["kg","كجم أسمنت/م³",0,0],["th","الأسمنت المستهلك طن",0,1],["ccm","تكلفة الأسمنت ر.س/م³",-1,2],["cc","تكلفة الأسمنت ر.س",0,2],["البيع"],["rev","الإيراد ر.س",1,2],["price","سعر المتر ر.س",1,2],["mg","سعر المتر − تكلفة الأسمنت",1,2]],
     radar:[["q","الكمية",1],["load","الحمولة",1],["wd","الانتظام",1],["price","السعر",1],["mg","الهامش",1]],trend:["q","الكمية م³",1],head:["q","share","ccm"],recs:s=>[["النقلات",s.P,"P"],["المبيعات",s.S,"S"]]},
   mattype:{l:"المواد الخام",u:"مادة",
     list:d=>[...sumBy(d.M,r=>r.type,r=>r.total)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
     sub:(d,k)=>({M:d.M.filter(r=>r.type===k)}),
-    m:(s,c)=>{const n=s.M.length,t=sum(s.M,"total");return {n,t,share:c.mt?t/c.mt:0,pl:n?sum(s.M,"price")/n:0,tr:sum(s.M,"transport"),tip:sum(s.M,"tip"),cl:n?t/n:0,src:new Set(s.M.map(r=>r.source)).size,eq:new Set(s.M.map(r=>r.equip)).size,tpm:c.q?t/c.q:0,info:[...sumBy(s.M,r=>r.source,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، ")};},
+    m:(s,c)=>{const n=s.M.length,t=sum(s.M,"total");return {small:n<5,n,t,share:c.mt?t/c.mt:0,pl:n?sum(s.M,"price")/n:0,tr:sum(s.M,"transport"),tip:sum(s.M,"tip"),cl:n?t/n:0,src:new Set(s.M.map(r=>r.source)).size,eq:new Set(s.M.map(r=>r.equip)).size,tpm:c.q?t/c.q:0,info:[...sumBy(s.M,r=>r.source,()=>1)].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join("، ")};},
     rows:[["الحمولات"],["n","عدد الحمولات",1,0],["share","النصيب من تكلفة المواد",0,"%"],["src","عدد المصادر",0,0],["eq","عدد المعدات الناقلة",0,0],["التكلفة"],["pl","متوسط سعر الحمولة ر.س",-1,2],["tr","أجور النقل ر.س",-1,2],["tip","الإكراميات ر.س",-1,2],["cl","التكلفة الكاملة للحمولة ر.س",-1,2],["t","الإجمالي ر.س",0,2],["tpm","التكلفة ر.س/م³ إنتاج",-1,2]],
-    radar:[["n","الحمولات",1],["pl","السعر",-1],["cl","التكلفة الكاملة",-1],["src","تنوع المصادر",1]],trend:["n","الحمولات",1],head:["n","cl","tpm"],
+    radar:[["n","الحمولات",1],["pl","السعر",-1],["cl","التكلفة الكاملة",-1],["src","تنوع المصادر",1]],trend:["n","الحمولات",1],head:["n","cl","tpm"],save:[["cl","n","تكلفة الحمولة"]],
     cost:s=>({"سعر المصدر":sum(s.M,"price"),"النقل":sum(s.M,"transport"),"الإكرامية":sum(s.M,"tip")}),recs:s=>[["الحمولات",s.M,"M"]]},
   source:{l:"مصادر المواد (كسارات ومصانع)",u:"مصدر",
     list:d=>[...sumBy(d.M,r=>r.source,r=>r.total)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
     sub:(d,k)=>({M:d.M.filter(r=>r.source===k)}),
-    m:(s,c)=>{const n=s.M.length,t=sum(s.M,"total");return {n,t,share:c.mt?t/c.mt:0,pl:n?sum(s.M,"price")/n:0,tr:n?sum(s.M,"transport")/n:0,cl:n?t/n:0,days:cxDays(s.M),types:new Set(s.M.map(r=>r.type)).size,info:[...new Set(s.M.map(r=>r.type))].slice(0,3).join("، ")};},
+    m:(s,c)=>{const n=s.M.length,t=sum(s.M,"total");return {small:n<5,n,t,share:c.mt?t/c.mt:0,pl:n?sum(s.M,"price")/n:0,tr:n?sum(s.M,"transport")/n:0,cl:n?t/n:0,days:cxDays(s.M),types:new Set(s.M.map(r=>r.type)).size,info:[...new Set(s.M.map(r=>r.type))].slice(0,3).join("، ")};},
     rows:[["التوريد"],["n","عدد الحمولات",1,0],["days","أيام التوريد",1,0],["types","عدد الأنواع",0,0],["share","النصيب من تكلفة المواد",0,"%"],["التكلفة"],["pl","متوسط سعر الحمولة ر.س",-1,2],["tr","متوسط النقل للحمولة ر.س",-1,2],["cl","التكلفة الكاملة للحمولة ر.س",-1,2],["t","الإجمالي ر.س",0,2]],
-    radar:[["n","الحمولات",1],["days","الانتظام",1],["pl","السعر",-1],["tr","النقل",-1],["types","التنوع",1]],trend:["n","الحمولات",1],head:["n","pl","cl"],
+    radar:[["n","الحمولات",1],["days","الانتظام",1],["pl","السعر",-1],["tr","النقل",-1],["types","التنوع",1]],trend:["n","الحمولات",1],head:["n","pl","cl"],save:[["cl","n","تكلفة الحمولة"]],
     cost:s=>({"سعر المصدر":sum(s.M,"price"),"النقل":sum(s.M,"transport"),"الإكرامية":sum(s.M,"tip")}),recs:s=>[["الحمولات",s.M,"M"]]},
   supplier:{l:"موردين الأسمنت",u:"مورد",
     list:d=>[...sumBy(d.C.filter(r=>r.tons>0),r=>cxSup(r.supplier),r=>r.tons)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),lab:k=>({"مستورة":"مستورة","شحبل":"شحبل","نجران":"نجران (الغامدي)"}[k]||k),
     sub:(d,k)=>({C:d.C.filter(r=>cxSup(r.supplier)===k),k}),
     m:(s,c)=>{const R=s.C.filter(r=>r.tons>0);const t=sum(R,"tons"),v=R.reduce((a,r)=>a+cemVal(r),0);const pay=sum(s.C.filter(r=>r.paid),"paid");const all=DB.C.filter(r=>cxSup(r.supplier)===s.k&&r.date<=c.e);const due=all.filter(r=>r.tons>0).reduce((a,r)=>a+cemVal(r),0)-sum(all.filter(r=>r.paid),"paid");
-      return {n:R.length,t,load:R.length?t/R.length:0,v,ppt:t?v/t:0,share:c.ct?t/c.ct:0,days:cxDays(R),pay,due,np:R.length?R.filter(r=>!r.price&&!r.rval).length/R.length:0,ni:R.length?R.filter(r=>!r.invoice).length/R.length:0,info:""};},
+      return {small:R.length<5,n:R.length,t,load:R.length?t/R.length:0,v,ppt:t?v/t:0,share:c.ct?t/c.ct:0,days:cxDays(R),pay,due,np:R.length?R.filter(r=>!r.price&&!r.rval).length/R.length:0,ni:R.length?R.filter(r=>!r.invoice).length/R.length:0,info:""};},
     rows:[["التوريد"],["n","عدد الحمولات",1,0],["t","الكمية طن",1,1],["load","متوسط الحمولة طن",1,2],["days","أيام التوريد",1,0],["share","النصيب من الأسمنت المستلم",0,"%"],["التكلفة والمدفوعات"],["ppt","متوسط سعر الطن ر.س",-1,2],["v","القيمة ر.س",0,2],["pay","الدفعات في الفترة ر.س",0,2],["due","المتبقي حتى نهاية الفترة ر.س",-1,2],["جودة البيانات"],["np","حمولات بدون سعر",-1,"%"],["ni","حمولات بدون فاتورة",-1,"%"]],
-    radar:[["t","الكمية",1],["load","الحمولة",1],["days","الانتظام",1],["ppt","السعر",-1],["np","اكتمال الأسعار",-1],["ni","اكتمال الفواتير",-1]],trend:["t","الكمية طن",1],head:["t","ppt","due"],recs:s=>[["حركات المورد",s.C,"C"]]},
+    radar:[["t","الكمية",1],["load","الحمولة",1],["days","الانتظام",1],["ppt","السعر",-1],["np","اكتمال الأسعار",-1],["ni","اكتمال الفواتير",-1]],trend:["t","الكمية طن",1],head:["t","ppt","due"],save:[["ppt","t","سعر الطن"]],recs:s=>[["حركات المورد",s.C,"C"]]},
   expcat:{l:"تصنيفات المصروفات",u:"تصنيف",
     list:d=>[...sumBy(cxOp(d.E),r=>r.cat,r=>r.amount)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]),
     sub:(d,k)=>({E:cxOp(d.E).filter(r=>r.cat===k)}),
     m:(s,c)=>{const t=sum(s.E,"amount");const te=[...sumBy(s.E.filter(r=>r.equip!=="غير مرتبط بمعدة"),r=>r.equip,r=>r.amount)].sort((a,b)=>b[1]-a[1])[0];const ts=[...sumBy(s.E,r=>r.sub,r=>r.amount)].sort((a,b)=>b[1]-a[1])[0];
       return {t,n:s.E.length,avg:s.E.length?t/s.E.length:0,share:c.ex?t/c.ex:0,tpm:c.q?t/c.q:0,eq:new Set(s.E.map(r=>r.equip)).size,days:cxDays(s.E),info:[ts&&`أكبر فرعي: ${ts[0]}`,te&&`أكبر معدة: ${te[0]}`].filter(Boolean).join(" • ")};},
-    rows:[["المبالغ"],["t","المبلغ ر.س",-1,2],["share","النصيب من مصروفات التشغيل",0,"%"],["tpm","ر.س/م³",-1,2],["النشاط"],["n","عدد القيود",-1,0],["avg","متوسط القيد ر.س",-1,2],["days","أيام الصرف",-1,0],["eq","عدد المعدات",0,0]],
+    rows:[["المبالغ"],["t","المبلغ ر.س",0,2],["share","النصيب من مصروفات التشغيل",0,"%"],["tpm","ر.س/م³",0,2],["النشاط"],["n","عدد القيود",0,0],["avg","متوسط القيد ر.س",0,2],["days","أيام الصرف",0,0],["eq","عدد المعدات",0,0]],
     radar:[["t","المبلغ",-1],["n","القيود",-1],["avg","متوسط القيد",-1],["days","تكرار الصرف",-1]],trend:["t","المبلغ ر.س",-1],head:["t","tpm","avg"],
     cost:s=>{const o={};[...sumBy(s.E,r=>r.sub,r=>r.amount)].sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([k,v])=>o[k]=v);const rest=sum(s.E,"amount")-Object.values(o).reduce((a,x)=>a+x,0);if(rest>0)o["أخرى"]=rest;return o;},recs:s=>[["القيود",s.E,"E"]]},
   site:{l:"المواقع والعملاء",u:"موقع",
@@ -2927,101 +2947,162 @@ const CXT={
     list:d=>[...new Set([...cxOp(d.E).map(r=>r.branch),...d.S.map(r=>r.branch)])].filter(Boolean).sort((a,b)=>String(a).localeCompare(String(b),"ar",{numeric:true})),lab:k=>"فرع "+k,
     sub:(d,k)=>({E:cxOp(d.E).filter(r=>r.branch===k),S:d.S.filter(r=>r.branch===k)}),
     m:(s,c)=>{const ex=sum(s.E,"amount"),rev=sum(s.S,"amount");const tc=[...sumBy(s.E,r=>r.cat,r=>r.amount)].sort((a,b)=>b[1]-a[1])[0];return {ex,n:s.E.length,share:c.ex?ex/c.ex:0,rev,sq:sum(s.S.filter(r=>r.amount>0),"qty"),net:rev-ex,info:tc?`أكبر تصنيف: ${tc[0]}`:""};},
-    rows:[["المصروفات"],["ex","المصروفات ر.س",-1,2],["n","عدد القيود",-1,0],["share","النصيب من المصروفات",0,"%"],["المبيعات"],["rev","الإيراد ر.س",1,2],["sq","الكمية المباعة م³",1,1],["net","الإيراد − المصروفات",1,2]],
+    rows:[["المصروفات"],["ex","المصروفات ر.س",0,2],["n","عدد القيود",0,0],["share","النصيب من المصروفات",0,"%"],["المبيعات"],["rev","الإيراد ر.س",1,2],["sq","الكمية المباعة م³",1,1],["net","الإيراد − المصروفات",1,2]],
     radar:[["ex","المصروفات",-1],["rev","الإيراد",1],["net","الصافي",1]],trend:["ex","المصروفات ر.س",-1],head:["ex","rev","net"],
     cost:s=>{const o={};[...sumBy(s.E,r=>r.ctype,r=>r.amount)].forEach(([k,v])=>o[k]=v);return o;},recs:s=>[["المصروفات",s.E,"E"],["المبيعات",s.S,"S"]]},
 };
 const CX_ORDER=[["period","الفترات"],["years","السنوات"],["mixer","الخلاطات"],["pump","المضخات"],["equip","المعدات"],["driver","السائقين"],["grade","درجات الضغط"],["mattype","المواد الخام"],["source","مصادر المواد"],["supplier","موردين الأسمنت"],["expcat","تصنيفات المصروفات"],["site","المواقع والعملاء"],["branch","الفروع"]];
 function cxRange(){const s=RS.from?toDate(RS.from):new Date(DB.maxD.getFullYear(),0,1),e=RS.to?toDate(RS.to):new Date(+DB.maxD);return {s,e};}
-function cxItems(T,d){const all=T.list(d);let it=(RS.cxI||"").split("|").filter(x=>x&&all.includes(x));if(!it.length)it=all.slice(0,RS.cxM==="two"?1:3);if(RS.cxM==="two")it=it.slice(0,1);return {all,it:it.slice(0,4)};}
+/* المسافة من العداد */
+function cxKm(F){let km=0;[...groupBy(F,r=>r.vehicle||r.center)].forEach(([,v])=>{const d=sum(v.filter(r=>r.dist>0),"dist");if(d){km+=d;return;}const o=v.filter(r=>r.km>0).map(r=>r.km).sort((a,b)=>a-b);if(o.length>1&&o[o.length-1]-o[0]<200000)km+=o[o.length-1]-o[0];});return km;}
+/* الإنتاجية المعدلة: مقارنة م³/يوم الفعلي بالمتوقع حسب نوع الصب في كل يوم (مضخة/مباشر) */
+const cxIsPump=p=>/^\d+$/.test(String(p).trim())||/مضخ/.test(p);
+function cxAdjBase(d){const g=new Map();d.P.forEach(r=>{const k=r.mixer+"|"+dKey(r.date);const o=g.get(k)||{q:0,p:0};o.q+=r.qty;if(cxIsPump(r.pump))o.p=1;g.set(k,o);});const a={0:[0,0],1:[0,0]};g.forEach(o=>{a[o.p][0]+=o.q;a[o.p][1]++;});return {0:a[0][1]?a[0][0]/a[0][1]:0,1:a[1][1]?a[1][0]/a[1][1]:0};}
+function cxAdj(P,c,fk){if(!P.length||!c.adjB)return 0;const g=new Map();P.forEach(r=>{const k=fk(r)+"|"+r.mixer+"|"+dKey(r.date);const o=g.get(k)||{q:0,p:0};o.q+=r.qty;if(cxIsPump(r.pump))o.p=1;g.set(k,o);});let act=0,exp=0;g.forEach(o=>{act+=o.q;exp+=c.adjB[o.p]||0;});return exp?act/exp*100:0;}
+function cxCtx(d,s,e){const q=sum(d.P,"qty");const CR=d.C.filter(r=>r.tons>0);const cv=CR.reduce((a,r)=>a+cemVal(r),0),ct=sum(CR,"tons");
+  const am=cxOp(d.E).filter(r=>r.equip!=="غير مرتبط بمعدة"&&r.cat!=="وقود").map(r=>r.amount).filter(v=>v>0).sort((a,b)=>a-b);const med=am.length?am[Math.floor(am.length/2)]:0;
+  return {d,s,e,od:cxDays(d.P),q,ex:sum(cxOp(d.E),"amount"),mt:sum(d.M,"total"),ct,cpt:ct?cv/ct:0,rev:sum(d.S,"amount"),thr:Math.max(8000,med*4),adjB:cxAdjBase(d)};}
+function cxItems(T,d){const all=T.list(d);let it=(RS.cxI||"").split("|").filter(x=>x&&all.includes(x));const one=RS.cxM==="two"||RS.cxM==="avg";if(!it.length)it=all.slice(0,one?1:3);if(one)it=it.slice(0,1);return {all,it:it.slice(0,4)};}
+const CX_MODES=[["same","عناصر في نفس الفترة"],["two","عنصر واحد في فترتين"],["avg","عنصر مقابل متوسط المجموعة"],["all","ترتيب كل العناصر"]];
 function cxUI(){const t=RS.cxT||"mixer";let h=`<div class="z-cx-bar"><div class="z-cx-types">${CX_ORDER.map(([k,l])=>`<button type="button" data-cxt="${k}" class="${k===t?"on":""}">${l}</button>`).join("")}</div><div class="z-cx-row">`;
   if(t==="period")h+=cmpUI();
   else if(t==="years"){const ys=[...new Set(DB.P.map(r=>r.date.getFullYear()))].sort().reverse();const ya=RS.yA||ys[0],yb=RS.yB||ys[1]||ys[0];h+=`<label class="report-filter">السنة (أ)<select id="rYA">${ys.map(y=>`<option${+ya===y?" selected":""}>${y}</option>`).join("")}</select></label><label class="report-filter">مقابل السنة (ب)<select id="rYB">${ys.map(y=>`<option${+yb===y?" selected":""}>${y}</option>`).join("")}</select></label>`;}
-  else{const T=CXT[t];const two=RS.cxM==="two";const {s,e}=cxRange();const d=filt({from:dKey(s),to:dKey(e)});const {all,it}=cxItems(T,d);const lab=T.lab||(x=>x);
-    h+=`<label class="report-filter">طريقة المقارنة<select id="rCxM"><option value="same"${two?"":" selected"}>${T.u==="مورد"?"موردين":"عناصر"} في نفس الفترة</option><option value="two"${two?" selected":""}>${T.u} واحد في فترتين</option></select></label>`;
-    h+=`<div class="report-filter"><span>${two?T.u:`العناصر (حتى 4)`}</span><details class="z-ms z-cx-ms" id="rCxI"><summary>${it.map(x=>esc(lab(x))).join(" • ")||"اختر"}</summary><div class="z-ms-pop"><input type="search" class="z-cx-q" placeholder="بحث..."><div class="z-cx-list">${all.map(x=>`<label><input type="${two?"radio":"checkbox"}" name="cxi" value="${esc(x)}"${it.includes(x)?" checked":""}> ${esc(lab(x))}</label>`).join("")||"<em>لا توجد عناصر في الفترة</em>"}</div><div class="z-ms-act"><button type="button" data-a="ok">تطبيق</button></div></div></details></div>`;
-    h+=two?cmpUI():`<label class="report-filter">من<input type="date" id="rFrom" value="${RS.from||dKey(s)}"></label><label class="report-filter">إلى<input type="date" id="rTo" value="${RS.to||dKey(e)}"></label>`;}
+  else{const T=CXT[t];const M=RS.cxM||"same";const one=M==="two"||M==="avg";const {s,e}=cxRange();const d=filt({from:dKey(s),to:dKey(e)});const {all,it}=cxItems(T,d);const lab=T.lab||(x=>x);
+    h+=`<label class="report-filter">طريقة المقارنة<select id="rCxM">${CX_MODES.map(([k,l])=>`<option value="${k}"${M===k?" selected":""}>${l}</option>`).join("")}</select></label>`;
+    if(M!=="all")h+=`<div class="report-filter"><span>${one?T.u:`العناصر (حتى 4)`}</span><details class="z-ms z-cx-ms" id="rCxI"><summary>${it.map(x=>esc(lab(x))).join(" • ")||"اختر"}</summary><div class="z-ms-pop"><input type="search" class="z-cx-q" placeholder="بحث..."><div class="z-cx-list">${all.map(x=>`<label><input type="${one?"radio":"checkbox"}" name="cxi" value="${esc(x)}"${it.includes(x)?" checked":""}> ${esc(lab(x))}</label>`).join("")||"<em>لا توجد عناصر في الفترة</em>"}</div>${one?"":`<div class="z-ms-act"><button type="button" data-a="ok">تطبيق</button></div>`}</div></details></div>`;
+    h+=M==="two"?cmpUI():`<label class="report-filter">من<input type="date" id="rFrom" value="${RS.from||dKey(s)}"></label><label class="report-filter">إلى<input type="date" id="rTo" value="${RS.to||dKey(e)}"></label>`;
+    if(M==="same")h+=`<div class="report-filter"><span>اختيار سريع</span><span class="z-cx-pre"><button type="button" data-pre="bw">أفضل 2 ↔ أسوأ 2</button><button type="button" data-pre="top">أكبر 4</button></span></div>`;
+    h+=`<label class="report-filter z-cx-one"><span>&nbsp;</span><span><input type="checkbox" id="rCxOne"${RS.cxOne?" checked":""}> ملخص صفحة واحدة</span></label>`;}
   return h+`</div></div>`;}
-function cxBind(){document.querySelectorAll("[data-cxt]").forEach(b=>b.onclick=()=>{RS.cxT=b.dataset.cxt;RS.cxI="";RS.cxM="same";drawReport();});
-  if($("rCxM"))$("rCxM").onchange=e=>{RS.cxM=e.target.value;if(RS.cxM==="two")RS.cxI=(RS.cxI||"").split("|")[0]||"";drawReport();};
+function cxBind(){document.querySelectorAll("[data-cxt]").forEach(b=>b.onclick=()=>{RS.cxT=b.dataset.cxt;RS.cxI="";if(RS.cxM!=="all")RS.cxM="same";drawReport();});
+  if($("rCxM"))$("rCxM").onchange=e=>{RS.cxM=e.target.value;if(RS.cxM==="two"||RS.cxM==="avg")RS.cxI=(RS.cxI||"").split("|")[0]||"";drawReport();};
+  if($("rCxOne"))$("rCxOne").onchange=e=>{RS.cxOne=e.target.checked?"1":"";drawReport();};
+  document.querySelectorAll("[data-pre]").forEach(b=>b.onclick=()=>{const T=CXT[RS.cxT||"mixer"];const {s,e}=cxRange();const d=filt({from:dKey(s),to:dKey(e)});const c=cxCtx(d,s,e);const all=T.list(d);
+    if(b.dataset.pre==="top"){RS.cxI=all.slice(0,4).join("|");drawReport();return;}
+    const L=all.map(k=>({k,m:T.m(T.sub(d,k),c)})).filter(x=>!x.m.small);const sc=cxScores(T,L.map(x=>x.m),L.map(x=>x.m));const o=L.map((x,i)=>({k:x.k,v:sc[i]})).sort((a,b)=>b.v-a.v);
+    if(o.length<2){toast("لا توجد عناصر كافية");return;}RS.cxI=[...o.slice(0,2),...o.slice(-2)].map(x=>x.k).filter((v,i,a)=>a.indexOf(v)===i).join("|");drawReport();});
   const box=$("rCxI");if(box){const q=box.querySelector(".z-cx-q");q.oninput=()=>{const v=q.value.trim();box.querySelectorAll(".z-cx-list label").forEach(l=>l.style.display=!v||l.textContent.includes(v)?"":"none");};
     box.addEventListener("change",e=>{if(e.target.type==="checkbox"){const c=[...box.querySelectorAll("input:checked")];if(c.length>4){e.target.checked=false;toast("الحد الأقصى 4 عناصر");}}if(e.target.type==="radio"){RS.cxI=e.target.value;drawReport();}});
-    box.querySelector('[data-a="ok"]').onclick=()=>{const c=[...box.querySelectorAll("input:checked")].map(i=>i.value);if(!c.length){toast("اختر عنصراً واحداً على الأقل");return;}RS.cxI=c.join("|");drawReport();};
-    document.addEventListener("click",e=>{if(box.open&&!box.contains(e.target))box.open=false;},{once:false});}}
+    const ok=box.querySelector('[data-a="ok"]');if(ok)ok.onclick=()=>{const c=[...box.querySelectorAll("input:checked")].map(i=>i.value);if(!c.length){toast("اختر عنصراً واحداً على الأقل");return;}RS.cxI=c.join("|");drawReport();};
+    document.addEventListener("click",e=>{if(box.open&&!box.contains(e.target))box.open=false;});}}
+/* نقاط الملف الشامل (0-100) */
+function cxScores(T,ms,pool){const ax=T.radar;const per=ms.map(m=>ax.map(([k,,dir])=>{const L=pool.map(x=>x[k]||0).filter(v=>v);const v=m[k]||0;if(!v||!L.length)return 0;const mn=Math.min(...L),mx=Math.max(...L);if(mx===mn)return 70;return Math.round((dir<0?(mx-v)/(mx-mn):(v-mn)/(mx-mn))*85+15);}));
+  ms.forEach((m,i)=>m._ax=per[i]);return per.map(a=>a.reduce((x,v)=>x+v,0)/a.length);}
 /* رسوم */
 function cxRadar(els,ax,vals){const W=330,cx=165,cy=150,R=110,n=ax.length;const pt=(i,r)=>[cx+r*Math.sin(2*Math.PI*i/n),cy-r*Math.cos(2*Math.PI*i/n)];
   let s=`<svg viewBox="0 0 ${W} 300" class="z-radar">`;[.25,.5,.75,1].forEach(f=>s+=`<polygon points="${ax.map((_,i)=>pt(i,R*f).map(v=>v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="#e3e8f0"/>`);
   ax.forEach((a,i)=>{const [x,y]=pt(i,R),[lx,ly]=pt(i,R+22);s+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e3e8f0"/><text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="11" font-weight="700" text-anchor="middle" fill="#33415c">${a[1]}</text>`;});
-  els.forEach((e,j)=>{s+=`<polygon points="${ax.map((a,i)=>pt(i,R*Math.max(.04,vals[j][i]/100)).map(v=>v.toFixed(1)).join(",")).join(" ")}" fill="${CXC[j]}" fill-opacity=".14" stroke="${CXC[j]}" stroke-width="2.2"/>`;});
+  els.forEach((e,j)=>{s+=`<polygon points="${ax.map((a,i)=>pt(i,R*Math.max(.04,vals[j][i]/100)).map(v=>v.toFixed(1)).join(",")).join(" ")}" fill="${e.col}" fill-opacity=".14" stroke="${e.col}" stroke-width="2.2"${e.dash?' stroke-dasharray="5 4"':""}/>`;
+    ax.forEach((a,i)=>{const [x,y]=pt(i,R*Math.max(.04,vals[j][i]/100));s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${e.col}"><title>${esc(e.label)} — ${a[1]}: ${vals[j][i]}</title></circle>`;});});
   return s+`</svg>`;}
-function cxLines(els,series,months,dc){const W=560,H=210,L=44,Rr=12,T=14,B=26;const all=series.flat();const mx=Math.max(1,...all);const px=i=>L+i*(W-L-Rr)/Math.max(1,months.length-1),py=v=>H-B-v/mx*(H-T-B);
+function cxLines(els,series,labels,dc,events){const W=560,H=210,L=48,Rr=12,T=16,B=26;const all=series.flat();const mx=Math.max(1,...all);const n=labels.length;const px=i=>L+i*(W-L-Rr)/Math.max(1,n-1),py=v=>H-B-v/mx*(H-T-B);
   let s=`<svg viewBox="0 0 ${W} ${H}" class="z-lines">`;[0,.5,1].forEach(f=>s+=`<line x1="${L}" x2="${W-Rr}" y1="${py(mx*f)}" y2="${py(mx*f)}" stroke="#e3e8f0"/><text x="${L-5}" y="${py(mx*f)+3}" font-size="9" text-anchor="end" fill="#7a869a">${num(mx*f,mx*f<10?1:0)}</text>`);
-  months.forEach((m,i)=>s+=`<text x="${px(i)}" y="${H-8}" font-size="9" text-anchor="middle" fill="#7a869a">${m}</text>`);
-  series.forEach((S,j)=>{s+=`<polyline points="${S.map((v,i)=>`${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${CXC[j]}" stroke-width="2.3"/>`+S.map((v,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="2.4" fill="${CXC[j]}"/>`).join("");});
+  labels.forEach((m,i)=>s+=`<text x="${px(i)}" y="${H-8}" font-size="9" text-anchor="middle" fill="#7a869a">${m}</text>`);
+  series.forEach((S,j)=>{const e=els[j];s+=`<polyline points="${S.map((v,i)=>`${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${e.col}" stroke-width="2.3"${e.dash?' stroke-dasharray="5 4"':""}/>`+S.map((v,i)=>`<circle cx="${px(i).toFixed(1)}" cy="${py(v).toFixed(1)}" r="3" fill="${e.col}"><title>${esc(e.label)} — ${labels[i]}: ${num(v,dc)}</title></circle>`).join("");
+    if(events&&events[j])events[j].forEach((ev,i)=>{if(!ev||!ev.length)return;const x=px(i),y=py(S[i])-9;s+=`<path d="M${x.toFixed(1)} ${(y-6).toFixed(1)} l5 8 h-10z" fill="#d9534f" stroke="#fff" stroke-width=".8"><title>${esc(e.label)} — حدث استثنائي: ${ev.map(r=>`${r.cat} ${money(r.amount)}`).join("، ")}</title></path>`;});});
   return s+`</svg>`;}
-function cxLegend(els){return `<div class="z-cx-lg">${els.map((e,j)=>`<span style="--c:${CXC[j]}">${esc(e.label)}</span>`).join("")}</div>`;}
+function cxLegend(els,ev){return `<div class="z-cx-lg">${els.map(e=>`<span style="--c:${e.col}">${esc(e.label)}</span>`).join("")}${ev?`<span class="z-ev-lg">▲ حدث استثنائي (مصروف كبير)</span>`:""}</div>`;}
 function cxRecShow(title,L,kind){const top=L.slice().sort((a,b)=>(b.amount||b.qty||b.value||b.tons||b.total||0)-(a.amount||a.qty||a.value||a.tons||a.total||0)).slice(0,40);
   const H={P:["التاريخ","الخلاطة","السائق","الضغط","معدة الصب","م³"],F:["التاريخ","المركز","المجموعة","لترات","القيمة ر.س"],E:["التاريخ","القيد","التصنيف","الفرعي","البيان","المبلغ"],S:["التاريخ","الموقع","الضغط","الكمية","المبلغ"],M:["التاريخ","المادة","المصدر","المعدة","السائق","الإجمالي"],C:["التاريخ","المورد","طن","السعر","الفاتورة","دفعة"]}[kind];
   const R=r=>({P:[fmtDate(r.date),esc(r.mixer),esc(r.driver),esc(r.grade),esc(cxPump(r.pump)),num(r.qty,1)],F:[fmtDate(r.date),esc(r.center),esc(r.group||""),r.liters?num(r.liters):"—",money(exV(r.value||0))],E:[fmtDate(r.date),esc(r.entry),esc(r.cat),esc(r.sub),esc(String(r.desc||"").slice(0,60)),money(r.amount)],S:[fmtDate(r.date),esc(r.site),esc(r.grade),num(r.qty,1),money(r.amount)],M:[fmtDate(r.date),esc(r.type),esc(r.source),esc(r.equip),esc(r.driver),money(r.total)],C:[fmtDate(r.date),esc(r.supplier),r.tons?num(r.tons,2):"—",r.price?money(r.price):"—",esc(r.invoice||"—"),r.paid?money(r.paid):"—"]}[kind]);
-  modal(`${title} — ${num(L.length)} سجل${L.length>40?" (أكبر 40)":""}`,`<div class="z-dr-t"><table class="report-table"><tr>${H.map(x=>`<th>${x}</th>`).join("")}</tr>${top.map(r=>`<tr>${R(r).map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`,[{t:"إغلاق",p:1}]);}
+  modal(`${title} — ${num(L.length)} سجل${L.length>40?" (أكبر 40)":""}`,`<div class="z-dr-t"><table class="report-table z-sort"><thead><tr>${H.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${top.map(r=>`<tr>${R(r).map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`,[{t:"إغلاق",p:1}]);}
+/* ترتيب الجداول بالضغط على العنوان */
+function cxSortBind(){document.addEventListener("click",e=>{const th=e.target.closest("table.z-sort th");if(!th)return;const tb=th.closest("table");const i=[...th.parentNode.children].indexOf(th);const body=tb.tBodies[0];if(!body)return;
+  const rows=[...body.rows].filter(r=>!r.classList.contains("total")&&!r.classList.contains("z-grp"));const tot=[...body.rows].filter(r=>r.classList.contains("total"));const dir=th.dataset.sd==="d"?1:-1;tb.querySelectorAll("th").forEach(x=>delete x.dataset.sd);th.dataset.sd=dir<0?"d":"a";
+  const val=r=>{const t=(r.cells[i]||{}).textContent||"";const n=parseFloat(t.replace(/[^\d.\-−]/g,"").replace("−","-"));return isNaN(n)?t:n;};
+  rows.sort((a,b)=>{const x=val(a),y=val(b);return (typeof x==="number"&&typeof y==="number"?x-y:String(x).localeCompare(String(y),"ar"))*dir;});rows.forEach(r=>body.appendChild(r));tot.forEach(r=>body.appendChild(r));});}
 /* التقرير */
-function cxReport(){const t=RS.cxT||"mixer";if(t==="period")return cmpReport();if(t==="years")return yoyReport();DRILL=[];
-  const T=CXT[t];const lab=T.lab||(x=>x);const two=RS.cxM==="two";let els=[];let note="";
-  const ctxOf=(d,s,e)=>{const q=sum(d.P,"qty");const CR=d.C.filter(r=>r.tons>0);const cv=CR.reduce((a,r)=>a+cemVal(r),0),ct=sum(CR,"tons");return {d,s,e,od:cxDays(d.P),q,ex:sum(cxOp(d.E),"amount"),mt:sum(d.M,"total"),ct,cpt:ct?cv/ct:0,rev:sum(d.S,"amount")};};
-  let base;
-  if(two){const R=cmpRanges();const dA=filt({from:dKey(R.A[0]),to:dKey(R.A[1])}),dB=filt({from:dKey(R.B[0]),to:dKey(R.B[1])});const {it}=cxItems(T,filt({from:dKey(R.B[0]),to:dKey(R.A[1])}));const k=it[0];
+function cxReport(){const t=RS.cxT||"mixer";try{LS.set("zahal_cx_last",{cxT:RS.cxT,cxI:RS.cxI,cxM:RS.cxM,cmpP:RS.cmpP,cxOne:RS.cxOne});}catch(e){}
+  if(t==="period")return cmpReport();if(t==="years")return yoyReport();DRILL=[];
+  const T=CXT[t];const lab=T.lab||(x=>x);const M=RS.cxM||"same";const ONE=!!RS.cxOne;let els=[],note="",base,pool;
+  const fmt=(v,dc)=>v==null||isNaN(v)?"—":dc==="%"?pct(v):v?num(v,dc):"—";
+  if(M==="two"){const R=cmpRanges();const dA=filt({from:dKey(R.A[0]),to:dKey(R.A[1])}),dB=filt({from:dKey(R.B[0]),to:dKey(R.B[1])});const {it}=cxItems(T,filt({from:dKey(R.B[0]),to:dKey(R.A[1])}));const k=it[0];
     if(!k)return `<div class="z-emptyline">لا توجد عناصر من نوع «${T.l}» في الفترتين.</div><!--NOSUM-->`;
-    const cA=ctxOf(dA,...R.A),cB=ctxOf(dB,...R.B);els=[{label:`${lab(k)} — (أ)`,k,c:cA,s:T.sub(dA,k)},{label:`${lab(k)} — (ب)`,k,c:cB,s:T.sub(dB,k)}];base=cA;
-    note=`مقارنة <b>${esc(lab(k))}</b> بنفسه: (أ) من <b>${fmtDate(R.A[0])}</b> إلى <b>${fmtDate(R.A[1])}</b> مقابل (ب) من <b>${fmtDate(R.B[0])}</b> إلى <b>${fmtDate(R.B[1])}</b>.`;}
-  else{const {s,e}=cxRange();const d=filt({from:dKey(s),to:dKey(e)});const c=ctxOf(d,s,e);base=c;const {all,it}=cxItems(T,d);
-    if(!it.length)return `<div class="z-emptyline">لا توجد بيانات من نوع «${T.l}» في الفترة المحددة.</div><!--NOSUM-->`;
-    els=it.map(k=>({label:lab(k),k,c,s:T.sub(d,k)}));
-    els.forEach(x=>x.m=T.m(x.s,c));const allM=all.map(k=>T.m(T.sub(d,k),c));base.allM=allM;
-    note=`مقارنة ${num(els.length)} من «${T.l}» من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e)}</b> (${num(c.od)} يوم تشغيل). «متوسط المجموعة» و«الأفضل» محسوبين على كل ${num(all.length)} ${T.u} في الفترة.`;}
-  els.forEach(x=>{if(!x.m)x.m=T.m(x.s,x.c);});
-  const rows=T.rows.filter(r=>r.length>1);const fmt=(v,dc)=>v==null||isNaN(v)?"—":dc==="%"?pct(v):v?num(v,dc):"—";
-  const avgOf=k=>{const L=(base.allM||[]).map(m=>m[k]).filter(v=>v);return L.length?L.reduce((a,v)=>a+v,0)/L.length:0;};
-  const bestOf=(k,dir)=>{const L=(base.allM||[]).map(m=>m[k]).filter(v=>v);return L.length?(dir<0?Math.min(...L):Math.max(...L)):0;};
+    const cA=cxCtx(dA,...R.A),cB=cxCtx(dB,...R.B);els=[{label:`${lab(k)} — (أ)`,k,c:cA,s:T.sub(dA,k)},{label:`${lab(k)} — (ب)`,k,c:cB,s:T.sub(dB,k)}];base=cA;
+    note=`مقارنة <b>${esc(lab(k))}</b> بنفسه: (أ) من <b>${fmtDate(R.A[0])}</b> إلى <b>${fmtDate(R.A[1])}</b> مقابل (ب) من <b>${fmtDate(R.B[0])}</b> إلى <b>${fmtDate(R.B[1])}</b>.`;
+    els.forEach(x=>x.m=T.m(x.s,x.c));pool=els.map(x=>x.m);}
+  else{const {s,e}=cxRange();const d=filt({from:dKey(s),to:dKey(e)});const c=cxCtx(d,s,e);base=c;const {all,it}=cxItems(T,d);
+    if(!all.length)return `<div class="z-emptyline">لا توجد بيانات من نوع «${T.l}» في الفترة المحددة.</div><!--NOSUM-->`;
+    let allE=all.map(k=>{const sb=T.sub(d,k);return {k,label:lab(k),s:sb,m:T.m(sb,c),c};});
+    if(T.peer){const tps=new Set(it.map(k=>(allE.find(x=>x.k===k)||{}).m?.[T.peer]));allE=allE.filter(x=>tps.has(x.m[T.peer])||it.includes(x.k));}
+    pool=allE.filter(x=>!x.m.small).map(x=>x.m);if(pool.length<2)pool=allE.map(x=>x.m);base.allE=allE;
+    const avgM=()=>{const o={};T.rows.filter(r=>r.length>1).forEach(([k])=>{const v=pool.map(m=>m[k]).filter(v=>v);o[k]=v.length?v.reduce((a,x)=>a+x,0)/v.length:0;});["q","t","n"].forEach(k=>{const v=pool.map(m=>m[k]).filter(v=>v);if(v.length)o[k]=v.reduce((a,x)=>a+x,0)/v.length;});o.info=`متوسط ${num(pool.length)} ${T.u}`;return o;};
+    if(M==="all"){return cxRanking(T,allE,pool,c,s,e,fmt);}
+    els=it.map(k=>allE.find(x=>x.k===k)).filter(Boolean);
+    if(M==="avg")els.push({label:"متوسط المجموعة",k:null,c,s:null,m:avgM(),avg:1});
+    note=`مقارنة ${M==="avg"?`<b>${esc(els[0].label)}</b> بمتوسط المجموعة`:`${num(els.length)} من «${T.l}»`} من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e)}</b> (${num(c.od)} يوم تشغيل). المتوسط والأفضل محسوبين على ${num(pool.length)} ${T.u}${T.peer?" من نفس النوع":""}${pool.length<allE.length?` (مستبعد ${num(allE.length-pool.length)} عينة صغيرة)`:""}.`;}
+  els.forEach((x,j)=>{x.col=x.avg?"#7a869a":CXC[j];x.dash=!!x.avg;});
+  const real=els.filter(x=>!x.avg);
+  const KEY1=new Set([...T.head,"q","tc","wd","n","t","rev","ex"]);const rows=T.rows.filter(r=>r.length>1).filter(([k])=>els.some(x=>x.m[k])).filter(([k])=>!ONE||KEY1.has(k));
+  const avgOf=k=>{const L=pool.map(m=>m[k]).filter(v=>v);return L.length?L.reduce((a,v)=>a+v,0)/L.length:0;};
+  const bestOf=(k,dir)=>{const L=pool.map(m=>m[k]).filter(v=>v);return L.length?(dir<0?Math.min(...L):Math.max(...L)):0;};
+  /* الوفر الممكن */
+  const SV=(T.save||[]).filter(()=>M!=="two");const saving=x=>SV.map(([rk,bk])=>{const a=avgOf(rk);const v=x.m[rk];return v&&a&&v>a?(v-a)*(x.m[bk]||0):0;});
   /* الخلاصة */
   const S=[];const pc=(a,b)=>b?Math.abs((a-b)/b*100):0;
-  T.head.forEach(k=>{const r=rows.find(x=>x[0]===k);if(!r)return;const [_,l,dir,dc]=r;const vs=els.map(x=>x.m[k]||0);if(!vs.some(v=>v))return;const bi=dir<0?vs.indexOf(Math.min(...vs.filter(v=>v))):vs.indexOf(Math.max(...vs));const wi=dir<0?vs.indexOf(Math.max(...vs)):vs.indexOf(Math.min(...vs));
+  T.head.forEach(k=>{const r=T.rows.find(x=>x[0]===k);if(!r)return;const [_,l,dir,dc]=r;const vs=els.map(x=>x.m[k]||0);if(!vs.some(v=>v))return;const nz=vs.filter(v=>v);const bi=dir<0?vs.indexOf(Math.min(...nz)):vs.indexOf(Math.max(...vs));const wi=dir<0?vs.indexOf(Math.max(...vs)):vs.indexOf(Math.min(...nz));
     if(bi===wi||!dir){S.push(`«${l}»: ${els.map((x,j)=>`${esc(x.label)} ${fmt(vs[j],dc)}`).join(" • ")}.`);return;}
-    S.push(`<b style="color:${CXC[bi]}">${esc(els[bi].label)}</b> ${dir<0?"الأقل":"الأعلى"} في «${l}» (${fmt(vs[bi],dc)}) مقابل ${esc(els[wi].label)} (${fmt(vs[wi],dc)}) — فرق <b>${num(dc==="%"?Math.abs(vs[bi]-vs[wi])*100:pc(vs[bi],vs[wi]),dc==="%"?1:0)}${dc==="%"?" نقطة":"%"}</b>.`);});
-  if(T.cost){const cs=els.map(x=>T.cost(x.s));const keys=[...new Set(cs.flatMap(o=>Object.keys(o)))];let bk=null,bd=0;keys.forEach(k=>{const v=cs.map(o=>o[k]||0);const d=Math.max(...v)-Math.min(...v);if(d>bd){bd=d;bk=k;}});
-    if(bk&&bd>0){const v=cs.map(o=>o[bk]||0);const hi=v.indexOf(Math.max(...v)),lo=v.indexOf(Math.min(...v));S.push(`أكبر فرق في تفكيك التكلفة في بند «${esc(bk)}»: ${esc(els[hi].label)} ${money(v[hi])} مقابل ${esc(els[lo].label)} ${money(v[lo])} ر.س.`);}}
+    S.push(`<b style="color:${els[bi].col}">${esc(els[bi].label)}</b> ${dir<0?"الأقل":"الأعلى"} في «${l}» (${fmt(vs[bi],dc)}) مقابل ${esc(els[wi].label)} (${fmt(vs[wi],dc)}) — فرق <b>${num(dc==="%"?Math.abs(vs[bi]-vs[wi])*100:pc(vs[bi],vs[wi]),dc==="%"?1:0)}${dc==="%"?" نقطة":"%"}</b>.`);});
+  if(SV.length){const sv=real.map(x=>({x,v:saving(x).reduce((a,b)=>a+b,0)})).sort((a,b)=>b.v-a.v);if(sv[0]&&sv[0].v>0)S.push(`<b>الوفر الممكن:</b> لو ${esc(sv[0].x.label)} كانت بمتوسط المجموعة في ${SV.map(z=>z[2]).join(" و")}، كان الوفر <b>${money(sv[0].v)} ر.س</b> في الفترة.`);}
+  if(real.some(x=>x.m.evN))S.push(`أحداث استثنائية (قيد ≥ ${money(base.thr)} ر.س): ${real.filter(x=>x.m.evN).map(x=>`${esc(x.label)} ${num(x.m.evN)} بـ ${money(x.m.evA)} ر.س`).join(" • ")} — والمؤشرات «بدون الاستثنائي» بتستبعدها.`);
+  if(real.some(x=>x.m.small))S.push(`<span class="z-small">عينة صغيرة</span> ${real.filter(x=>x.m.small).map(x=>esc(x.label)).join("، ")} — اشتغل أيام قليلة، فأرقامه أقل موثوقية.`);
   /* الهيدر */
-  let h=`<div class="report-note">${note}</div><div class="z-pg1w"><div class="z-cx-heads" style="--n:${els.length}">${els.map((x,j)=>`<div class="z-cx-head" style="--c:${CXC[j]}"><b>${esc(x.label)}</b><small>${esc(x.m.info||"")}</small></div>`).join("")}</div><div class="report-grid z-daily-grid z-p1">`;
+  let h=`<div class="report-note">${note}</div><div class="z-pg1w"><div class="z-cx-heads" style="--n:${els.length}">${els.map(x=>`<div class="z-cx-head" style="--c:${x.col}"><b>${esc(x.label)}${x.m.small?' <span class="z-small">عينة صغيرة</span>':""}</b><small>${esc(x.m.info||"")}</small></div>`).join("")}</div><div class="report-grid z-daily-grid z-p1">`;
   h+=card("الخلاصة",`<ol class="z-insights">${S.map(x=>`<li>${x}</li>`).join("")||"<li>لا توجد بيانات كافية.</li>"}</ol>`,true);
-  /* الجدول */
-  {const ref=!two&&base.allM&&base.allM.length>1;const rs=[];T.rows.forEach(r=>{if(r.length===1){rs.push(CX.gtr(r[0],els.length+1+(ref?2:0)+(two?1:0)));return;}const [k,l,dir,dc]=r;const vs=els.map(x=>x.m[k]);
-      const cand=vs.filter(v=>v);const best=!dir||!cand.length||cand.length<2?null:(dir<0?Math.min(...cand):Math.max(...cand));
-      const cells=vs.map((v,j)=>`<span class="${best!=null&&v===best?"z-cx-best":""}" style="--c:${CXC[j]}">${fmt(v,dc)}</span>`);
-      rs.push(tr([`<b>${l}</b>`,...cells,...(two?[vs[1]?CX.chg(vs[0],vs[1],dir):"—"]:[]),...(ref?[fmt(avgOf(k),dc),dir?fmt(bestOf(k,dir),dc):"—"]:[])]));});
-   h+=card("المؤشرات جنباً إلى جنب",table(["المؤشر",...els.map((x,j)=>`<span class="z-cx-th" style="--c:${CXC[j]}">${esc(x.label)}</span>`),...(two?["التغير"]:[]),...(!two&&base.allM&&base.allM.length>1?["متوسط المجموعة","الأفضل"]:[])],rs).replace('<table class="report-table','<table class="report-table z-cx-tbl'),true);}
+  const th=x=>`<span class="z-cx-th" style="--c:${x.col}">${esc(x.label)}</span>`;
+  {const ref=M==="same"&&pool.length>1;const rs=[];let grp=null;T.rows.forEach(r=>{if(r.length===1){grp=r[0];return;}const [k,l,dir,dc]=r;if(!rows.includes(r))return;if(grp){rs.push(CX.gtr(grp,els.length+1+(ref?2:0)+(M!=="same"?1:0)));grp=null;}const vs=els.map(x=>x.m[k]);
+      const cand=real.map(x=>x.m[k]).filter(v=>v);const best=!dir||cand.length<2?null:(dir<0?Math.min(...cand):Math.max(...cand));
+      const cells=vs.map((v,j)=>`<span class="${best!=null&&v===best&&!els[j].avg?"z-cx-best":""}" style="--c:${els[j].col}">${fmt(v,dc)}</span>`);
+      rs.push(tr([`<b>${l}</b>`,...cells,...(M!=="same"?[vs[1]&&vs[0]?(dc==="%"?CX.sg((vs[0]-vs[1])*100,1)+" نقطة":CX.chg(vs[0],vs[1],dir)):"—"]:[]),...(ref?[fmt(avgOf(k),dc),dir?fmt(bestOf(k,dir),dc):"—"]:[])]));});
+   h+=card("المؤشرات جنباً إلى جنب",table(["المؤشر",...els.map(th),...(M!=="same"?[M==="avg"?"الفرق عن المتوسط":"التغير"]:[]),...(ref?["متوسط المجموعة","الأفضل"]:[])],rs).replace('<table class="report-table','<table class="report-table z-cx-tbl'),true);}
+  let SVC="";if(SV.length&&M!=="two"){const rs=real.map(x=>{const v=saving(x);return tr([th(x),...v.map(a=>a?`<b class="z-neg">${money(a)}</b>`:"—"),`<b>${money(v.reduce((a,b)=>a+b,0))}</b>`]);});
+    SVC=card("الوفر الممكن لو كل عنصر بمتوسط المجموعة (ر.س)",table(["العنصر",...SV.map(z=>z[2]),"الإجمالي"],rs).replace('<table class="report-table','<table class="report-table z-sort'),true);}
+  if(ONE)h+=SVC;
   h+=`</div></div>`;
-  const pg=[[],[]];
+  if(ONE)return h+"<!--NOSUM-->";
+  const pg=[[],[]];if(SVC)pg[0].push(SVC);
   /* الرادار */
-  {const ax=T.radar;const pool=two?els.map(x=>x.m):(base.allM||els.map(x=>x.m));
-   const vals=els.map(x=>ax.map(([k,,dir])=>{const L=pool.map(m=>m[k]||0).filter(v=>v);const v=x.m[k]||0;if(!v||L.length<1)return 0;const mn=Math.min(...L),mx=Math.max(...L);if(mx===mn)return 70;return Math.round((dir<0?(mx-v)/(mx-mn):(v-mn)/(mx-mn))*85+15);}));
-   const tb=table(["المحور",...els.map((x,j)=>`<span class="z-cx-th" style="--c:${CXC[j]}">${esc(x.label)}</span>`)],ax.map((a,i)=>tr([`<b>${a[1]}</b>`,...els.map((x,j)=>`<span class="z-score" style="--s:${vals[j][i]}"><b>${num(vals[j][i])}</b></span>`)])),tr(["<b>المتوسط</b>",...els.map((x,j)=>`<b>${num(vals[j].reduce((a,v)=>a+v,0)/ax.length,0)}</b>`)],"total"));
+  {const ax=T.radar;cxScores(T,els.map(x=>x.m),pool);const vals=els.map(x=>x.m._ax);
+   const tb=table(["المحور",...els.map(th)],ax.map((a,i)=>tr([`<b>${a[1]}</b>`,...els.map((x,j)=>`<span class="z-score" style="--s:${vals[j][i]}"><b>${num(vals[j][i])}</b></span>`)])),tr(["<b>المتوسط</b>",...els.map((x,j)=>`<b>${num(vals[j].reduce((a,v)=>a+v,0)/ax.length,0)}</b>`)],"total"));
    pg[0].push(card("الملف الشامل (نقاط من 100 مقارنة بالمجموعة)",`<div class="z-cx-radar">${cxRadar(els,ax,vals)}<div>${cxLegend(els)}${tb}</div></div>`,true));}
-  /* الاتجاه الشهري */
-  {const [tk,tl,tdc]=T.trend;const e=two?els[0].c.e:base.e;const months=[];for(let i=11;i>=0;i--){const a=new Date(e.getFullYear(),e.getMonth()-i,1),b=new Date(e.getFullYear(),e.getMonth()-i+1,0);months.push({a,b,d:filt({from:dKey(a),to:dKey(b)})});}
-   const series=els.map(x=>months.map(M=>{const c=ctxOf(M.d,M.a,M.b);const m=T.m(T.sub(M.d,x.k),c);return m[tk]||0;}));
-   const els2=two?[els[0]]:els;const ser2=two?[series[0]]:series;
-   pg[0].push(card(`الاتجاه الشهري — ${tl} (آخر 12 شهر)`,cxLines(els2,ser2,months.map(M=>String(M.a.getMonth()+1)),0)+cxLegend(els2)+table(["الشهر",...els2.map((x,j)=>`<span class="z-cx-th" style="--c:${CXC[j]}">${esc(x.label)}</span>`)],months.map((M,i)=>tr([`<b>${mLabel(mKey(M.a))}</b>`,...ser2.map(S=>S[i]?num(S[i],1):"—")])).filter((_,i)=>ser2.some(S=>S[i]))).replace('<table class="report-table','<table class="report-table z-cx-mini'),true));}
+  /* الاتجاه الشهري + الأحداث + التكلفة التراكمية */
+  {const [tk,tl]=T.trend;const e=base.e;const months=[];for(let i=11;i>=0;i--){const a=new Date(e.getFullYear(),e.getMonth()-i,1),b=new Date(e.getFullYear(),e.getMonth()-i+1,0);const dd=filt({from:dKey(a),to:dKey(b)});months.push({a,b,d:dd,c:cxCtx(dd,a,b)});}
+   const tEls=M==="two"?[els[0]]:els;const mm=tEls.map(x=>months.map(Mo=>{if(x.avg){const L=base.allE.map(y=>T.m(T.sub(Mo.d,y.k),Mo.c));const v=L.map(m=>m[tk]).filter(v=>v);const o={};o[tk]=v.length?v.reduce((a,b)=>a+b,0)/v.length:0;o.tc=L.reduce((a,m)=>a+(m.tc||0),0)/Math.max(1,L.length);o.q=L.reduce((a,m)=>a+(m.q||0),0)/Math.max(1,L.length);return {m:o,s:null};}const sb=T.sub(Mo.d,x.k);return {m:T.m(sb,Mo.c),s:sb,thr:base.thr};}));
+   const series=mm.map(L=>L.map(o=>o.m[tk]||0));const evs=T.ev?mm.map(L=>L.map(o=>o.s&&o.s.E?o.s.E.filter(r=>r.amount>=base.thr):[])):null;const hasEv=evs&&evs.some(L=>L.some(x=>x.length));
+   const labels=months.map(Mo=>String(Mo.a.getMonth()+1));
+   pg[0].push(card(`الاتجاه الشهري — ${tl} (آخر 12 شهر)`,cxLines(tEls,series,labels,1,hasEv?evs:null)+cxLegend(tEls,hasEv)+table(["الشهر",...tEls.map(th)],months.map((Mo,i)=>tr([`<b>${mLabel(mKey(Mo.a))}</b>`,...series.map((S,j)=>S[i]?num(S[i],1)+(hasEv&&evs[j][i].length?' <span class="z-evm" title="حدث استثنائي">▲</span>':""):"—")])).filter((_,i)=>series.some(S=>S[i]))).replace('<div class="report-table-wrap"','<div class="report-table-wrap z-noprint"').replace('<table class="report-table','<table class="report-table z-cx-mini'),true));
+   if(T.cum){const cs=mm.map(L=>{let c=0,q=0;return L.map(o=>{c+=o.m.tc||0;q+=o.m.q||0;return q?c/q:0;});});if(cs.some(L=>L.some(v=>v)))
+     pg[1].push(card("التكلفة التراكمية للمتر (ر.س/م³) — آخر 12 شهر",cxLines(tEls,cs,labels,2)+cxLegend(tEls)+`<div class="z-emptyline">كل نقطة = إجمالي التكلفة (وقود + صيانة) من أول الـ12 شهر لحد الشهر ده ÷ إجمالي الإنتاج في نفس المدة. الخط الطالع معناه إن المعدة بتغلى مع الوقت.</div>`,true));}}
+  /* كل عنصر قدام فترته السابقة */
+  if(M==="same"||M==="avg"){const {s,e}=cxRange();const n=Math.round((e-s)/864e5);const pe=new Date(s);pe.setDate(s.getDate()-1);const ps=new Date(pe);ps.setDate(pe.getDate()-n);const dP=filt({from:dKey(ps),to:dKey(pe)});const cP=cxCtx(dP,ps,pe);
+   const H=T.head.map(k=>T.rows.find(r=>r[0]===k)).filter(Boolean);
+   const rs=real.map(x=>{const mp=T.m(T.sub(dP,x.k),cP);return tr([th(x),...H.flatMap(([k,,dir,dc])=>[fmt(x.m[k],dc),fmt(mp[k],dc),x.m[k]&&mp[k]?(dc==="%"?CX.sg((x.m[k]-mp[k])*100,1)+" ن":CX.chg(x.m[k],mp[k],dir)):"—"])]);});
+   pg[1].push(card(`كل عنصر قدام فترته السابقة (${fmtDate(ps)} – ${fmtDate(pe)})`,table(["العنصر",...H.flatMap(([,l])=>[l,"السابقة","التغير"])],rs).replace('<table class="report-table','<table class="report-table z-cx-hist'),true));}
   /* تفكيك التكلفة */
-  if(T.cost){const cs=els.map(x=>T.cost(x.s));const keys=[...new Set(cs.flatMap(o=>Object.keys(o)))].filter(k=>cs.some(o=>o[k]));
+  if(T.cost){const cs=els.map(x=>x.avg?(()=>{const L=base.allE.filter(y=>!y.m.small).map(y=>T.cost(y.s));const o={};L.forEach(c=>Object.entries(c).forEach(([k,v])=>o[k]=(o[k]||0)+v/L.length));return o;})():T.cost(x.s));const keys=[...new Set(cs.flatMap(o=>Object.keys(o)))].filter(k=>cs.some(o=>o[k]));
    if(keys.length){const PAL=["#1f3a6d","#d6a84b","#2e9e6a","#c0504d","#7f63b8","#3aa0c8","#9aa5b4","#e08a3c"];const tot=cs.map(o=>keys.reduce((a,k)=>a+(o[k]||0),0));const mx=Math.max(1,...tot);
-     const bars=els.map((x,j)=>`<div class="z-stk-r"><b>${esc(x.label)}</b><div class="z-stk" style="width:${(tot[j]/mx*100).toFixed(1)}%">${keys.map((k,i)=>cs[j][k]?`<i style="width:${(cs[j][k]/tot[j]*100).toFixed(2)}%;background:${PAL[i%8]}" title="${esc(k)}: ${money(cs[j][k])}"></i>`:"").join("")}</div><span>${money(tot[j])}</span></div>`).join("");
+     const bars=els.map((x,j)=>`<div class="z-stk-r"><b>${esc(x.label)}</b><div class="z-stk" style="width:${(tot[j]/mx*100).toFixed(1)}%">${keys.map((k,i)=>cs[j][k]?`<i style="width:${(cs[j][k]/tot[j]*100).toFixed(2)}%;background:${PAL[i%8]}" title="${esc(k)}: ${money(cs[j][k])} ر.س (${pct(cs[j][k]/tot[j])})"></i>`:"").join("")}</div><span>${money(tot[j])}</span></div>`).join("");
      const lg=`<div class="z-cx-lg">${keys.map((k,i)=>`<span style="--c:${PAL[i%8]}">${esc(k)}</span>`).join("")}</div>`;
-     const tb=table(["البند",...els.map((x,j)=>`<span class="z-cx-th" style="--c:${CXC[j]}">${esc(x.label)}</span>`)],keys.map(k=>tr([`<b>${esc(k)}</b>`,...cs.map((o,j)=>o[k]?`${money(o[k])} <small>${pct(o[k]/(tot[j]||1))}</small>`:"—")])),tr(["الإجمالي",...tot.map(v=>money(v))],"total"));
+     const tb=table(["البند",...els.map(th)],keys.map(k=>tr([`<b>${esc(k)}</b>`,...cs.map((o,j)=>o[k]?`${money(o[k])} <small>${pct(o[k]/(tot[j]||1))}</small>`:"—")])),tr(["الإجمالي",...tot.map(v=>money(v))],"total"));
      pg[1].push(card("تفكيك التكلفة (ر.س)",`<div class="z-stks">${bars}</div>${lg}${tb}`,true));}}
+  /* الأحداث الاستثنائية */
+  if(T.ev){const L=real.flatMap(x=>(x.s.E||[]).filter(r=>r.amount>=base.thr).map(r=>({x,r}))).sort((a,b)=>b.r.amount-a.r.amount).slice(0,15);
+   if(L.length)pg[1].push(card(`الأحداث الاستثنائية (قيد ≥ ${money(base.thr)} ر.س)`,table(["العنصر","التاريخ","التصنيف","البيان","المبلغ ر.س"],L.map(({x,r})=>tr([th(x),fmtDate(r.date),esc(r.cat),`<span class="z-desc">${esc(String(r.desc||"").slice(0,70))}</span>`,`<b>${money(r.amount)}</b>`]))),true));}
   /* السجلات */
-  {const rs=[];els.forEach((x,j)=>T.recs(x.s).forEach(([l,L,kind])=>{if(!L.length)return;rs.push(tr([`<span class="z-cx-th" style="--c:${CXC[j]}">${esc(x.label)}</span>`,l,num(L.length),CX.drill("عرض السجلات ←",()=>cxRecShow(`${x.label} — ${l}`,L,kind))]));}));
+  {const rs=[];real.forEach(x=>T.recs(x.s).forEach(([l,L,kind])=>{if(!L.length)return;rs.push(tr([th(x),l,num(L.length),CX.drill("عرض السجلات ←",()=>cxRecShow(`${x.label} — ${l}`,L,kind))]));}));
    if(rs.length)pg[1].push(card("السجلات (اضغط للعرض)",table(["العنصر","النوع","العدد",""],rs),true).replace('class="report-card','class="z-noprint report-card'));}
   pg.forEach(p=>{if(p.length)h+=`<div class="report-grid z-daily-grid z-dpage z-wk">${p.join("")}</div>`;});
   return h+"<!--NOSUM-->";}
+/* ترتيب كل العناصر */
+function cxRanking(T,allE,pool,c,s,e,fmt){const sc=cxScores(T,allE.map(x=>x.m),pool);const L=allE.map((x,i)=>({...x,sc:sc[i]})).sort((a,b)=>(a.m.small-b.m.small)||(b.sc-a.sc));
+  const H=T.head.map(k=>T.rows.find(r=>r[0]===k)).filter(Boolean);const SV=T.save||[];const avgOf=k=>{const v=pool.map(m=>m[k]).filter(v=>v);return v.length?v.reduce((a,x)=>a+x,0)/v.length:0;};
+  const sv=x=>SV.reduce((a,[rk,bk])=>{const av=avgOf(rk),v=x.m[rk];return a+(v&&av&&v>av?(v-av)*(x.m[bk]||0):0);},0);
+  let rk=0;const rs=L.map(x=>{if(!x.m.small)rk++;return tr([x.m.small?"—":`<b>${num(rk)}</b>`,CX.drill(`<b>${esc(x.label)}</b>`,()=>{RS.cxM="same";RS.cxI=x.k;drawReport();}),x.m.small?'<span class="z-small">عينة صغيرة</span>':`<span class="z-score" style="--s:${x.sc.toFixed(0)}"><b>${num(x.sc,0)}</b></span>`,...H.map(([k,,,dc])=>fmt(x.m[k],dc)),...(SV.length?[sv(x)?`<b class="z-neg">${money(sv(x))}</b>`:"—"]:[]),`<small>${esc(x.m.info||"")}</small>`],rk===1&&!x.m.small?"z-bestday":"");});
+  const top=L.filter(x=>!x.m.small);const S=[];if(top.length>1){S.push(`الأول: <b>${esc(top[0].label)}</b> بـ ${num(top[0].sc,0)} نقطة، والأخير: <b>${esc(top[top.length-1].label)}</b> بـ ${num(top[top.length-1].sc,0)} نقطة.`);
+    if(SV.length){const tv=top.reduce((a,x)=>a+sv(x),0);if(tv)S.push(`لو كل ${T.u} أعلى من المتوسط في ${SV.map(z=>z[2]).join(" و")} نزل للمتوسط، الوفر الإجمالي <b>${money(tv)} ر.س</b> في الفترة.`);}}
+  return `<div class="report-note">ترتيب كل «${T.l}» من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e)}</b> بنقاط الملف الشامل (${T.radar.map(a=>a[1]).join("، ")}). اضغط على أي اسم لفتح مقارنته.</div><div class="z-pg1w"><div class="report-grid z-daily-grid z-p1">`+
+    card("الخلاصة",`<ol class="z-insights">${S.map(x=>`<li>${x}</li>`).join("")||"<li>لا توجد بيانات كافية.</li>"}</ol>`,true)+
+    card(`ترتيب ${T.l} (اضغط على عنوان أي عمود للترتيب)`,table(["#",T.u,"النقاط",...H.map(r=>r[1]),...(SV.length?["الوفر الممكن ر.س"]:[]),"ملاحظة"],rs).replace('<table class="report-table','<table class="report-table z-sort'),true)+`</div></div><!--NOSUM-->`;}
 function periodLabel(id){
   if(id==="cmpx"){const t=RS.cxT||"mixer";if(t==="period")return periodLabel("cmp");if(t==="years")return periodLabel("yoy");if(RS.cxM==="two")return periodLabel("cmp");const r=cxRange();return `${fmtDate(r.s)} – ${fmtDate(r.e)}`;}
   if(id==="cmp"){const c=cmpRanges();return `(أ) ${fmtDate(c.A[0])} – ${fmtDate(c.A[1])} • (ب) ${fmtDate(c.B[0])} – ${fmtDate(c.B[1])}`;}
@@ -3424,6 +3505,7 @@ function initSidebarPro(){
     if(e.key==="?"){showHelp();}
   },true);
   // متابعة التجديدات: زر «تمت المعالجة»
+  cxSortBind();
   $("reportBody").addEventListener("click",e=>{const d=e.target.closest(".z-drill");if(d&&DRILL[+d.dataset.dr]){e.preventDefault();DRILL[+d.dataset.dr]();}});
   $("reportBody").addEventListener("click",e=>{const b=e.target.closest("[data-hkey]");if(!b)return;const H=handledMap();const k=b.dataset.hkey;if(H[k])delete H[k];else H[k]=Date.now();LS.set(ZK.handled,H);drawReport();updateSidebar();toast(H[k]?"تم وضع علامة «تمت المعالجة» ✓":"أُعيد إلى قائمة المتابعة");});
   // تلميح الوضع المطوي
