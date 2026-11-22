@@ -1373,6 +1373,26 @@ tr.z-r-expired>td:first-child{box-shadow:inset -4px 0 0 #d9534f}tr.z-r-near>td:f
   tr.z-r-expired>td{background:#fff4f3!important}tr.z-r-near>td{background:#fffaf0!important}
   .z-st-legend{margin-bottom:2mm}
 }
+
+/* فلاتر المستندات */
+#reportToolbar:has(.z-df){display:block}
+.z-df{display:grid;gap:10px;width:100%}
+.z-df-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.z-df-ms summary{min-width:150px;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.z-df-ms summary.on{border-color:#1f3a6d!important;background:#eef3fb!important;color:#1f3a6d;font-weight:800}
+.z-df-ms .z-ms-pop{min-width:260px}.z-df-ms .z-cx-list label{display:flex;align-items:center;gap:6px}
+.z-df-ms .z-cx-list em{margin-inline-start:auto;font-style:normal;color:#7a869a;font-size:11px;font-weight:700}
+.z-df-0{opacity:.45}
+.z-ms-act .z-ms-clr{background:#eef1f5!important;color:#33415c!important}
+#rDfQ{min-width:240px}
+.z-df-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.z-df-n{font-weight:900;color:#1f3a6d;margin-inline-end:6px}
+.z-df-chip{display:inline-flex;align-items:center;gap:4px;background:#eef3fb;border:1px solid #c9d6ec;color:#33415c;border-radius:999px;padding:2px 4px 2px 10px;font-size:12px}
+.z-df-chip button{border:0;background:#1f3a6d;color:#fff;border-radius:50%;width:18px;height:18px;line-height:16px;cursor:pointer;font-size:13px;padding:0}
+.z-df-reset{border-color:#d9534f!important;color:#b3261e!important}
+@media print{.z-df{display:none}}
+#reportToolbar:has(.z-df)>.report-filter{display:inline-flex;width:auto;margin-top:10px}
+#reportToolbar:has(.z-df)>.report-filter button{width:auto;padding-inline:18px}
 </style>
 </head>
 <body>
@@ -2031,6 +2051,7 @@ const REPORTS={
 let CUR=null;
 const RS={from:"",to:"",month:"",day:"",status:"",branch:"",mixer:"",cat:"",etype:"",equip:""};let HASHDONE=false;
 function openReport(id,keep){
+  if(DOC_REPORTS.includes(id)&&["expired","near","valid"].includes(RS.status)){RS.dfSt=[RS.status];RS.status="";}
   if(id==="cmpx"&&!RS.cxT){const L=LS.get("zahal_cx_last",null);if(L)Object.assign(RS,Object.fromEntries(Object.entries(L).filter(([,v])=>v!=null)));}
   CUR=id;const r=REPORTS[id];
   document.querySelectorAll(".report-item").forEach(b=>b.classList.toggle("active",b.dataset.r===id));
@@ -2048,6 +2069,7 @@ function toolbar(kind){
   if(kind==="month")h+=`<label class="report-filter">الشهر<select id="rMonth">${months.map(m=>`<option value="${m}"${m===RS.month?" selected":""}>${mLabel(m)}</option>`).join("")}</select></label>`;
   if(kind==="day")h+=`<label class="report-filter"><span>&nbsp;</span><span class="z-daynav"><button type="button" id="rDayPrev">→ ${CUR==="weekly"?"الأسبوع السابق":"اليوم السابق"}</button><button type="button" id="rDayNext">${CUR==="weekly"?"الأسبوع التالي":"اليوم التالي"} ←</button></span></label>`;
   if(kind==="day")h+=`<label class="report-filter">${CUR==="weekly"?"أي يوم في الأسبوع":"اليوم"}<input type="date" id="rDay" value="${RS.day}" min="${dKey(DB.minD)}" max="${dKey(DB.maxD)}"></label>`;
+  if(kind==="df")h+=dfUI();
   if(kind==="cx")h+=cxUI();
   if(kind==="cmp")h+=cmpUI();
   if(kind==="yoy"){const ys=[...new Set(DB.P.map(r=>r.date.getFullYear()))].sort().reverse();const ya=RS.yA||ys[0],yb=RS.yB||ys[1]||ys[0];h+=`<label class="report-filter">السنة (أ)<select id="rYA">${ys.map(y=>`<option${+ya===y?" selected":""}>${y}</option>`).join("")}</select></label><label class="report-filter">مقابل السنة (ب)<select id="rYB">${ys.map(y=>`<option${+yb===y?" selected":""}>${y}</option>`).join("")}</select></label>`;}
@@ -2075,7 +2097,7 @@ function toolbar(kind){
   if($("rWtr")){const box=$("rWtr");const upd=()=>{RS.wtr=[...box.querySelectorAll("input:checked")].map(i=>i.value);box.querySelector("summary").textContent=RS.wtr.length?RS.wtr.join("، "):"كل الوايتات";KEEP_TB=true;drawReport();KEEP_TB=false;};
     box.addEventListener("change",upd);box.querySelectorAll(".z-ms-act button").forEach(b=>b.onclick=()=>{box.querySelectorAll("input").forEach(i=>i.checked=b.dataset.a==="all"||i.value===WATER_TRUCK);upd();});
     document.addEventListener("click",e=>{if(box.open&&!box.contains(e.target))box.open=false;});}
-  if(kind==="cx")cxBind();
+  if(kind==="cx")cxBind();if(kind==="df")dfBind();
   $("rExcel").onclick=()=>exportTables($("reportBody"),REPORTS[CUR].t);
   const shiftDay=n=>{if(CUR==="weekly")n*=7;const d=toDate(RS.day)||DB.maxD;d.setDate(d.getDate()+n);RS.day=dKey(d);drawReport();};
   if($("rDayPrev")){$("rDayPrev").onclick=()=>shiftDay(-1);$("rDayNext").onclick=()=>shiftDay(1);}
@@ -2105,7 +2127,7 @@ function drawReport(){
   const id=CUR;let h="";const _tb=toolbar;if(KEEP_TB){toolbar=()=>{};}
   if(["exec","prod","fleet","cement","materials","fuel","water","revenue","expenses","pnl","equip","bench"].includes(id))toolbar("range");
   else if(id==="cmpx")toolbar("cx");else if(id==="cmp")toolbar("cmp");else if(id==="yoy")toolbar("yoy");
-  else if(id==="monthly")toolbar("month");else if(id==="daily"||id==="weekly")toolbar("day");else if(id==="veh")toolbar("docs");else if(id==="gov")toolbar("gov");else if(id==="follow")toolbar("follow");else toolbar("none");
+  else if(id==="monthly")toolbar("month");else if(id==="daily"||id==="weekly")toolbar("day");else if(DOC_REPORTS.includes(id))toolbar("df");else toolbar("none");
   if(id==="exec")h=execReport();
   if(id==="cmpx")h=cxReport();if(id==="cmp")h=cmpReport();if(id==="yoy")h=yoyReport();if(id==="bench")h=benchReport();
   if(id==="exec_old"){const d=rangeData();const al=docAlerts();
@@ -3137,13 +3159,69 @@ function cxRanking(T,allE,pool,c,s,e,fmt){const sc=cxScores(T,allE.map(x=>x.m),p
   return `<div class="report-note">ترتيب كل «${T.l}» من <b>${fmtDate(s)}</b> إلى <b>${fmtDate(e)}</b> بنقاط الملف الشامل (${T.radar.map(a=>a[1]).join("، ")}). اضغط على أي اسم لفتح مقارنته.</div><div class="z-pg1w"><div class="report-grid z-daily-grid z-p1">`+
     card("الخلاصة",`<ol class="z-insights">${S.map(x=>`<li>${x}</li>`).join("")||"<li>لا توجد بيانات كافية.</li>"}</ol>`,true)+
     card(`ترتيب ${T.l} (اضغط على عنوان أي عمود للترتيب)`,table(["#",T.u,"النقاط",...H.map(r=>r[1]),...(SV.length?["الوفر الممكن ر.س"]:[]),"ملاحظة"],rs).replace('<table class="report-table','<table class="report-table z-sort'),true)+`</div></div><!--NOSUM-->`;}
+/* ===================== فلاتر المستندات والامتثال (متعددة الاختيار) ===================== */
+const DOC_REPORTS=["comp","vready","veh","gov","follow"];
+const DF_MULTI=[["dfSrc","المصدر"],["dfBr","الفرع / القسم"],["dfType","نوع المستند"],["dfSt","الحالة"],["dfCrit","الأهمية"],["dfOwn","المسؤول / السائق"],["dfBrand","ماركة المركبة"],["dfReady","جاهزية المركبة"]];
+const DF_ALL=[...DF_MULTI.map(x=>x[0]),"dfQ","dfFrom","dfTo","dfIn"];
+const ZTOK="__زحل";
+function dfArr(k){let v=RS[k];if(k==="dfBr"&&v===undefined)return [ZTOK];if(Array.isArray(v))return v;return v?String(v).split("|").filter(Boolean):[];}
+function vReady(v){const s=Object.values(v.docs).map(x=>x.s);return s.includes("expired")?"blocked":s.includes("near")?"near":s.every(x=>x==="valid"||x==="na")?"ready":"unknown";}
+const RDN={ready:"جاهزة",near:"تحتاج تجديد قريب",blocked:"ممنوعة من التشغيل",unknown:"بيانات ناقصة"};
+const SRCN={gov:"المستندات الحكومية",veh:"مستندات المركبات"};
+function itemV(v,k){const t=DOCN[k];return {src:"veh",k,type:t,title:t,who:`${v.plate}${v.brand?" — "+v.brand+" "+(v.model||""):""}`.trim(),grp:nb(v.dept)||"غير محدد",owner:nb(v.driver)||"",s:v.docs[k],v,brand:nb(v.brand)||"غير محدد",ready:vReady(v),crit:CRIT_T.includes(t)};}
+function itemG(g){const ty=gType(g.title);return {src:"gov",type:ty,title:g.title,no:g.no,who:nb(g.branch),grp:nb(g.branch)||"غير محدد",owner:nb(g.owner)||"",s:g.st,g,crit:CRIT_T.includes(ty)};}
+function dfAllItems(){return [...DB.V.flatMap(v=>Object.keys(DOCN).map(k=>itemV(v,k))),...DB.G.map(itemG)];}
+const dfVal={dfSrc:x=>x.src,dfBr:x=>x.grp,dfType:x=>x.type,dfSt:x=>x.s.s,dfCrit:x=>x.crit?"crit":"norm",dfOwn:x=>x.owner||"__none",dfBrand:x=>x.src==="veh"?x.brand:null,dfReady:x=>x.src==="veh"?x.ready:null};
+function docPass(x,skip){for(const [k] of DF_MULTI){if(k===skip)continue;const a=dfArr(k);if(!a.length)continue;const v=dfVal[k](x);
+    if(k==="dfBr"){if(!a.some(b=>b===ZTOK?/زحل/.test(v):v===b))return false;continue;}
+    if(v===null)return false;if(!a.includes(v))return false;}
+  if(skip!=="dfQ"&&RS.dfQ){const q=String(RS.dfQ).trim();if(q&&![x.title,x.who,x.grp,x.owner,x.type,x.no,x.v&&x.v.plate].join(" ").includes(q))return false;}
+  if(skip!=="dfDate"){const d=x.s.d;if(RS.dfFrom&&(!d||d<toDate(RS.dfFrom)))return false;if(RS.dfTo&&(!d||d>toDate(RS.dfTo)))return false;
+    if(RS.dfIn){const n=+RS.dfIn;if(x.s.days==null||x.s.days>n)return false;}}
+  return true;}
+/* المركبة تمر لو أي مستند من مستنداتها يمر بالفلاتر */
+function vehPass(v){return Object.keys(DOCN).some(k=>docPass(itemV(v,k)));}
+function dfActive(){return DF_ALL.some(k=>k==="dfBr"?!(dfArr("dfBr").length===1&&dfArr("dfBr")[0]===ZTOK):(Array.isArray(RS[k])?RS[k].length:RS[k]));}
+function dfLabelOf(k,v){if(k==="dfBr"&&v===ZTOK)return "زحل (كل ما يحتوي زحل)";if(k==="dfSrc")return SRCN[v]||v;if(k==="dfSt")return STN[v]||v;if(k==="dfCrit")return v==="crit"?"حرج":"عادي";if(k==="dfOwn")return v==="__none"?"بدون مسؤول":v;if(k==="dfReady")return RDN[v]||v;return v;}
+function dfLabel(){const p=[];DF_MULTI.forEach(([k,l])=>{const a=dfArr(k);if(a.length)p.push(`${l}: ${a.map(v=>dfLabelOf(k,v)).join("، ")}`);});if(RS.dfQ)p.push(`بحث: «${RS.dfQ}»`);if(RS.dfIn)p.push(`خلال ${RS.dfIn} يوم`);if(RS.dfFrom||RS.dfTo)p.push(`الانتهاء ${RS.dfFrom||"…"} → ${RS.dfTo||"…"}`);return p.length?p.join(" • "):"بدون فلاتر (كل المستندات)";}
+function dfUI(){const all=dfAllItems();const ORD={dfSt:["expired","near","valid","ondemand","na","unknown"],dfReady:["blocked","near","ready","unknown"],dfSrc:["gov","veh"],dfCrit:["crit","norm"]};
+  const opt=k=>{const pool=all.filter(x=>docPass(x,k));const c=new Map();pool.forEach(x=>{const v=dfVal[k](x);if(v==null)return;c.set(v,(c.get(v)||0)+1);});
+    const allV=new Set(all.map(x=>dfVal[k](x)).filter(v=>v!=null));let L=[...allV];if(ORD[k])L=ORD[k].filter(v=>allV.has(v));else L.sort((a,b)=>(c.get(b)||0)-(c.get(a)||0)||String(a).localeCompare(String(b),"ar"));
+    if(k==="dfOwn")L=L.filter(v=>v!=="__none").concat(allV.has("__none")?["__none"]:[]);if(k==="dfBr")L=[ZTOK,...L];return {L,c};};
+  let h=`<div class="z-df"><div class="z-df-row">`;
+  DF_MULTI.forEach(([k,l])=>{const {L,c}=opt(k);const sel=dfArr(k);const cntZ=k==="dfBr"?all.filter(x=>docPass(x,k)&&/زحل/.test(x.grp)).length:0;
+    h+=`<div class="report-filter"><span>${l}</span><details class="z-ms z-df-ms" data-df="${k}"><summary class="${sel.length?"on":""}">${sel.length?sel.map(v=>esc(dfLabelOf(k,v))).join("، "):"الكل"}</summary><div class="z-ms-pop">${L.length>8?`<input type="search" class="z-cx-q" placeholder="بحث...">`:""}<div class="z-cx-list">${L.map(v=>{const n=v===ZTOK?cntZ:(c.get(v)||0);return `<label class="${n?"":"z-df-0"}"><input type="checkbox" value="${esc(v)}"${sel.includes(v)?" checked":""}> ${k==="dfSt"||k==="dfReady"?`<span class="z-chip z-${k==="dfReady"?{ready:"valid",near:"near",blocked:"expired",unknown:"unknown"}[v]:v}">${esc(dfLabelOf(k,v))}</span>`:esc(dfLabelOf(k,v))} <em>${num(n)}</em></label>`;}).join("")}</div><div class="z-ms-act"><button type="button" data-a="ok">تطبيق</button><button type="button" data-a="clr" class="z-ms-clr">مسح</button></div></div></details></div>`;});
+  h+=`</div><div class="z-df-row"><label class="report-filter">بحث<input type="search" id="rDfQ" placeholder="اسم المستند، اللوحة، الرقم، المسؤول..." value="${esc(RS.dfQ||"")}"></label>
+    <label class="report-filter">ينتهي خلال<select id="rDfIn"><option value="">أي مدة</option>${[7,15,30,60,90,180,365].map(n=>`<option value="${n}"${+RS.dfIn===n?" selected":""}>${num(n)} يوم (والمنتهي)</option>`).join("")}</select></label>
+    <label class="report-filter">الانتهاء من<input type="date" id="rDfFrom" value="${RS.dfFrom||""}"></label><label class="report-filter">إلى<input type="date" id="rDfTo" value="${RS.dfTo||""}"></label>
+    <div class="report-filter"><span>اختيار سريع</span><span class="z-cx-pre"><button type="button" data-dfp="crit">المنتهي الحرج</button><button type="button" data-dfp="d30">خلال 30 يوم</button><button type="button" data-dfp="noown">بدون مسؤول</button><button type="button" data-dfp="block">مركبات ممنوعة</button><button type="button" data-dfp="all">كل الفروع</button><button type="button" data-dfp="reset" class="z-df-reset">↺ مسح كل الفلاتر</button></span></div></div>`;
+  const chips=[];DF_MULTI.forEach(([k,l])=>dfArr(k).forEach(v=>chips.push(`<span class="z-df-chip">${l}: <b>${esc(dfLabelOf(k,v))}</b><button type="button" data-dfx="${k}" data-v="${esc(v)}">×</button></span>`)));
+  if(RS.dfQ)chips.push(`<span class="z-df-chip">بحث: <b>${esc(RS.dfQ)}</b><button type="button" data-dfx="dfQ">×</button></span>`);if(RS.dfIn)chips.push(`<span class="z-df-chip">خلال <b>${num(+RS.dfIn)} يوم</b><button type="button" data-dfx="dfIn">×</button></span>`);
+  if(RS.dfFrom||RS.dfTo)chips.push(`<span class="z-df-chip">الانتهاء <b>${esc(RS.dfFrom||"…")} → ${esc(RS.dfTo||"…")}</b><button type="button" data-dfx="dfDate">×</button></span>`);
+  const n=all.filter(x=>docPass(x)).length;
+  h+=`<div class="z-df-chips"><span class="z-df-n">${num(n)} من ${num(all.length)} مستند مطابق</span>${chips.join("")}</div></div>`;return h;}
+function dfBind(){const redraw=()=>{drawReport();};
+  document.querySelectorAll(".z-df-ms").forEach(box=>{const k=box.dataset.df;const q=box.querySelector(".z-cx-q");if(q)q.oninput=()=>{const v=q.value.trim();box.querySelectorAll(".z-cx-list label").forEach(l=>l.style.display=!v||l.textContent.includes(v)?"":"none");};
+    box.querySelector('[data-a="ok"]').onclick=()=>{RS[k]=[...box.querySelectorAll("input:checked")].map(i=>i.value);redraw();};
+    box.querySelector('[data-a="clr"]').onclick=()=>{RS[k]=[];redraw();};
+    document.addEventListener("click",e=>{if(box.open&&!box.contains(e.target))box.open=false;});});
+  let tq;if($("rDfQ"))$("rDfQ").oninput=e=>{clearTimeout(tq);tq=setTimeout(()=>{RS.dfQ=e.target.value.trim();redraw();setTimeout(()=>{const i=$("rDfQ");if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},30);},450);};
+  if($("rDfIn"))$("rDfIn").onchange=e=>{RS.dfIn=e.target.value;redraw();};
+  if($("rDfFrom"))$("rDfFrom").onchange=e=>{RS.dfFrom=e.target.value;redraw();};
+  if($("rDfTo"))$("rDfTo").onchange=e=>{RS.dfTo=e.target.value;redraw();};
+  document.querySelectorAll("[data-dfx]").forEach(b=>b.onclick=()=>{const k=b.dataset.dfx;if(k==="dfQ"||k==="dfIn")RS[k]="";else if(k==="dfDate"){RS.dfFrom="";RS.dfTo="";}else RS[k]=dfArr(k).filter(v=>v!==b.dataset.v);redraw();});
+  document.querySelectorAll("[data-dfp]").forEach(b=>b.onclick=()=>{const p=b.dataset.dfp;
+    if(p==="reset"){DF_ALL.forEach(k=>RS[k]=k==="dfBr"?[]:Array.isArray(RS[k])?[]:"");}
+    else if(p==="crit"){RS.dfSt=["expired"];RS.dfCrit=["crit"];}
+    else if(p==="d30"){RS.dfIn="30";}
+    else if(p==="noown"){RS.dfSrc=["gov"];RS.dfOwn=["__none"];}
+    else if(p==="block"){RS.dfSrc=["veh"];RS.dfReady=["blocked"];}
+    else if(p==="all"){RS.dfBr=[];}
+    redraw();});}
 /* ===================== مركز الامتثال ===================== */
 const CRIT_T=["السجل التجاري","رخصة البلدية","الدفاع المدني","التأمين","كارت التشغيل"];
 const plDig=x=>{const m=String(x||"").match(/\d{3,}/g);return m?m[m.length-1]:"";};
-function compItems(){const L=[];
-  DB.V.forEach(v=>Object.keys(DOCN).forEach(k=>L.push({src:"veh",k,type:DOCN[k],title:DOCN[k],who:`${v.plate}${v.brand?" — "+v.brand+" "+(v.model||""):""}`.trim(),grp:nb(v.dept)||"غير محدد",owner:nb(v.driver)||"",ownerKind:"السائق",s:v.docs[k],v,crit:CRIT_T.includes(DOCN[k])})));
-  DB.G.forEach(g=>{const ty=gType(g.title);L.push({src:"gov",type:ty,title:g.title,no:g.no,who:nb(g.branch),grp:nb(g.branch)||"غير محدد",owner:nb(g.owner)||"",ownerKind:"المسؤول",s:g.st,g,crit:CRIT_T.includes(ty)});});
-  L.forEach(x=>{x.w=x.crit?3:1;const d=x.s.days;x.risk=x.s.s==="expired"?x.w*(100+Math.min(365,d==null?60:-d)):x.s.s==="near"?x.w*(NEAR_DAYS-(d||0)):0;});return L;}
+function compItems(){const L=dfAllItems().filter(x=>docPass(x));L.forEach(x=>{x.w=x.crit?3:1;const d=x.s.days;x.risk=x.s.s==="expired"?x.w*(100+Math.min(365,d==null?60:-d)):x.s.s==="near"?x.w*(NEAR_DAYS-(d||0)):0;});return L;}
 const compCnt=a=>{const c={v:0,n:0,e:0,w:0,wv:0,ce:0};a.forEach(x=>{const s=x.s.s;if(!["valid","near","expired"].includes(s))return;c[s==="valid"?"v":s==="near"?"n":"e"]++;c.w+=x.w;if(s!=="expired")c.wv+=x.w;if(s==="expired"&&x.crit)c.ce++;});c.t=c.v+c.n+c.e;c.r=c.t?c.v/c.t:0;c.wr=c.w?c.wv/c.w:0;return c;};
 const stCell=s=>`<span class="z-chip z-${s.s}">${STN[s.s]||s.s}</span>`;
 const compBar=(r)=>`<span class="z-cbar ${r>=.9?"g":r>=.75?"a":"r"}"><span class="z-tr"><i style="width:${(r*100).toFixed(0)}%"></i></span><b>${pct(r)}</b></span>`;
@@ -3154,8 +3232,9 @@ function compMsg(owner,L){const ex=L.filter(x=>x.s.s==="expired"),nr=L.filter(x=
 function compReport(){DRILL=[];const L=compItems();const t=today();const G=L.filter(x=>x.src==="gov"),V=L.filter(x=>x.src==="veh");const CA=compCnt(L),CG=compCnt(G),CV=compCnt(V);
   let h=`<div class="report-note">الوضع في <b>${fmtDate(t)}</b> — «قارب» = خلال ${NEAR_DAYS} يوماً. الامتثال الموزون: المستندات الحرجة (${CRIT_T.join("، ")}) وزنها 3 والباقي 1. «عند الطلب» و«غير مطلوب» مستبعدة من النسبة.</div>`;
   h+=`<div class="z-st-legend"><span class="z-chip z-valid">ساري</span><span class="z-chip z-near">قارب على الانتهاء</span><span class="z-chip z-expired">منتهي</span></div><div class="z-pg1w"><div class="report-grid z-daily-grid z-p1">`;
+  h=h.replace('<div class="z-st-legend">',`<div class="report-note z-df-note">الفلاتر: <b>${esc(dfLabel())}</b></div><div class="z-st-legend">`);
   const sr=(l,c)=>tr([`<b>${l}</b>`,`<span class="z-n-valid">${num(c.v)}</span>`,`<span class="z-n-near">${num(c.n)}</span>`,`<span class="z-n-expired">${num(c.e)}</span>`,c.ce?`<b class="z-n-expired">${num(c.ce)}</b>`:"0",num(c.t),compBar(c.r),compBar(c.wr)]);
-  h+=card("ملخص الامتثال",table(["البيان","ساري","قارب","منتهي","منها حرج منتهي","الإجمالي","الامتثال","الامتثال الموزون"],[sr("المستندات الحكومية",CG),sr(`مستندات المركبات (${num(DB.V.length)} مركبة)`,CV)],tr(["الإجمالي",num(CA.v),num(CA.n),num(CA.e),num(CA.ce),num(CA.t),pct(CA.r),pct(CA.wr)],"total")),true);
+  h+=card("ملخص الامتثال",table(["البيان","ساري","قارب","منتهي","منها حرج منتهي","الإجمالي","الامتثال","الامتثال الموزون"],[sr("المستندات الحكومية",CG),sr(`مستندات المركبات (${num(new Set(V.map(x=>x.v.plate)).size)} مركبة)`,CV)],tr(["الإجمالي",num(CA.v),num(CA.n),num(CA.e),num(CA.ce),num(CA.t),pct(CA.r),pct(CA.wr)],"total")),true);
   {const g=[...groupBy(L,x=>x.grp)].map(([k,a])=>({k,a,c:compCnt(a)})).filter(x=>x.c.t).sort((a,b)=>a.c.wr-b.c.wr);
    h+=card("الامتثال حسب الفرع والقسم (الأضعف أولاً)",table(["الفرع / القسم","حكومي","مركبات","ساري","قارب","منتهي","حرج منتهي","الامتثال الموزون"],g.map(({k,a,c})=>tr([`<b>${esc(k)}</b>`,num(a.filter(x=>x.src==="gov").length),num(new Set(a.filter(x=>x.src==="veh").map(x=>x.v.plate)).size),`<span class="z-n-valid">${num(c.v)}</span>`,`<span class="z-n-near">${num(c.n)}</span>`,`<span class="z-n-expired">${num(c.e)}</span>`,c.ce?`<b class="z-n-expired">${num(c.ce)}</b>`:"—",compBar(c.wr)],c.wr<.75?"z-r-expired":c.wr<.9?"z-r-near":""))).replace('<table class="report-table','<table class="report-table z-sort'),true);}
   h+=`</div></div>`;const pg=[[],[],[]];
@@ -3184,13 +3263,13 @@ function compReport(){DRILL=[];const L=compItems();const t=today();const G=L.fil
   pg.forEach(p=>{if(p.length)h+=`<div class="report-grid z-daily-grid z-dpage z-wk">${p.join("")}</div>`;});
   return h+"<!--NOSUM-->";}
 /* ===================== جاهزية المركبات ===================== */
-function vreadyReport(){DRILL=[];const t=today();const V=DB.V;
+function vreadyReport(){DRILL=[];const t=today();const V=DB.V.filter(vehPass);
   const ready=v=>{const s=Object.values(v.docs).map(x=>x.s);return s.includes("expired")?"blocked":s.includes("near")?"near":s.every(x=>x==="valid"||x==="na")?"ready":"unknown";};
   const RN={ready:"جاهزة",near:"تحتاج تجديد قريب",blocked:"ممنوعة من التشغيل",unknown:"بيانات ناقصة"};const RC={ready:"valid",near:"near",blocked:"expired",unknown:"unknown"};
   V.forEach(v=>{v._r=ready(v);v._k=plDig(v.plate);});
   const cnt=a=>({r:a.filter(v=>v._r==="ready").length,n:a.filter(v=>v._r==="near").length,b:a.filter(v=>v._r==="blocked").length,u:a.filter(v=>v._r==="unknown").length});const C=cnt(V);
   let h=`<div class="report-note">الوضع في <b>${fmtDate(t)}</b> — المركبة «جاهزة» لو المستندات الأربعة (${Object.values(DOCN).join("، ")}) سارية، و«ممنوعة من التشغيل» لو أي مستند منتهي. الربط مع الإنتاج والمحروقات والوايت برقم اللوحة.</div>`;
-  h+=`<div class="z-st-legend"><span class="z-chip z-valid">جاهزة</span><span class="z-chip z-near">تحتاج تجديد قريب</span><span class="z-chip z-expired">ممنوعة من التشغيل</span></div><div class="z-pg1w"><div class="report-grid z-daily-grid z-p1">`;
+  h+=`<div class="report-note z-df-note">الفلاتر: <b>${esc(dfLabel())}</b></div><div class="z-st-legend"><span class="z-chip z-valid">جاهزة</span><span class="z-chip z-near">تحتاج تجديد قريب</span><span class="z-chip z-expired">ممنوعة من التشغيل</span></div><div class="z-pg1w"><div class="report-grid z-daily-grid z-p1">`;
   const D=[...groupBy(V,v=>nb(v.dept)||"غير محدد")].map(([k,a])=>({k,a,c:cnt(a)})).sort((x,y)=>(x.c.r/x.a.length)-(y.c.r/y.a.length));
   h+=card("جاهزية الأسطول حسب القسم",table(["القسم","المركبات","جاهزة","قارب","ممنوعة","ناقصة","نسبة الجاهزية"],D.map(({k,a,c})=>tr([`<b>${esc(k)}</b>`,num(a.length),`<span class="z-n-valid">${num(c.r)}</span>`,`<span class="z-n-near">${num(c.n)}</span>`,`<span class="z-n-expired">${num(c.b)}</span>`,num(c.u),compBar(c.r/a.length)],c.b?"z-r-expired":"")),tr(["الإجمالي",num(V.length),num(C.r),num(C.n),num(C.b),num(C.u),pct(C.r/(V.length||1))],"total")).replace('<table class="report-table','<table class="report-table z-sort'),true);
   /* التشغيل بمستندات منتهية */
@@ -3363,7 +3442,7 @@ function prevKey(k){const [y,m]=k.split("-").map(Number);return mKey(new Date(y,
 function handledMap(){return {};}
 const nb=x=>String(x||"").replace(/\u0640/g,"").replace(/\s+/g," ").trim();
 function brOk(x){const b=RS.br===undefined?"زحل":RS.br;if(!b)return true;return b==="زحل"?/زحل/.test(nb(x)):nb(x)===b;}
-const vF=()=>DB.V.filter(v=>brOk(v.dept)),gF=()=>DB.G.filter(g=>brOk(g.branch));
+const vF=()=>DB.V.filter(vehPass),gF=()=>DB.G.filter(g=>docPass(itemG(g)));
 function brLabel(){const b=RS.br===undefined?"زحل":RS.br;return b||"جميع الفروع";}
 function brSelect(list){const b=RS.br===undefined?"زحل":RS.br;const opts=[...new Set(list.map(nb).filter(Boolean))].filter(x=>!/زحل/.test(x)).sort((a,c)=>a.localeCompare(c,"ar"));
   return `<label class="report-filter">الفرع / القسم<select id="rBr"><option value=""${b===""?" selected":""}>جميع الفروع</option><option value="زحل"${b==="زحل"?" selected":""}>زحل</option>${opts.map(o=>`<option${b===o?" selected":""}>${esc(o)}</option>`).join("")}</select></label>`;}
@@ -3374,19 +3453,18 @@ const dLeft=s=>s.days==null?"—":s.days<0?`منتهي منذ ${arN(-s.days,"ي�
 const dCell=s=>s.d?`${fmtDate(s.d)}<div class="z-sub">${hij(s.d)}</div>`:"—";
 function docsDash(kind){
   const isV=kind==="veh";const list=isV?vF():gF();
-  const items=isV?list.flatMap(v=>Object.keys(DOCN).map(k=>({type:DOCN[k],who:`${v.plate} — ${v.brand} ${v.model}`.trim(),grp:nb(v.dept)||"غير محدد",owner:v.driver,s:v.docs[k]}))):
-    list.map(g=>({type:gType(g.title),title:g.title,who:nb(g.branch),grp:nb(g.branch),owner:g.owner,s:g.st}));
+  const items=isV?list.flatMap(v=>Object.keys(DOCN).map(k=>itemV(v,k))).filter(x=>docPass(x)).map(x=>({...x,title:undefined})):list.map(itemG);
   const cnt=a=>({v:a.filter(x=>x.s.s==="valid").length,n:a.filter(x=>x.s.s==="near").length,e:a.filter(x=>x.s.s==="expired").length});
   const rate=c=>{const t=c.v+c.n+c.e;return t?c.v/t:0;};const C=cnt(items);const T=C.v+C.n+C.e;
   const red=v=>v?`<span class="z-neg">${num(v)}</span>`:"0";
   const stRows=(groups)=>groups.map(([k,a])=>{const c=cnt(a);return tr([`<b>${esc(k)}</b>`,num(c.v),num(c.n),red(c.e),num(c.v+c.n+c.e),`<b>${pct(rate(c))}</b>`]);});
-  let h=`<div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — الحالة محسوبة لتاريخ اليوم ${fmtDate(today())}، و«يقارب» = خلال ${NEAR_DAYS} يوماً.</div>`;
+  let h=`<div class="report-note">الفلاتر: <b>${esc(dfLabel())}</b> — الحالة محسوبة لتاريخ اليوم ${fmtDate(today())}، و«يقارب» = خلال ${NEAR_DAYS} يوماً.</div>`;
   const cards=[];
   // 01 الامتثال
   {const byT=[...groupBy(items,x=>x.type)].sort((a,b)=>rate(cnt(a[1]))-rate(cnt(b[1])));
    let body=`<div class="z-comp"><div class="z-comp-v">${pct(rate(C))}</div><div><b>نسبة الامتثال</b><span>${num(C.v)} من ${num(T)} ${isV?"مستند مركبات":"مستند"} ساري • ${num(C.n)} يقارب • ${num(C.e)} منتهي${isV?` • ${arN(list.length,"مركبة")}`:""}</span></div></div>`;
    body+=table(["نوع المستند","ساري","يقارب","منتهي","الإجمالي","نسبة الامتثال"],stRows(byT),tr(["الإجمالي",num(C.v),num(C.n),red(C.e),num(T),pct(rate(C))],"total"));
-   if((RS.br===undefined?"زحل":RS.br)===""){const byG=[...groupBy(items,x=>x.grp)].sort((a,b)=>rate(cnt(a[1]))-rate(cnt(b[1])));body+=`<div class="z-subt">حسب ${isV?"القسم":"الفرع"}</div>`+table([isV?"القسم":"الفرع","ساري","يقارب","منتهي","الإجمالي","نسبة الامتثال"],stRows(byG));}
+   if(dfArr("dfBr").length!==1){const byG=[...groupBy(items,x=>x.grp)].sort((a,b)=>rate(cnt(a[1]))-rate(cnt(b[1])));body+=`<div class="z-subt">حسب ${isV?"القسم":"الفرع"}</div>`+table([isV?"القسم":"الفرع","ساري","يقارب","منتهي","الإجمالي","نسبة الامتثال"],stRows(byG));}
    cards.push(card("حالة الامتثال",body,true));}
   // 02 الإجراءات المطلوبة
   {const ex=items.filter(x=>x.s.s==="expired").sort((a,b)=>(a.s.days??0)-(b.s.days??0));const n7=items.filter(x=>x.s.s==="near"&&x.s.days<=7).sort((a,b)=>a.s.days-b.s.days);const n30=items.filter(x=>x.s.s==="near"&&x.s.days>7).sort((a,b)=>a.s.days-b.s.days);
@@ -3413,7 +3491,7 @@ function docsDash(kind){
 }
 function followItems(){
   const H=handledMap();const al=docAlerts();
-  return al.list.filter(a=>a.kind==="veh"?brOk(a.v.dept):brOk(a.g.branch)).map(a=>{const isV=a.kind==="veh";const key=isV?`v|${a.v.plate}|${a.k}|${a.s.d?dKey(a.s.d):""}`:`g|${a.g.branch}|${a.g.title}|${a.g.exp?dKey(a.g.exp):""}`;
+  return al.list.filter(a=>a.kind==="veh"?docPass(itemV(a.v,a.k)):docPass(itemG(a.g))).map(a=>{const isV=a.kind==="veh";const key=isV?`v|${a.v.plate}|${a.k}|${a.s.d?dKey(a.s.d):""}`:`g|${a.g.branch}|${a.g.title}|${a.g.exp?dKey(a.g.exp):""}`;
     return {a,key,done:!!H[key],title:isV?DOCN[a.k]:a.g.title,who:isV?`${a.v.plate} — ${a.v.brand} ${a.v.model}`:a.g.branch,owner:isV?a.v.driver:a.g.owner,exp:a.s.d,s:a.s};})
    .sort((x,y)=>(x.s.s==="near"?0:1)-(y.s.s==="near"?0:1)||(x.s.s==="near"?x.s.days-y.s.days:(y.s.days??-1e9)-(x.s.days??-1e9)));
 }
@@ -3494,11 +3572,11 @@ function saveView(){
     [{t:"حفظ",p:1,f:()=>{const n=$("zViewName").value.trim();if(!n)return false;const v=LS.get(ZK.views,[]);v.push({name:n,id:CUR,rs:{...RS}});LS.set(ZK.views,v);LS.set("zahal_views_open",true);renderQuick();toast("تم حفظ العرض ✓");}},{t:"إلغاء"}]);
   setTimeout(()=>$("zViewName")?.select(),50);
 }
-function buildHash(){if(!CUR)return "";const p=new URLSearchParams({r:CUR});["from","to","month","day","status","branch","mixer","cat","etype","equip","cxT","cxI","cxM","cmpP","af","at","bf","bt","yA","yB"].forEach(k=>{if(RS[k])p.set(k,RS[k]);});return "#"+p.toString();}
+function buildHash(){if(!CUR)return "";const p=new URLSearchParams({r:CUR});["from","to","month","day","status","branch","mixer","cat","etype","equip","cxT","cxI","cxM","cmpP","af","at","bf","bt","yA","yB"].forEach(k=>{if(RS[k])p.set(k,RS[k]);});DF_ALL.forEach(k=>{const v=RS[k];if(k==="dfBr"&&Array.isArray(v)&&!v.length){p.set(k,"__all");return;}const x=Array.isArray(v)?v.join("|"):v;if(x)p.set(k,x);});return "#"+p.toString();}
 function syncHash(){try{history.replaceState(null,"",CUR?buildHash():location.pathname+location.search);}catch(e){}}
 function copyLink(){const u=location.href.split("#")[0]+buildHash();(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast("تم نسخ رابط التقرير ✓")).catch(()=>{modal("رابط التقرير",`<input class="z-copy" value="${esc(u)}" readonly onclick="this.select()">`,[{t:"إغلاق"}]);});}
 function openFromHash(){if(!location.hash||!DB)return false;const p=new URLSearchParams(location.hash.slice(1));const id=p.get("r");if(!id||!REPORTS[id])return false;
-  ["from","to","month","day","status","branch","mixer","cat","etype","equip","cxT","cxI","cxM","cmpP","af","at","bf","bt","yA","yB"].forEach(k=>RS[k]=p.get(k)||"");openReport(id,true);return true;}
+  ["from","to","month","day","status","branch","mixer","cat","etype","equip","cxT","cxI","cxM","cmpP","af","at","bf","bt","yA","yB"].forEach(k=>RS[k]=p.get(k)||"");DF_ALL.forEach(k=>{const v=p.get(k);if(v==null){if(k==="dfBr")delete RS.dfBr;else RS[k]=DF_MULTI.some(m=>m[0]===k)?[]:"";return;}RS[k]=v==="__all"?[]:DF_MULTI.some(m=>m[0]===k)?v.split("|"):v;});openReport(id,true);return true;}
 
 /* ---------- 4) التصدير المجمّع ومتابعة التجديدات ---------- */
 let BULK=false;const SEL=new Set();
@@ -3522,7 +3600,7 @@ function followReport(){
   const all=followItems();const mode=["expired","near"].includes(RS.status)?RS.status:"";const F=all.filter(x=>!mode||x.s.s===mode).sort((a,b)=>(a.s.s==="expired"?0:1)-(b.s.s==="expired"?0:1)||(a.s.days??-1e9)-(b.s.days??-1e9));
   const ne=all.filter(x=>x.s.s==="expired").length,nn=all.filter(x=>x.s.s==="near").length,n7=all.filter(x=>x.s.s==="near"&&x.s.days<=7).length;
   return `<div class="report-kpis">${kpi("تحتاج تجديد",num(all.length),"red")}${kpi("منتهية",num(ne),ne?"red":"")}${kpi("قاربت على الانتهاء",num(nn))}${kpi("تنتهي خلال 7 أيام",num(n7),n7?"red":"")}</div>
-  <div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — المستند بيفضل في القائمة لحد ما تاريخ انتهائه يتحدث في الشيت لتاريخ قادم (بعد التجديد الفعلي).</div><div class="z-st-legend"><span class="z-chip z-near">قارب على الانتهاء</span><span class="z-chip z-expired">منتهي</span></div>`+
+  <div class="report-note">الفلاتر: <b>${esc(dfLabel())}</b> — المستند بيفضل في القائمة لحد ما تاريخ انتهائه يتحدث في الشيت لتاريخ قادم (بعد التجديد الفعلي).</div><div class="z-st-legend"><span class="z-chip z-near">قارب على الانتهاء</span><span class="z-chip z-expired">منتهي</span></div>`+
   card(`قائمة المتابعة (${num(F.length)})`,table(["المستند","المركبة / الفرع","الانتهاء","المتبقي","المسؤول / السائق","الحالة"],
     F.map(x=>tr([`<b>${esc(x.title)}</b>`,esc(x.who),fmtDate(x.exp),daysTxt(x.s),esc(x.owner||"—"),chip(x.s.s)],"z-r-"+x.s.s))),true);
 }
