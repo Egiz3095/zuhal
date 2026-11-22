@@ -2025,7 +2025,7 @@ const REPORTS={
   vready:{t:"جاهزية المركبات",d:"المركبات الجاهزة والممنوعة من التشغيل، ومن اشتغل بمستندات منتهية"},
   veh:{t:"مستندات السيارات",d:"كارت التشغيل والفحص والرخصة والتأمين لكل مركبة"},
   gov:{t:"المستندات الحكومية",d:"التراخيص والعقود والشهادات حسب الفرع"},
-  follow:{t:"متابعة التجديدات",d:"المستندات المنتهية والقاربة مع المسؤول وإجراء «تمت المعالجة»"},
+  follow:{t:"متابعة التجديدات",d:"المستندات المنتهية والقاربة مع المسؤول — تختفي فقط بعد تحديث تاريخ الانتهاء"},
   dq:{t:"جودة البيانات",d:"الأخطاء والنواقص التي تؤثر على دقة التقارير"}
 };
 let CUR=null;
@@ -2057,7 +2057,7 @@ function toolbar(kind){
   if(kind==="range"&&CUR==="expenses"){const cs=[...new Set(DB.E.map(r=>r.cat))].sort((a,b)=>a.localeCompare(b,"ar"));h+=`<label class="report-filter">التصنيف<select id="rCat"><option value="">جميع التصنيفات</option>${cs.map(c=>`<option${RS.cat===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
   if(kind==="range"&&CUR==="equip"){const ts=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة").map(r=>r.etype))].sort((a,b)=>a.localeCompare(b,"ar"));const es=[...new Set(DB.E.filter(r=>r.equip!=="غير مرتبط بمعدة"&&(!RS.etype||r.etype===RS.etype)).map(r=>r.equip))].sort((a,b)=>a.localeCompare(b,"ar",{numeric:true}));
     h+=`<label class="report-filter">نوع المعدة<select id="rEtype"><option value="">جميع الأنواع</option>${ts.map(c=>`<option${RS.etype===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label><label class="report-filter">المعدة<select id="rEquip"><option value="">كل المعدات</option>${es.map(c=>`<option${RS.equip===c?" selected":""}>${esc(c)}</option>`).join("")}</select></label>`;}
-  if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","بانتظار المعالجة"],["done","تمت معالجتها"],["all","الكل"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
+  if(kind==="follow")h+=`<label class="report-filter">العرض<select id="rStatus">${[["","الكل"],["expired","المنتهي فقط"],["near","القارب على الانتهاء فقط"]].map(([v,l])=>`<option value="${v}"${RS.status===v?" selected":""}>${l}</option>`).join("")}</select></label>`;
   if(kind==="gov")h+=`<label class="report-filter">الحالة<select id="rStatus"><option value="">جميع الحالات</option>${["expired","near","valid","ondemand"].map(s=>`<option value="${s}"${RS.status===s?" selected":""}>${STN[s]}</option>`).join("")}</select></label>`+brSelect(DB.G.map(g=>g.branch));
   if(kind==="range"&&CUR==="water"){const trs=[...sumBy(DB.W,r=>r.truck,r=>r.trips)].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).filter(Boolean);
     if(!Array.isArray(RS.wtr))RS.wtr=trs.includes(WATER_TRUCK)?[WATER_TRUCK]:[];const sel=RS.wtr.filter(x=>trs.includes(x));
@@ -3360,7 +3360,7 @@ function curMonth(){return mKey(DB.maxD);}
 function monthData(k){const [y,m]=k.split("-").map(Number);return filt({from:`${k}-01`,to:dKey(new Date(y,m,0))});}
 function lastFull(){let k=curMonth();if(isPartial(k)){const [y,m]=k.split("-").map(Number);k=mKey(new Date(y,m-2,1));}return k;}
 function prevKey(k){const [y,m]=k.split("-").map(Number);return mKey(new Date(y,m-2,1));}
-function handledMap(){return LS.get(ZK.handled,{});}
+function handledMap(){return {};}
 const nb=x=>String(x||"").replace(/\u0640/g,"").replace(/\s+/g," ").trim();
 function brOk(x){const b=RS.br===undefined?"زحل":RS.br;if(!b)return true;return b==="زحل"?/زحل/.test(nb(x)):nb(x)===b;}
 const vF=()=>DB.V.filter(v=>brOk(v.dept)),gF=()=>DB.G.filter(g=>brOk(g.branch));
@@ -3519,12 +3519,12 @@ function bulkExport(){
   addEventListener("afterprint",restore);setBulk(false);setTimeout(()=>window.print(),200);
 }
 function followReport(){
-  const all=followItems();const mode=RS.status||"pending";const F=all.filter(x=>mode==="all"||(mode==="done"?x.done:!x.done));
-  const n7=all.filter(x=>!x.done&&x.s.s==="near"&&x.s.days<=7).length;
-  return `<div class="report-kpis">${kpi("بانتظار المعالجة",num(all.filter(x=>!x.done).length),"red")}${kpi("تنتهي خلال 7 أيام",num(n7),n7?"red":"")}${kpi("منتهية",num(all.filter(x=>!x.done&&x.s.s==="expired").length))}${kpi("تمت معالجتها",num(all.filter(x=>x.done).length),"green")}</div>
-  <div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — «تمت المعالجة» يُخفي المستند من القائمة على هذا الجهاز حتى يتغير تاريخ انتهائه في الشيت (أي بعد التجديد الفعلي).</div>`+
-  card(`قائمة المتابعة (${num(F.length)})`,table(["المستند","المركبة / الفرع","الانتهاء","المتبقي","المسؤول / السائق","الحالة","إجراء"],
-    F.map(x=>tr([`<b>${esc(x.title)}</b>`,esc(x.who),fmtDate(x.exp),daysTxt(x.s),esc(x.owner||"—"),chip(x.s.s),`<button type="button" class="z-act${x.done?" done":""}" data-hkey="${esc(x.key)}">${x.done?"↺ تراجع":"✓ تمت المعالجة"}</button>`]))),true);
+  const all=followItems();const mode=["expired","near"].includes(RS.status)?RS.status:"";const F=all.filter(x=>!mode||x.s.s===mode).sort((a,b)=>(a.s.s==="expired"?0:1)-(b.s.s==="expired"?0:1)||(a.s.days??-1e9)-(b.s.days??-1e9));
+  const ne=all.filter(x=>x.s.s==="expired").length,nn=all.filter(x=>x.s.s==="near").length,n7=all.filter(x=>x.s.s==="near"&&x.s.days<=7).length;
+  return `<div class="report-kpis">${kpi("تحتاج تجديد",num(all.length),"red")}${kpi("منتهية",num(ne),ne?"red":"")}${kpi("قاربت على الانتهاء",num(nn))}${kpi("تنتهي خلال 7 أيام",num(n7),n7?"red":"")}</div>
+  <div class="report-note">الفرع / القسم: <b>${esc(brLabel())}</b> — المستند بيفضل في القائمة لحد ما تاريخ انتهائه يتحدث في الشيت لتاريخ قادم (بعد التجديد الفعلي).</div><div class="z-st-legend"><span class="z-chip z-near">قارب على الانتهاء</span><span class="z-chip z-expired">منتهي</span></div>`+
+  card(`قائمة المتابعة (${num(F.length)})`,table(["المستند","المركبة / الفرع","الانتهاء","المتبقي","المسؤول / السائق","الحالة"],
+    F.map(x=>tr([`<b>${esc(x.title)}</b>`,esc(x.who),fmtDate(x.exp),daysTxt(x.s),esc(x.owner||"—"),chip(x.s.s)],"z-r-"+x.s.s))),true);
 }
 
 /* ---------- 5) لوحة الأوامر ---------- */
