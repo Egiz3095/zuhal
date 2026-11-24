@@ -2051,6 +2051,7 @@ const REPORTS={
 let CUR=null;
 const RS={from:"",to:"",month:"",day:"",status:"",branch:"",mixer:"",cat:"",etype:"",equip:""};let HASHDONE=false;
 function openReport(id,keep){
+  if(id==="daily"&&!keep){const y=new Date(+today());y.setHours(0,0,0,0);y.setDate(y.getDate()-1);RS.day=dKey(y);}
   if(DOC_REPORTS.includes(id)&&["expired","near","valid"].includes(RS.status)){RS.dfSt=[RS.status];RS.status="";}
   if(id==="cmpx"&&!RS.cxT){const L=LS.get("zahal_cx_last",null);if(L)Object.assign(RS,Object.fromEntries(Object.entries(L).filter(([,v])=>v!=null)));}
   CUR=id;const r=REPORTS[id];
